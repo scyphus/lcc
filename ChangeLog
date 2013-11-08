@@ -1,3 +1,17 @@
+2013-11-08  Hirochika Asai  <asai@scyphus.co.jp>
+
+    * las/assembler.c: Added
+
+    * las/checkint.c: Added, a set of functions to check the size of variables
+    * las/checkint.h: Added, the header file of checkint.c
+
+    * las/vector.c: Added, vector utility
+    * las/vector.h: Added
+
+    * las/hashtable.c: Added, hash table utility
+    * las/hashtable.h: Added
+
+
 2013-11-07  Hirochika Asai  <asai@scyphus.co.jp>
 
     * Makefile.am: Added
@@ -6,3 +20,4 @@
     * las/las.c: Added
     * las/las.h: Added
     * las/tokenizer.c: Added
+    * las/token.h: Added
