@@ -30,8 +30,6 @@ main(int argc, const char *const argv[])
 {
     pcode_t *pcode;
     const char *fname;
-    FILE *fp;
-    string_t *str;
 
     if ( argc < 2 ) {
         usage(argv[0]);
@@ -44,9 +42,7 @@ main(int argc, const char *const argv[])
         fprintf(stderr, "Fatal error\n");
     }
 
-    while ( pcode->token_queue ) {
-        break;
-    }
+    assemble(pcode);
 
     return 0;
 }

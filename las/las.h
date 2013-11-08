@@ -11,7 +11,9 @@
 #define _LAS_H
 
 #include "token.h"
+#include "hashtable.h"
 #include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
 
 /*
@@ -36,7 +38,7 @@ typedef struct scode {
 typedef struct token {
     token_type_t type;
     union {
-        /* Symbol */
+        /* Symbol, identifier, or label */
         char *sym;
         /* Numerical value */
         char *num;
@@ -120,6 +122,85 @@ typedef struct preprocessor {
 
 
 
+/*
+ * Operand address
+ */
+typedef struct op_addr {
+    /* Base register */
+    char *base;
+    /* Displacement */
+    int64_t disp;
+    /* Offset register */
+    char *offset;
+    /* Scale multiplier */
+    int scale;
+} op_addr_t;
+
+/*
+ * Operand type
+ */
+typedef enum operand_type {
+    OPERAND_IMM8,
+    OPERAND_IMM16,
+    OPERAND_IMM32,
+    OPERAND_IMM64,
+    OPERAND_ADDR,
+    OPERAND_MOFFSET,
+    OPERAND_REG,
+    OPERAND_SYMBOL,
+} operand_type_t;
+
+typedef struct op_symbol {
+    int64_t offset;
+} op_symbol_t;
+
+/*
+ * Operand
+ */
+typedef struct operand {
+    operand_type_t type;
+    union {
+        uint8_t imm8;
+        uint16_t imm16;
+        uint32_t imm32;
+        uint64_t imm64;
+        op_addr_t addr;
+        uint64_t moffset;
+        char *reg;
+    } op;
+} operand_t;
+
+/*
+ * Instruction
+ */
+typedef struct instruction {
+    char *opcode;
+    struct {
+        int nr;
+        operand_t *vals;
+    } operands;
+} instr_t;
+
+/*
+ * List of instructions
+ */
+typedef struct stmt_list {
+    int nr;
+    /* Instructions */
+    instr_t *instrs;
+} stmt_list_t;
+
+
+typedef struct hashtable symbol_table_t;
+
+
+typedef struct assembler {
+    /* For linker */
+    symbol_table_t *symbols;
+    /* Global symbols */
+    symbol_table_t *globals;
+} assembler_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -129,6 +210,13 @@ extern "C" {
 
     scode_t * scode_read(const char *);
     void scode_delete(scode_t *);
+
+    void token_queue_rewind(token_queue_t *);
+    token_t * token_queue_cur(token_queue_t *);
+    token_t * token_queue_next(token_queue_t *);
+
+
+    void assemble(pcode_t *);
 
 
 #ifdef __cplusplus
