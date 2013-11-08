@@ -28,16 +28,16 @@ struct vector {
 extern "C" {
 #endif
 
-    __inline__ struct vector * vector_new(size_t);
-    __inline__ void vector_delete(struct vector *);
-    __inline__ void vector_clear(struct vector *);
-    __inline__ struct vector * vector_reserve(struct vector *, size_t);
-    __inline__ size_t vector_size(const struct vector *);
-    __inline__ size_t vector_max_size(struct vector *);
-    __inline__ struct vector * vector_push_back(struct vector *, void *);
-    __inline__ void * vector_pop_back(struct vector *);
-    __inline__ void * vector_at(const struct vector *, size_t);
-    __inline__ void * vector_replace(struct vector *, size_t, void *);
+    struct vector * vector_new(size_t);
+    void vector_delete(struct vector *);
+    void vector_clear(struct vector *);
+    struct vector * vector_reserve(struct vector *, size_t);
+    size_t vector_size(const struct vector *);
+    size_t vector_max_size(struct vector *);
+    struct vector * vector_push_back(struct vector *, void *);
+    void * vector_pop_back(struct vector *);
+    void * vector_at(const struct vector *, size_t);
+    void * vector_replace(struct vector *, size_t, void *);
 
 #ifdef __cplusplus
 }
