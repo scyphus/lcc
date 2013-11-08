@@ -13,7 +13,7 @@
 #include <limits.h>
 #include <sys/types.h>
 
-__inline__ size_t
+size_t
 check_size_t_add(size_t x, size_t y, int *err)
 {
     if ( x > SIZE_T_MAX - y ) {
@@ -25,7 +25,7 @@ check_size_t_add(size_t x, size_t y, int *err)
     return x + y;
 }
 
-__inline__ size_t
+size_t
 check_size_t_sub(size_t x, size_t y, int *err)
 {
     if ( x < y ) {
@@ -37,7 +37,7 @@ check_size_t_sub(size_t x, size_t y, int *err)
     return x - y;
 }
 
-__inline__ size_t
+size_t
 check_size_t_mul(size_t x, size_t y, int *err)
 {
     int i, j;
@@ -65,7 +65,7 @@ check_size_t_mul(size_t x, size_t y, int *err)
     return z;
 }
 
-__inline__ size_t
+size_t
 check_size_t_div(size_t x, size_t y, int *err)
 {
     if ( y == 0 ) {
@@ -77,7 +77,7 @@ check_size_t_div(size_t x, size_t y, int *err)
 }
 
 #if 0
-__inline__ ssize_t
+ssize_t
 check_ssize_t_add(ssize_t x, ssize_t y, int *err)
 {
     *err = CHECKINT_NOERR;
@@ -94,7 +94,7 @@ check_ssize_t_add(ssize_t x, ssize_t y, int *err)
     return x + y;
 }
 
-__inline__ ssize_t
+ssize_t
 check_ssize_t_sub(ssize_t x, ssize_t y, int *err)
 {
     if ( y < 0 ) {
@@ -110,7 +110,7 @@ check_ssize_t_sub(ssize_t x, ssize_t y, int *err)
     return x - y;
 }
 
-__inline__ ssize_t
+ssize_t
 check_ssize_t_mul(ssize_t x, ssize_t y, int *err)
 {
     int i, j;
@@ -130,7 +130,7 @@ check_ssize_t_mul(ssize_t x, ssize_t y, int *err)
     return z;
 }
 
-__inline__ ssize_t_t
+ssize_t_t
 check_ssize_t_div(ssize_t_t x, ssize_t_t y, int *err)
 {
     if ( y == 0 ) {
@@ -146,7 +146,7 @@ check_ssize_t_div(ssize_t_t x, ssize_t_t y, int *err)
 }
 #endif
 
-__inline__ uint32_t
+uint32_t
 check_uint32_add(uint64_t x, uint64_t y, int *err)
 {
     uint64_t z;
@@ -161,7 +161,7 @@ check_uint32_add(uint64_t x, uint64_t y, int *err)
     return (uint32_t) z;
 }
 
-__inline__ uint32_t
+uint32_t
 check_uint32_sub(uint32_t x, uint32_t y, int *err)
 {
     if ( x < y ) {
@@ -173,7 +173,7 @@ check_uint32_sub(uint32_t x, uint32_t y, int *err)
     return x - y;
 }
 
-__inline__ uint32_t
+uint32_t
 check_uint32_mul(int64_t x, int64_t y, int *err)
 {
     int64_t z;
@@ -188,7 +188,7 @@ check_uint32_mul(int64_t x, int64_t y, int *err)
     return (uint32_t) z;
 }
 
-__inline__ uint32_t
+uint32_t
 check_uint32_div(uint32_t x, uint32_t y, int *err)
 {
     if ( y == 0 ) {
@@ -199,7 +199,7 @@ check_uint32_div(uint32_t x, uint32_t y, int *err)
     return x / y;
 }
 
-__inline__ int32_t
+int32_t
 check_int32_add(int32_t x, int32_t y, int *err)
 {
     *err = CHECKINT_NOERR;
@@ -216,7 +216,7 @@ check_int32_add(int32_t x, int32_t y, int *err)
     return x + y;
 }
 
-__inline__ int32_t
+int32_t
 check_int32_sub(int32_t x, int32_t y, int *err)
 {
     *err = CHECKINT_NOERR;
@@ -233,7 +233,7 @@ check_int32_sub(int32_t x, int32_t y, int *err)
     return x - y;
 }
 
-__inline__ int32_t
+int32_t
 check_int32_mul(int64_t x, int64_t y, int *err)
 {
     int64_t z;
@@ -248,7 +248,7 @@ check_int32_mul(int64_t x, int64_t y, int *err)
     return (int32_t) z;
 }
 
-__inline__ int32_t
+int32_t
 check_int32_div(int32_t x, int32_t y, int *err)
 {
     if ( y == 0 ) {
@@ -263,7 +263,7 @@ check_int32_div(int32_t x, int32_t y, int *err)
     return x / y;
 }
 
-__inline__ uint64_t
+uint64_t
 check_uint64_add(uint64_t x, uint64_t y, int *err)
 {
     if ( x > UINT64_MAX - y ) {
@@ -275,7 +275,7 @@ check_uint64_add(uint64_t x, uint64_t y, int *err)
     return x + y;
 }
 
-__inline__ uint64_t
+uint64_t
 check_uint64_sub(uint64_t x, uint64_t y, int *err)
 {
     if ( x < y ) {
@@ -287,7 +287,7 @@ check_uint64_sub(uint64_t x, uint64_t y, int *err)
     return x - y;
 }
 
-__inline__ uint64_t
+uint64_t
 check_uint64_mul(uint64_t x, uint64_t y, int *err)
 {
     int i, j;
@@ -315,7 +315,7 @@ check_uint64_mul(uint64_t x, uint64_t y, int *err)
     return z;
 }
 
-__inline__ uint64_t
+uint64_t
 check_uint64_div(uint64_t x, uint64_t y, int *err)
 {
     if ( y == 0 ) {
@@ -327,7 +327,7 @@ check_uint64_div(uint64_t x, uint64_t y, int *err)
 }
 
 
-__inline__ int64_t
+int64_t
 check_int64_add(int64_t x, int64_t y, int *err)
 {
     *err = CHECKINT_NOERR;
@@ -344,7 +344,7 @@ check_int64_add(int64_t x, int64_t y, int *err)
     return x + y;
 }
 
-__inline__ int64_t
+int64_t
 check_int64_sub(int64_t x, int64_t y, int *err)
 {
     *err = CHECKINT_NOERR;
@@ -361,7 +361,7 @@ check_int64_sub(int64_t x, int64_t y, int *err)
     return x - y;
 }
 
-__inline__ int64_t
+int64_t
 check_int64_mul(int64_t x, int64_t y, int *err)
 {
     int64_t z;
@@ -376,7 +376,7 @@ check_int64_mul(int64_t x, int64_t y, int *err)
     return (int64_t) z;
 }
 
-__inline__ int64_t
+int64_t
 check_int64_div(int64_t x, int64_t y, int *err)
 {
     if ( y == 0 ) {
