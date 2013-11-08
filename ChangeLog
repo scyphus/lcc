@@ -11,6 +11,12 @@
     * las/hashtable.c: Added, hash table utility
     * las/hashtable.h: Added
 
+    * las/token.h: Added TOK_SEMICOLON
+    * las/tokenizer.c: Added TOK_SEMICOLON, and fixed a bug on the termination
+                       of the token value
+    * las/las.c: Added a function call of assemble()
+    * las/las.h: Added several structures for assembler
+
 
 2013-11-07  Hirochika Asai  <asai@scyphus.co.jp>
 
