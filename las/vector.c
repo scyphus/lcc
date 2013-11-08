@@ -15,7 +15,7 @@
 /*
  * Allocate struct vector
  */
-__inline__ struct vector *
+struct vector *
 vector_new(size_t sz)
 {
     struct vector *vec;
@@ -40,7 +40,7 @@ vector_new(size_t sz)
 /*
  * Free struct vector
  */
-__inline__ void
+void
 vector_delete(struct vector *vec)
 {
     if ( NULL != vec ) {
@@ -53,7 +53,7 @@ vector_delete(struct vector *vec)
 /*
  * Clear
  */
-__inline__ void
+void
 vector_clear(struct vector *vec)
 {
     vec->size = 0;
@@ -62,7 +62,7 @@ vector_clear(struct vector *vec)
 /*
  * Reserve size of vector
  */
-__inline__ struct vector *
+struct vector *
 vector_reserve(struct vector *vec, size_t sz)
 {
     void **elems;
@@ -80,7 +80,7 @@ vector_reserve(struct vector *vec, size_t sz)
 /*
  * Get used size of vector
  */
-__inline__ size_t
+size_t
 vector_size(const struct vector *vec)
 {
     return vec->size;
@@ -89,7 +89,7 @@ vector_size(const struct vector *vec)
 /*
  * Get used max size of vector
  */
-__inline__ size_t
+size_t
 vector_max_size(struct vector *vec)
 {
     return vec->max_size;
@@ -98,7 +98,7 @@ vector_max_size(struct vector *vec)
 /*
  * Push a element to the vector.
  */
-__inline__ struct vector *
+struct vector *
 vector_push_back(struct vector *vec, void *elem)
 {
     size_t new_sz;
@@ -126,7 +126,7 @@ vector_push_back(struct vector *vec, void *elem)
 /*
  * Pop a element from the vector.
  */
-__inline__ void *
+void *
 vector_pop_back(struct vector *vec)
 {
     void *elem;
@@ -144,7 +144,7 @@ vector_pop_back(struct vector *vec)
 /*
  * Get a element
  */
-__inline__ void *
+void *
 vector_at(const struct vector *vec, size_t pos)
 {
     void *elem;
@@ -160,7 +160,7 @@ vector_at(const struct vector *vec, size_t pos)
 /*
  * Replace a element
  */
-__inline__ void *
+void *
 vector_replace(struct vector *vec, size_t pos, void *new)
 {
     void *elem;
