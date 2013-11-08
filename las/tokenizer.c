@@ -244,12 +244,6 @@ token_queue_insert_tail(token_queue_t *tq, token_t *token)
     /* new entry */
     token_queue_entry_t *ent;
 
-#if 1
-    if ( token->type == TOK_INVAL ) {
-        printf("XXXX\n");
-    }
-#endif
-
     /* allocate the entry */
     ent = malloc(sizeof(token_queue_entry_t));
     if ( NULL == ent ) {
@@ -273,6 +267,46 @@ token_queue_insert_tail(token_queue_t *tq, token_t *token)
     return 0;
 }
 
+/*
+ * Rewind the token queue
+ */
+void
+token_queue_rewind(token_queue_t *tq)
+{
+    tq->cur = tq->head;
+}
+
+/*
+ * Get the current token from the queue
+ */
+token_t *
+token_queue_cur(token_queue_t *tq)
+{
+    if ( NULL == tq->cur ) {
+        /* End-of-token */
+        return NULL;
+    }
+
+    return tq->cur->token;
+}
+
+/*
+ * Proceed the queue to the next token and return it
+ */
+token_t *
+token_queue_next(token_queue_t *tq)
+{
+    if ( NULL == tq->cur ) {
+        return NULL;
+    }
+    tq->cur = tq->cur->next;
+
+    return token_queue_cur(tq);
+}
+
+/*
+ * Allocate new token
+ */
 token_t *
 token_new(tokenizer_t * tokenizer)
 {
@@ -393,11 +427,12 @@ _scan_number(tokenizer_t *tokenizer, token_queue_t *tq)
         ret = _append_typed_token(tokenizer, tq, TOK_INVAL);
     } else {
         /* Copy the value */
-        val = malloc(sizeof(char) * (tp - sp));
+        val = malloc(sizeof(char) * (tp - sp + 1));
         if ( NULL == val ) {
             return -1;
         }
         (void)memcpy(val, sp, tp - sp);
+        val[tp - sp] = '\0';
 
         /* Allocate a token */
         token = token_new(tokenizer);
@@ -446,11 +481,12 @@ _scan_symbol(tokenizer_t *tokenizer, token_queue_t *tq)
         ret = _append_typed_token(tokenizer, tq, TOK_INVAL);
     } else {
         /* Copy the value */
-        val = malloc(sizeof(char) * (tp - sp));
+        val = malloc(sizeof(char) * (tp - sp + 1));
         if ( NULL == val ) {
             return -1;
         }
         (void)memcpy(val, sp, tp - sp);
+        val[tp - sp] = '\0';
 
         /* Allocate a token */
         token = token_new(tokenizer);
@@ -501,6 +537,10 @@ _next_token(tokenizer_t *tokenizer, token_queue_t *tq)
         break;
     case ':':
         ret = _append_typed_token(tokenizer, tq, TOK_COLON);
+        (void)_next(tokenizer);
+        break;
+    case ';':
+        ret = _append_typed_token(tokenizer, tq, TOK_SEMICOLON);
         (void)_next(tokenizer);
         break;
     case '[':
