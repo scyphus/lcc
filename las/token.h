@@ -41,6 +41,9 @@ typedef enum _token_type {
     /* COLON */
     TOK_COLON,
 
+    /* SEMICOLON */
+    TOK_SEMICOLON,
+
     TOK_LBRACKET,
     TOK_RBRACKET,
 
