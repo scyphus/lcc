@@ -13,13 +13,13 @@
 #include <sys/types.h>  /* for ssize_t etc.. */
 
 struct hashtable {
-    /** hash space */
+    /* Hash space */
     ssize_t hashsize;
-    /** hash function */
+    /* Hash function */
     ssize_t (*hashfunc)(const void *);
-    /** function for comparing key */
+    /* Function for comparing key */
     int (*compare)(const void *, const void *);
-    /** use list temporally */
+    /* Use list temporally */
     void **hashdata;
 };
 
@@ -27,11 +27,12 @@ struct hashtable {
 extern "C" {
 #endif
 
-    struct hashtable * hashtable_init(ssize_t, ssize_t (*)(const void *),
-                                      int (*)(const void *, const void *));
-    int hashtable_set(void *, void *, struct hashtable *);
-    int hashtable_get(void **, void *, struct hashtable *);
-    int hashtable_unset(void *, struct hashtable *);
+    struct hashtable *
+    hashtable_new(ssize_t, ssize_t (*)(const void *),
+                  int (*)(const void *, const void *));
+    int hashtable_set(struct hashtable *, void *, void *, void **);
+    int hashtable_get(struct hashtable *, void *, void **);
+    int hashtable_unset(struct hashtable *, void *, void **);
 
 
 #ifdef __cplusplus
