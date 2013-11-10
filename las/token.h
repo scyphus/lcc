@@ -29,6 +29,9 @@ typedef enum _token_type {
     /* Symbol */
     TOK_SYMBOL,
 
+    /* Keywords */
+    TOK_KW_GLOBAL,
+
     /* Integer */
     TOK_BININT,
     TOK_OCTINT,
@@ -46,12 +49,20 @@ typedef enum _token_type {
 
     TOK_LBRACKET,
     TOK_RBRACKET,
+    TOK_LPAREN,
+    TOK_RPAREN,
 
     /* Operators */
     TOK_OP_PLUS,
     TOK_OP_MINUS,
     TOK_OP_MUL,
     TOK_OP_DIV,
+    TOK_OP_TILDE,
+    TOK_OP_LSHIFT,
+    TOK_OP_RSHIFT,
+    TOK_OP_BAR,
+    TOK_OP_AMP,
+    TOK_OP_XOR,
 
 } token_type_t;
 

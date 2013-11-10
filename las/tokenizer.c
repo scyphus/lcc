@@ -479,6 +479,8 @@ _scan_symbol(tokenizer_t *tokenizer, token_queue_t *tq)
         /* Invalidate if the length is zero */
         (void)_next(tokenizer);
         ret = _append_typed_token(tokenizer, tq, TOK_INVAL);
+    } else if ( 0 == memcmp(sp, "global", 5) ) {
+        ret = _append_typed_token(tokenizer, tq, TOK_KW_GLOBAL);
     } else {
         /* Copy the value */
         val = malloc(sizeof(char) * (tp - sp + 1));
@@ -503,6 +505,9 @@ _scan_symbol(tokenizer_t *tokenizer, token_queue_t *tq)
     return ret;
 }
 
+/*
+ * Proceed to the next token
+ */
 int
 _next_token(tokenizer_t *tokenizer, token_queue_t *tq)
 {
@@ -551,6 +556,14 @@ _next_token(tokenizer_t *tokenizer, token_queue_t *tq)
         ret = _append_typed_token(tokenizer, tq, TOK_RBRACKET);
         (void)_next(tokenizer);
         break;
+    case '(':
+        ret = _append_typed_token(tokenizer, tq, TOK_LPAREN);
+        (void)_next(tokenizer);
+        break;
+    case ')':
+        ret = _append_typed_token(tokenizer, tq, TOK_RPAREN);
+        (void)_next(tokenizer);
+        break;
     case '+':
         ret = _append_typed_token(tokenizer, tq, TOK_OP_PLUS);
         (void)_next(tokenizer);
@@ -571,6 +584,42 @@ _next_token(tokenizer_t *tokenizer, token_queue_t *tq)
         } else {
             ret = _append_typed_token(tokenizer, tq, TOK_OP_DIV);
         }
+        break;
+    case '~':
+        ret = _append_typed_token(tokenizer, tq, TOK_OP_TILDE);
+        (void)_next(tokenizer);
+        break;
+    case '<':
+        c = _next(tokenizer);
+        if ( '<' == c ) {
+            ret = _append_typed_token(tokenizer, tq, TOK_OP_LSHIFT);
+            (void)_next(tokenizer);
+        } else {
+            /* Invalid */
+            ret = _append_typed_token(tokenizer, tq, TOK_INVAL);
+        }
+        break;
+    case '>':
+        c = _next(tokenizer);
+        if ( '>' == c ) {
+            ret = _append_typed_token(tokenizer, tq, TOK_OP_RSHIFT);
+            (void)_next(tokenizer);
+        } else {
+            /* Invalid */
+            ret = _append_typed_token(tokenizer, tq, TOK_INVAL);
+        }
+        break;
+    case '|':
+        ret = _append_typed_token(tokenizer, tq, TOK_OP_BAR);
+        (void)_next(tokenizer);
+        break;
+    case '&':
+        ret = _append_typed_token(tokenizer, tq, TOK_OP_AMP);
+        (void)_next(tokenizer);
+        break;
+    case '^':
+        ret = _append_typed_token(tokenizer, tq, TOK_OP_XOR);
+        (void)_next(tokenizer);
         break;
     default:
         /* Other characters */

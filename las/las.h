@@ -11,6 +11,7 @@
 #define _LAS_H
 
 #include "token.h"
+#include "vector.h"
 #include "hashtable.h"
 #include <stdio.h>
 #include <stdint.h>
@@ -19,7 +20,7 @@
 /*
  * String (can be binary)
  */
-typedef struct string {
+typedef struct _string {
     unsigned char *s;
     size_t len;
 } string_t;
@@ -27,7 +28,7 @@ typedef struct string {
 /*
  * Source code
  */
-typedef struct scode {
+typedef struct _scode {
     char *fname;
     string_t str;
 } scode_t;
@@ -35,7 +36,7 @@ typedef struct scode {
 /*
  * Token
  */
-typedef struct token {
+typedef struct _token {
     token_type_t type;
     union {
         /* Symbol, identifier, or label */
@@ -55,8 +56,8 @@ typedef struct token {
 /*
  * An entry of token
  */
-typedef struct token_queue_entry token_queue_entry_t;
-struct token_queue_entry {
+typedef struct _token_queue_entry token_queue_entry_t;
+struct _token_queue_entry {
     token_t *token;
     token_queue_entry_t *next;
 };
@@ -140,14 +141,10 @@ typedef struct op_addr {
  * Operand type
  */
 typedef enum operand_type {
-    OPERAND_IMM8,
-    OPERAND_IMM16,
-    OPERAND_IMM32,
-    OPERAND_IMM64,
+    OPERAND_IMM,
     OPERAND_ADDR,
     OPERAND_MOFFSET,
-    OPERAND_REG,
-    OPERAND_SYMBOL,
+    OPERAND_REG_SYM,
 } operand_type_t;
 
 typedef struct op_symbol {
@@ -160,25 +157,20 @@ typedef struct op_symbol {
 typedef struct operand {
     operand_type_t type;
     union {
-        uint8_t imm8;
-        uint16_t imm16;
-        uint32_t imm32;
-        uint64_t imm64;
+        uint64_t imm;
         op_addr_t addr;
         uint64_t moffset;
-        char *reg;
+        char *regsim;
     } op;
 } operand_t;
+typedef struct vector operand_vector_t;
 
 /*
  * Instruction
  */
 typedef struct instruction {
     char *opcode;
-    struct {
-        int nr;
-        operand_t *vals;
-    } operands;
+    operand_vector_t *operands;
 } instr_t;
 
 /*
@@ -217,6 +209,7 @@ extern "C" {
 
 
     void assemble(pcode_t *);
+
 
 
 #ifdef __cplusplus

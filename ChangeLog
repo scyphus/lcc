@@ -1,3 +1,15 @@
+2013-11-10  Hirochika Asai  <asai@scyphus.co.jp>
+
+    * las/expr.c: Added, a set of parser functions
+
+    * las/hashtable.c: Removed exit() and changed the order of arguments
+    * las/hashtable.h: Changed the order of arguments
+
+    * las/token.h: Added several new tokens
+    * las/tokenizer.c: Added several new tokens
+    * las/las.h: Added several new tokens
+
+
 2013-11-08  Hirochika Asai  <asai@scyphus.co.jp>
 
     * las/assembler.c: Added
