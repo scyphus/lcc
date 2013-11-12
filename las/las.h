@@ -147,9 +147,10 @@ typedef enum operand_type {
     OPERAND_REG_SYM,
 } operand_type_t;
 
-typedef struct op_symbol {
+typedef struct _op_regsym {
+    char *regsym;
     int64_t offset;
-} op_symbol_t;
+} op_regsym_t;
 
 /*
  * Operand
@@ -160,7 +161,7 @@ typedef struct operand {
         uint64_t imm;
         op_addr_t addr;
         uint64_t moffset;
-        char *regsim;
+        op_regsym_t regsym;
     } op;
 } operand_t;
 typedef struct vector operand_vector_t;
