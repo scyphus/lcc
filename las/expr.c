@@ -8,70 +8,11 @@
 /* $Id$ */
 
 #include "vector.h"
+#include "expr.h"
 #include "las.h"
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-
-typedef struct vector expr_vec_t;
-
-/*
- * Types of operator
- */
-typedef enum _expr_operator_type {
-    OP_PLUS,
-    OP_MINUS,
-    OP_MUL,
-    OP_DIV,
-    OP_LSHIFT,
-    OP_RSHIFT,
-    OP_TILDE,
-    OP_BAR,
-    OP_AMP,
-    OP_XOR,
-} expr_operator_type_t;
-
-/*
- * Types of *fix
- */
-typedef enum _expr_fix_type {
-    FIX_PREFIX,
-    FIX_INFIX,
-} expr_fix_type_t;
-
-/*
- * Types of expression
- */
-typedef enum _expr_type {
-    EXPR_VAR,
-    EXPR_INT,
-    EXPR_OP,
-} expr_type_t;
-
-/*
- * Operation
- */
-typedef struct _expr_op_t {
-    expr_operator_type_t type;
-    expr_fix_type_t fix_type;   /* Prefix or infix */
-    expr_vec_t *args;           /* Operands */
-} expr_op_t;
-
-/*
- * Expression
- */
-typedef struct expr {
-    expr_type_t type;
-    union {
-        char *var;
-        uint64_t i;
-        expr_op_t op;
-    } u;
-} expr_t;
-
-expr_t * parse_expr(pcode_t *);
-
-
 
 
 /*
@@ -134,6 +75,9 @@ expr_prefix_operator(expr_operator_type_t type, expr_t *expr0)
     return expr;
 }
 
+/*
+ * Variable (symbol or label) expression
+ */
 expr_t *
 expr_var(char *var)
 {
@@ -153,6 +97,9 @@ expr_var(char *var)
     return expr;
 }
 
+/*
+ * Integer expression
+ */
 expr_t *
 expr_int(token_t *tok)
 {
@@ -221,11 +168,12 @@ parse_expr_atom(pcode_t *pcode)
         /* End of token; i.e., syntax error */
         return NULL;
     }
-
     switch ( tok->type ) {
     case TOK_SYMBOL:
         /* Parse symbol expression */
         expr = expr_var(tok->val.sym);
+        /* Eat */
+        (void)token_queue_next(pcode->token_queue);
         break;
     case TOK_BININT:
     case TOK_OCTINT:
@@ -233,6 +181,8 @@ parse_expr_atom(pcode_t *pcode)
     case TOK_HEXINT:
         /* Parse integer expression */
         expr = expr_int(tok);
+        /* Eat */
+        (void)token_queue_next(pcode->token_queue);
         break;
     case TOK_LPAREN:
         /* Eat TOK_LPAREN */
@@ -249,6 +199,8 @@ parse_expr_atom(pcode_t *pcode)
             expr_free(expr);
             return NULL;
         }
+        /* Eat */
+        (void)token_queue_next(pcode->token_queue);
         break;
     default:
         /* Syntax error */
