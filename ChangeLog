@@ -1,3 +1,11 @@
+2013-11-12  Hirochika Asai  <asai@scyphus.co.jp>
+
+    * las/expr.c: Fixed a bug that the parser did not eat the token of integers
+    * las/expr.h: Added, definitions of structures etc. have been moved from
+                  las/expr.c
+    * las/las.h: Changed the definition of register/symbol structure
+
+
 2013-11-10  Hirochika Asai  <asai@scyphus.co.jp>
 
     * las/expr.c: Added, a set of parser functions
