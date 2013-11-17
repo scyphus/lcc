@@ -5,8 +5,6 @@
  *      Hirochika Asai  <asai@scyphus.co.jp>
  */
 
-/* $Id$ */
-
 #include "vector.h"
 #include "checkint.h"
 #include <stdlib.h>
@@ -90,7 +88,7 @@ vector_size(const struct vector *vec)
  * Get used max size of vector
  */
 size_t
-vector_max_size(struct vector *vec)
+vector_max_size(const struct vector *vec)
 {
     return vec->max_size;
 }
