@@ -1,3 +1,9 @@
+2013-11-16  Hirochika Asai  <asai@scyphus.co.jp>
+
+    * las/vector.c: Added `const' modifier to the argument of vector_max_size()
+    * las/vector.h: Added `const' modifier to the argument of vector_max_size()
+
+
 2013-11-12  Hirochika Asai  <asai@scyphus.co.jp>
 
     * las/expr.c: Fixed a bug that the parser did not eat the token of integers

@@ -11,7 +11,7 @@
 #define _LAS_EXPR_H
 
 #include "vector.h"
-#include "las.h"
+#include "token.h"
 #include <stdint.h>
 
 typedef struct vector expr_vec_t;
@@ -74,7 +74,10 @@ typedef struct expr {
 extern "C" {
 #endif
 
-    expr_t * parse_expr(pcode_t *);
+    expr_t * expr_infix_operator(expr_operator_type_t, expr_t *, expr_t *);
+    expr_t * expr_prefix_operator(expr_operator_type_t, expr_t *);
+    expr_t * expr_var(char *);
+    expr_t * expr_int(uint64_t);
     void expr_free(expr_t *);
 
 #ifdef __cplusplus
