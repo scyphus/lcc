@@ -66,15 +66,6 @@ typedef enum _token_type {
 
 } token_type_t;
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* _LAS_TOKEN_H */
 
 /*

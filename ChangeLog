@@ -2,6 +2,10 @@
 
     * las/vector.c: Added `const' modifier to the argument of vector_max_size()
     * las/vector.h: Added `const' modifier to the argument of vector_max_size()
+    * las/parser.c: Added
+    * las/expr.c: Moved parser functions to parser.c
+    * las/expr.h: Moved parser functions to parser.c
+    * las/las.h: Removed ineffective code
 
 
 2013-11-12  Hirochika Asai  <asai@scyphus.co.jp>
