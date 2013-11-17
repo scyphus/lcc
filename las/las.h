@@ -5,13 +5,13 @@
  *      Hirochika Asai  <asai@scyphus.co.jp>
  */
 
-/* $Id$ */
-
 #ifndef _LAS_H
 #define _LAS_H
 
 #include "token.h"
 #include "vector.h"
+#include "mvector.h"
+#include "expr.h"
 #include "hashtable.h"
 #include <stdio.h>
 #include <stdint.h>
@@ -141,10 +141,8 @@ typedef struct op_addr {
  * Operand type
  */
 typedef enum operand_type {
-    OPERAND_IMM,
-    OPERAND_ADDR,
-    OPERAND_MOFFSET,
-    OPERAND_REG_SYM,
+    OPERAND_ADDR_EXPR,
+    OPERAND_EXPR,
 } operand_type_t;
 
 typedef struct _op_regsym {
@@ -158,13 +156,10 @@ typedef struct _op_regsym {
 typedef struct operand {
     operand_type_t type;
     union {
-        uint64_t imm;
-        op_addr_t addr;
-        uint64_t moffset;
-        op_regsym_t regsym;
+        expr_t *expr;
     } op;
 } operand_t;
-typedef struct vector operand_vector_t;
+typedef struct mvector operand_vector_t;
 
 /*
  * Instruction
@@ -177,15 +172,26 @@ typedef struct instruction {
 /*
  * List of instructions
  */
+typedef struct vector instr_vector_t;
 typedef struct stmt_list {
     int nr;
     /* Instructions */
     instr_t *instrs;
 } stmt_list_t;
 
+typedef struct vector symbol_vector_t;
 
 typedef struct hashtable symbol_table_t;
 
+
+/*
+ * Assembled code
+ */
+typedef struct _acode {
+    instr_vector_t *instrs;
+    /* Symbols for linker */
+    symbol_vector_t *symbols;
+} acode_t;
 
 typedef struct assembler {
     /* For linker */
