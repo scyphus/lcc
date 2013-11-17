@@ -3,6 +3,8 @@
     * las/mvector.c: Added, a set of functions to implement mutable vector
     * las/mvector.h: Added this file with mvector/mvector.c
 
+    * las/parser.h: Added
+
 
 2013-11-16  Hirochika Asai  <asai@scyphus.co.jp>
 
