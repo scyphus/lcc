@@ -94,7 +94,7 @@ vector_max_size(const struct vector *vec)
 }
 
 /*
- * Push a element to the vector.
+ * Push an element to the vector.
  */
 struct vector *
 vector_push_back(struct vector *vec, void *elem)
@@ -122,7 +122,7 @@ vector_push_back(struct vector *vec, void *elem)
 }
 
 /*
- * Pop a element from the vector.
+ * Pop an element from the vector.
  */
 void *
 vector_pop_back(struct vector *vec)
@@ -140,7 +140,7 @@ vector_pop_back(struct vector *vec)
 }
 
 /*
- * Get a element
+ * Get an element
  */
 void *
 vector_at(const struct vector *vec, size_t pos)
@@ -156,7 +156,7 @@ vector_at(const struct vector *vec, size_t pos)
 }
 
 /*
- * Replace a element
+ * Replace an element
  */
 void *
 vector_replace(struct vector *vec, size_t pos, void *new)
