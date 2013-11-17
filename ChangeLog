@@ -1,3 +1,9 @@
+2013-11-17  Hirochika Asai  <asai@scyphus.co.jp>
+
+    * las/mvector.c: Added, a set of functions to implement mutable vector
+    * las/mvector.h: Added this file with mvector/mvector.c
+
+
 2013-11-16  Hirochika Asai  <asai@scyphus.co.jp>
 
     * las/vector.c: Added `const' modifier to the argument of vector_max_size()
