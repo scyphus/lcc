@@ -2,8 +2,12 @@
 
 # LCC: Lightweight C Compiler
 
-## Grammar (Intel Syntax)
+## About
+LCC is (to be) an implementation of lightweight c compiler with assembler and
+linker.  This is mainly for my operating system but we may try to provide
+portable one.  Its output format has not yet been fixed at the current time.
 
+## Grammar (Intel Syntax)
  atom ::=
               symbol | literal | "(" expression ")"
 
