@@ -598,47 +598,12 @@ parse_expr(pcode_t *pcode)
     return parse_expr_or_expr(pcode);
 }
 
-/*
- * Parse an addr or moffset
- */
-operand_t *
-parse_operand_addr(pcode_t *pcode)
-{
-    token_t *tok;
-    expr_t *expr;
-    operand_t *op;
-
-    /* Skip lbracket */
-    (void)token_queue_next(pcode->token_queue);
-
-    /* Parse expression */
-    expr = parse_expr(pcode);
-    if ( NULL == expr ) {
-        /* Parse error */
-        return NULL;
-    }
-
-    /* Get the current token */
-    tok = token_queue_cur(pcode->token_queue);
-    if ( TOK_RBRACKET != tok->type ) {
-        return NULL;
-    }
-    (void)token_queue_next(pcode->token_queue);
-
-    /* Expression to addr */
-    op = malloc(sizeof(operand_t));
-    if ( NULL == op ) {
-        expr_free(expr);
-        return NULL;
-    }
-    op->type = OPERAND_ADDR_EXPR;
-    op->op.expr = expr;
-
-    return op;
-}
 
 /*
  * Parse an expr
+ *
+ * operand_expr ::=
+ *              expression
  */
 operand_t *
 parse_operand_expr(pcode_t *pcode)
@@ -664,7 +629,53 @@ parse_operand_expr(pcode_t *pcode)
 }
 
 /*
+ * Parse an addr or moffset
+ *
+ * operand_addr ::=
+ *              "[" expression "]"
+ */
+operand_t *
+parse_operand_addr(pcode_t *pcode)
+{
+    token_t *tok;
+    expr_t *expr;
+    operand_t *op;
+
+    /* Skip lbracket */
+    (void)token_queue_next(pcode->token_queue);
+
+    /* Parse expression */
+    expr = parse_expr(pcode);
+    if ( NULL == expr ) {
+        /* Parse error */
+        return NULL;
+    }
+
+    /* Get the current token */
+    tok = token_queue_cur(pcode->token_queue);
+    if ( tok == NULL || TOK_RBRACKET != tok->type ) {
+        return NULL;
+    }
+    /* Skip the TOK_RBRACKET */
+    (void)token_queue_next(pcode->token_queue);
+
+    /* Expression to addr */
+    op = malloc(sizeof(operand_t));
+    if ( NULL == op ) {
+        expr_free(expr);
+        return NULL;
+    }
+    op->type = OPERAND_ADDR_EXPR;
+    op->op.expr = expr;
+
+    return op;
+}
+
+/*
  * Parse an operand
+ *
+ * operand ::=
+ *              ( operand_expr | operand_addr )
  */
 operand_t *
 parse_operand(pcode_t *pcode)

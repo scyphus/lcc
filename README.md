@@ -34,11 +34,14 @@
  expression ::=
               or_expr
 
+ operand_expr ::=
+              expression
+
  operand_addr ::=
               "[" expression "]"
 
  operand ::=
-              ( operand_addr | expression )
+              ( operand_expr | operand_addr )
 
  instruction ::=
               opcode operand ( "," operand )*
