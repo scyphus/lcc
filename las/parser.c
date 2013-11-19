@@ -769,6 +769,7 @@ parse_instr(pcode_t *pcode, const char *sym)
 }
 
 /*
+ * Parse label
  *
  * label ::=
  *              symbol ":"
