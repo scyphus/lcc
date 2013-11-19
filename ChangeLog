@@ -1,7 +1,18 @@
+2013-11-19  Hirochika Asai  <asai@scyphus.co.jp>
+
+    * las/instr.c: Aded; moved functions related to statements and instructions
+                   from las/parser.c
+    * las/instr.h: Added this header file corresponding to las/instr.c
+    * las/parser.c: Implemented parser functions and moved some functions to
+                    las/instr.c
+    * las/parser.h: Changed the prototype declarations of parser functions
+                    to return statements
+
+
 2013-11-17  Hirochika Asai  <asai@scyphus.co.jp>
 
     * las/mvector.c: Added, a set of functions to implement mutable vector
-    * las/mvector.h: Added this file with mvector/mvector.c
+    * las/mvector.h: Added this file with las/mvector.c
 
     * las/parser.h: Added
 

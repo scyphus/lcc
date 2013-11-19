@@ -5,27 +5,27 @@
  *      Hirochika Asai  <asai@scyphus.co.jp>
  */
 
-/* $Id$ */
+#ifndef _LAS_INSTR_H
+#define _LAS_INSTR_H
 
-#ifndef _LAS_PARSER_H
-#define _LAS_PARSER_H
-
-#include "expr.h"
 #include "las.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    expr_t * parse_expr(pcode_t *);
-    stmt_t * parse_instr(pcode_t *, const char *);
-    stmt_vector_t * parse(pcode_t *);
+    void operand_free(operand_t *);
+    void operands_delete(operand_vector_t *);
+
+    instr_t * instr_new(char *, operand_vector_t *);
+    void instr_delete(instr_t *);
+    void stmt_free(stmt_t *);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _LAS_PARSER_H */
+#endif /* _LAS_INSTR_H */
 
 /*
  * Local variables:

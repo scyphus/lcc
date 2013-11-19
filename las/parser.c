@@ -7,6 +7,7 @@
 
 #include "expr.h"
 #include "parser.h"
+#include "instr.h"
 #include "las.h"
 #include "checkint.h"
 #include <stdlib.h>
@@ -597,83 +598,6 @@ parse_expr(pcode_t *pcode)
     return parse_expr_or_expr(pcode);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
- * Free an operand
- */
-void
-operand_free(operand_t *op)
-{
-    switch ( op->type ) {
-    case OPERAND_ADDR_EXPR:
-    case OPERAND_EXPR:
-        expr_free(op->op.expr);
-        break;
-    default:
-        ;
-    }
-}
-
-/*
- * Delete the operands
- */
-void
-operands_delete(operand_vector_t *vec)
-{
-    size_t i;
-
-    for ( i = 0; i < mvector_size(vec); i++ ) {
-        operand_free(mvector_at(vec, i));
-    }
-    mvector_delete(vec);
-}
-
-
-/*
- * Create a new instruction
- */
-instr_t *
-instr_new(char *opcode, operand_vector_t *operands)
-{
-    instr_t *instr;
-
-    instr = malloc(sizeof(instr_t));
-    if ( NULL == instr ) {
-        return NULL;
-    }
-    instr->opcode = opcode;
-    instr->operands = operands;
-
-    return instr;
-}
-
-/*
- * Delete the instruction
- */
-void
-instr_delete(instr_t *instr)
-{
-    free(instr->opcode);
-    operands_delete(instr->operands);
-    free(instr);
-}
-
-
 /*
  * Parse an addr or moffset
  */
@@ -773,9 +697,10 @@ parse_operand(pcode_t *pcode)
  * instruction ::=
  *              opcode operand ( "," operand )*
  */
-instr_t *
+stmt_t *
 parse_instr(pcode_t *pcode, const char *sym)
 {
+    stmt_t *stmt;
     instr_t *instr;
     token_t *tok;
     char *opcode;
@@ -783,8 +708,6 @@ parse_instr(pcode_t *pcode, const char *sym)
     operand_vector_t *vec;
 
     vec = mvector_new();
-
-    printf("%s ", sym);
 
     /* Read until the end of line */
     tok = token_queue_cur(pcode->token_queue);
@@ -831,7 +754,18 @@ parse_instr(pcode_t *pcode, const char *sym)
         return NULL;
     }
 
-    return instr;
+    /* Allocate for the global statement structure */
+    stmt = malloc(sizeof(stmt_t));
+    if ( NULL == stmt ) {
+        /* Error on memory allocation */
+        instr_delete(instr);
+        return NULL;
+    }
+    /* Set attributes */
+    stmt->type = STMT_INSTR;
+    stmt->u.instr = instr;
+
+    return stmt;
 }
 
 /*
@@ -839,69 +773,107 @@ parse_instr(pcode_t *pcode, const char *sym)
  * label ::=
  *              symbol ":"
  */
-void *
+stmt_t *
 parse_label(pcode_t *pcode, const char *sym)
 {
-    char *label;
+    stmt_t *stmt;
 
-    label = strdup(sym);
-    if ( NULL == label ) {
-        /* Can't allocate memory */
+    /* Allocate for the global statement structure */
+    stmt = malloc(sizeof(stmt_t));
+    if ( NULL == stmt ) {
+        /* Error on memory allocation */
         return NULL;
     }
-    printf("Label: %s\n", label);
+    /* Set attributes */
+    stmt->type = STMT_LABEL;
+    stmt->u.label = strdup(sym);
+    if ( NULL == stmt->u.label ) {
+        /* Can't allocate memory */
+        free(stmt);
+        return NULL;
+    }
 
     /* Skip this colon */
     (void)token_queue_next(pcode->token_queue);
 
-    return NULL;
+    return stmt;
 }
 
 /*
+ * Parse global statement
  *
  * global ::=
  *              "global" symbol
  */
-void
+stmt_t *
 parse_global(pcode_t *pcode)
 {
     token_t *tok;
+    stmt_t *stmt;
 
+    /* Skip "global" and get the symbol string */
     tok = token_queue_next(pcode->token_queue);
     if ( TOK_SYMBOL != tok->type ) {
-        /* Error */
-        return;
+        /* Syntax error */
+        return NULL;
     }
-    printf("global %s\n", tok->val.sym);
+
+    /* Allocate for the global statement structure */
+    stmt = malloc(sizeof(stmt_t));
+    if ( NULL == stmt ) {
+        /* Error on memory allocation */
+        return NULL;
+    }
+    /* Set attributes */
+    stmt->type = STMT_GLOBAL;
+    stmt->u.global = strdup(tok->val.sym);
+    if ( NULL == stmt->u.global ) {
+        /* Error on memory allocation */
+        free(stmt);
+        return NULL;
+    }
+
+    /* Skip the current token */
     (void)token_queue_next(pcode->token_queue);
 
-    return;
+    return stmt;
 }
 
 /*
- * Parse all
+ * Parse a sequence of tokens from the input pcode
  *
  * input ::=
  *              ( EOL | instruction | label | global )* EOF
  */
-acode_t *
+stmt_vector_t *
 parse(pcode_t *pcode)
 {
-    acode_t *acode;
     token_t *tok;
     char *sym;
+    stmt_t *stmt;
+    stmt_vector_t *vec;
 
-    acode = NULL;
+    /* Create a new statement vector */
+    vec = mvector_new();
 
     token_queue_rewind(pcode->token_queue);
     while ( NULL != (tok = token_queue_cur(pcode->token_queue)) ) {
         switch ( tok-> type ) {
         case TOK_INVAL:
             /* Invalid token */
+            /* FIXME: Raise an error */
+            return NULL;
+            break;
+        case TOK_EOL:
+            (void)token_queue_next(pcode->token_queue);
             break;
         case TOK_KW_GLOBAL:
             /* glboal */
-            parse_global(pcode);
+            stmt = parse_global(pcode);
+            if ( NULL == mvector_push_back(vec, stmt) ) {
+                stmt_free(stmt);
+                return NULL;
+            }
             break;
         case TOK_SYMBOL:
             /* Store the symbol */
@@ -912,14 +884,19 @@ parse(pcode_t *pcode)
             tok = token_queue_next(pcode->token_queue);
             if ( TOK_COLON == tok->type ) {
                 /* Label token */
-                parse_label(pcode, sym);
+                stmt = parse_label(pcode, sym);
             } else {
-                parse_instr(pcode, sym);
+                stmt = parse_instr(pcode, sym);
             }
             free(sym);
-            break;
-        case TOK_EOL:
-            (void)token_queue_next(pcode->token_queue);
+            if ( NULL == stmt ) {
+                /* Parse error */
+                return NULL;
+            }
+            if ( NULL == mvector_push_back(vec, stmt) ) {
+                stmt_free(stmt);
+                return NULL;
+            }
             break;
         default:
             /* Other token */
@@ -927,7 +904,7 @@ parse(pcode_t *pcode)
         }
     }
 
-    return acode;
+    return vec;
 }
 
 /*
