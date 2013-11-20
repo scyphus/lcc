@@ -1,3 +1,8 @@
+2013-11-20  Hirochika Asai  <asai@scyphus.co.jp>
+
+    * las/parser.c: Fixed bugs in parse_expr_atom()
+
+
 2013-11-19  Hirochika Asai  <asai@scyphus.co.jp>
 
     * las/instr.c: Aded; moved functions related to statements and instructions
