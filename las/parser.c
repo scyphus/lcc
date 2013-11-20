@@ -43,12 +43,27 @@ parse_expr_atom(pcode_t *pcode)
     case TOK_BININT:
         /* Convert a token to an integer value */
         ival = strtoull(tok->val.num + 2, NULL, 2);
+        /* Create new integer expression */
+        expr = expr_int(ival);
+        /* Eat */
+        (void)token_queue_next(pcode->token_queue);
+        break;
     case TOK_OCTINT:
         /* Convert a token to an integer value */
         ival = strtoull(tok->val.num + 1, NULL, 8);
+        /* Create new integer expression */
+        expr = expr_int(ival);
+        /* Eat */
+        (void)token_queue_next(pcode->token_queue);
+        break;
     case TOK_DECINT:
         /* Convert a token to an integer value */
         ival = strtoull(tok->val.num, NULL, 10);
+        /* Create new integer expression */
+        expr = expr_int(ival);
+        /* Eat */
+        (void)token_queue_next(pcode->token_queue);
+        break;
     case TOK_HEXINT:
         /* Convert a token to an integer value */
         ival = strtoull(tok->val.num, NULL, 16);
