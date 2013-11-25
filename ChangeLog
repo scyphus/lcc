@@ -1,3 +1,11 @@
+2013-11-25  Hirochika Asai  <asai@scyphus.co.jp>
+
+    * las/assembler.c: Implementing assembler
+    * las/arch/x86_64.c: Added, implementing assembler
+    * las/las.c: Implementing assembler
+    * las/las.h: Implementing assembler
+
+
 2013-11-20  Hirochika Asai  <asai@scyphus.co.jp>
 
     * las/parser.c: Fixed bugs in parse_expr_atom()

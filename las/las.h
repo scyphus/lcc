@@ -164,25 +164,55 @@ typedef struct mvector operand_vector_t;
 /*
  * Instruction
  */
-typedef struct instruction {
+typedef struct _instruction {
     char *opcode;
     operand_vector_t *operands;
 } instr_t;
 
 /*
+ * Global statement
+ */
+typedef struct _stmt_global {
+    char *symbol;
+} stmt_global_t;
+
+/*
+ * Label statement
+ */
+typedef struct _stmt_label {
+    char *symbol;
+} stmt_label_t;
+
+/*
+ * Statement type
+ */
+typedef enum _stmt_type {
+    STMT_INSTR,
+    STMT_LABEL,
+    STMT_GLOBAL,
+} stmt_type_t;
+
+typedef struct _stmt {
+    stmt_type_t type;
+    union {
+        instr_t *instr;
+        char *label;
+        char *global;
+    } u;
+} stmt_t;
+
+typedef struct mvector stmt_vector_t;
+
+
+
+
+/*
  * List of instructions
  */
 typedef struct vector instr_vector_t;
-typedef struct stmt_list {
-    int nr;
-    /* Instructions */
-    instr_t *instrs;
-} stmt_list_t;
 
 typedef struct vector symbol_vector_t;
-
 typedef struct hashtable symbol_table_t;
-
 
 /*
  * Assembled code
@@ -199,6 +229,10 @@ typedef struct assembler {
     /* Global symbols */
     symbol_table_t *globals;
 } assembler_t;
+
+
+
+
 
 #ifdef __cplusplus
 extern "C" {

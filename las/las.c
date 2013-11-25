@@ -8,6 +8,7 @@
 /* $Id$ */
 
 #include "las.h"
+#include "parser.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,6 +30,7 @@ int
 main(int argc, const char *const argv[])
 {
     pcode_t *pcode;
+    stmt_vector_t *vec;
     const char *fname;
 
     if ( argc < 2 ) {
@@ -40,9 +42,17 @@ main(int argc, const char *const argv[])
     pcode = preprocess(fname);
     if ( NULL == pcode ) {
         fprintf(stderr, "Fatal error\n");
+        return EXIT_FAILURE;
     }
 
-    assemble(pcode);
+    /* Parse the code */
+    vec = parse(pcode);
+    if ( NULL == vec ) {
+        fprintf(stderr, "Parse error\n");
+        return EXIT_FAILURE;
+    }
+
+    arch_assemble_x86_64(vec);
 
     return 0;
 }
