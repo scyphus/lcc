@@ -595,6 +595,22 @@ _mov(operand_vector_t *operands)
 void
 _xor(operand_vector_t *operands)
 {
+    int i;
+    operand_t *op;
+    expr_t *expr;
+    val_t *val;
+
+    for ( i = 0; i < mvector_size(operands); i++ ) {
+        op = mvector_at(operands, i);
+        if ( OPERAND_ADDR_EXPR == op->type ) {
+            /* Address expression */
+        } else if ( OPERAND_EXPR == op->type ) {
+            /* Expression */
+        }
+        expr = op->op.expr;
+        val = _eval_expr(expr);
+    }
+
     printf("XOR (#args = %zu)\n", mvector_size(operands));
 }
 

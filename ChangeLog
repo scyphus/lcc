@@ -1,5 +1,11 @@
 2013-11-25  Hirochika Asai  <asai@scyphus.co.jp>
 
+    * las/arch/x86_64/main.c: Moved from las/arch/x86_64.c
+    * las/arch/x86_64.c: Moved to las/arch/x86_64/main.c
+
+
+2013-11-25  Hirochika Asai  <asai@scyphus.co.jp>
+
     * las/assembler.c: Implementing assembler
     * las/arch/x86_64.c: Added, implementing assembler
     * las/las.c: Implementing assembler
