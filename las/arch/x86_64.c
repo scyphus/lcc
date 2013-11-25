@@ -554,6 +554,50 @@ _mov(operand_vector_t *operands)
     printf("MOV (#args = %zu)\n", mvector_size(operands));
 }
 
+/*
+ * XOR (Vol. 2B 4-531)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      34 ib           XOR AL,imm8             I       Valid   Valid
+ *      35 iw           XOR AX,imm16            I       Valid   Valid
+ *      35 id           XOR EAX,imm32           I       Valid   Valid
+ *      REX.W + 35 id   XOR RAX,imm32           I       Valid   N.E.
+ *      80 /6 ib        XOR r/m8,imm8           MI      Valid   Valid
+ *      REX + 80 /6 ib  XOR r/m8*,imm8          MI      Valid   N.E.
+ *      81 /6 iw        XOR r/m16,imm16         MI      Valid   Valid
+ *      81 /6 id        XOR r/m32,imm32         MI      Valid   Valid
+ *      REX.W + 81 /6 id
+ *                      XOR r/m64,imm32         MI      Valid   N.E.
+ *      83 /6 ib        XOR r/m16,imm8          MI      Valid   Valid
+ *      83 /6 ib        XOR r/m32,imm8          MI      Valid   Valid
+ *      REX.W + 83 /6 ib
+ *                      XOR r/m64,imm8          MI      Valid   N.E.
+ *      30 /r           XOR r/m8,r8             MR      Valid   Valid
+ *      REX + 30 /r     XOR r/m8*,r8*           MR      Valid   N.E.
+ *      31 /r           XOR r/m16,r16           MR      Valid   Valid
+ *      31 /r           XOR r/m32,r32           MR      Valid   Valid
+ *      REX.W + 31 /r   XOR r/m64,r64           MR      Valid   N.E.
+ *      32 /r           XOR r8,r/m8             RM      Valid   Valid
+ *      REX + 32 /r     XOR r8*,r/m8*           RM      Valid   N.E.
+ *      33 /r           XOR r16,r/m16           RM      Valid   Valid
+ *      33 /r           XOR r32,r/m32           RM      Valid   Valid
+ *      REX.W + 33 /r   XOR r64,r/m64           RM      Valid   N.E.
+ *
+ *      * In 64-bit mode, AH, BH, CH, DH cannot be accessed
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      I       AL/AX/EAX/RAX   imm8/16/32      NA              NA
+ *      MI      ModRM:r/m(w)    imm8/16/32      NA              NA
+ *      MR      ModRM:r/m(r,w)  ModRM:reg(r)    NA              NA
+ *      RM      ModRM:reg(r,w)  ModRM:r/m(r)    NA              NA
+ */
+void
+_xor(operand_vector_t *operands)
+{
+    printf("XOR (#args = %zu)\n", mvector_size(operands));
+}
+
 
 /*
  * Assemble x86-64 code
@@ -568,7 +612,11 @@ arch_assemble_x86_64(stmt_vector_t *vec)
         stmt = mvector_at(vec, i);
         if ( STMT_INSTR == stmt->type ) {
             if ( 0 == strcmp("mov", stmt->u.instr->opcode) ) {
+                /* MOV */
                 _mov(stmt->u.instr->operands);
+            } else if ( 0 == strcmp("xor", stmt->u.instr->opcode) ) {
+                /* XOR */
+                _xor(stmt->u.instr->operands);
             }
         }
     }

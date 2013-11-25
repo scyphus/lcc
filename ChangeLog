@@ -5,6 +5,8 @@
     * las/las.c: Implementing assembler
     * las/las.h: Implementing assembler
 
+    * las/arch/x86_64.c: Added the description of XOR instruction
+
 
 2013-11-20  Hirochika Asai  <asai@scyphus.co.jp>
 
