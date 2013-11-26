@@ -8,7 +8,7 @@ bin_PROGRAMS = las
 
 las_SOURCES = las.c las.h tokenizer.c assembler.c parser.c parser.h \
 	instr.c instr.h expr.c \
-	arch/x86_64.c \
+	arch/x86_64/main.c arch/x86_64/reg.c arch/x86_64/reg.h \
 	checkint.c checkint.h vector.c vector.h mvector.c mvector.h \
 	hashtable.c hashtable.h
 
