@@ -11,22 +11,22 @@
 #include "../../las.h"
 #include <stdint.h>
 
-typedef enum _val_type {
+typedef enum _x86_64_val_type {
     VAL_IMM,
-} val_type_t;
+} x86_64_val_type_t;
 
-typedef struct _val {
-    val_type_t type;
+typedef struct _x86_64_val {
+    x86_64_val_type_t type;
     union {
         uint64_t imm;
     } u;
-} val_t;
+} x86_64_val_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    val_t * x86_64_eval_expr(expr_t *);
+    x86_64_val_t * x86_64_eval_expr(expr_t *);
 
 #ifdef __cplusplus
 }

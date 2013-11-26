@@ -158,7 +158,7 @@ _xor(operand_vector_t *operands)
     int i;
     operand_t *op;
     expr_t *expr;
-    val_t *val;
+    x86_64_val_t *val;
 
     for ( i = 0; i < mvector_size(operands); i++ ) {
         op = mvector_at(operands, i);

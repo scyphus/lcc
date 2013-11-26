@@ -13,15 +13,15 @@
 /*
  * Prototype declarations
  */
-static val_t * _eval_expr_var(expr_t *);
-static val_t * _eval_expr_int(expr_t *);
-static val_t * _eval_expr_op(expr_t *);
-static val_t * _eval_expr(expr_t *);
+static x86_64_val_t * _eval_expr_var(expr_t *);
+static x86_64_val_t * _eval_expr_int(expr_t *);
+static x86_64_val_t * _eval_expr_op(expr_t *);
+static x86_64_val_t * _eval_expr(expr_t *);
 
 /*
  * Evaluate var expression
  */
-static val_t *
+static x86_64_val_t *
 _eval_expr_var(expr_t *expr)
 {
     x86_64_reg_t reg;
@@ -39,12 +39,12 @@ _eval_expr_var(expr_t *expr)
 /*
  * Evaluate integer expression
  */
-static val_t *
+static x86_64_val_t *
 _eval_expr_int(expr_t *expr)
 {
-    val_t *val;
+    x86_64_val_t *val;
 
-    val = malloc(sizeof(val_t));
+    val = malloc(sizeof(x86_64_val_t));
     if ( NULL == val ) {
         return NULL;
     }
@@ -57,16 +57,16 @@ _eval_expr_int(expr_t *expr)
 /*
  * Evaluate operand
  */
-static val_t *
+static x86_64_val_t *
 _eval_expr_op(expr_t *expr)
 {
-    val_t *val;
-    val_t *lval;
-    val_t *rval;
+    x86_64_val_t *val;
+    x86_64_val_t *lval;
+    x86_64_val_t *rval;
     expr_t *expr0;
     expr_t *expr1;
 
-    val = malloc(sizeof(val_t));
+    val = malloc(sizeof(x86_64_val_t));
     if ( NULL == val ) {
         return NULL;
     }
@@ -139,10 +139,10 @@ _eval_expr_op(expr_t *expr)
 /*
  * Evaluate the expression
  */
-static val_t *
+static x86_64_val_t *
 _eval_expr(expr_t *expr)
 {
-    val_t *val;
+    x86_64_val_t *val;
 
     switch ( expr->type ) {
     case EXPR_VAR:
@@ -162,7 +162,7 @@ _eval_expr(expr_t *expr)
 /*
  * Evaluate the expression
  */
-val_t *
+x86_64_val_t *
 x86_64_eval_expr(expr_t *expr)
 {
     return _eval_expr(expr);
