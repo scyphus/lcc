@@ -5,6 +5,11 @@
     * las/arch/x86_64/reg.h: Moved register-related definitions from
                              las/arch/x86_64/main.c
 
+    * las/arch/x86_64/eval.c: Moved operand evaluation related functions from
+                              las/arch/x86_64/main.c
+    * las/arch/x86_64/eval.h: Moved operand evaluation related definitions from
+                              las/arch/x86_64/main.c
+
 
 2013-11-25  Hirochika Asai  <asai@scyphus.co.jp>
 
