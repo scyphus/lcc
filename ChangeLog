@@ -4,6 +4,9 @@
                              the register
     * las/arch/x86_64/reg.h: Added regsize()
 
+    * las/arch/x86_64/reg.c: Added MM0-MM7 and XMM0-XMM7
+    * las/arch/x86_64/reg.h: Added MM0-MM7 and XMM0-XMM7
+
 
 2013-11-26  Hirochika Asai  <asai@scyphus.co.jp>
 

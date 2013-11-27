@@ -168,6 +168,38 @@ strtoreg(const char *s)
         reg = REG_EFLAGS;
     } else if ( 0 == strcmp("rflags", s) ) {
         reg = REG_RFLAGS;
+    } else if ( 0 == strcmp("mm0", s) ) {
+        reg = REG_MM0;
+    } else if ( 0 == strcmp("mm1", s) ) {
+        reg = REG_MM1;
+    } else if ( 0 == strcmp("mm2", s) ) {
+        reg = REG_MM2;
+    } else if ( 0 == strcmp("mm3", s) ) {
+        reg = REG_MM3;
+    } else if ( 0 == strcmp("mm4", s) ) {
+        reg = REG_MM4;
+    } else if ( 0 == strcmp("mm5", s) ) {
+        reg = REG_MM5;
+    } else if ( 0 == strcmp("mm6", s) ) {
+        reg = REG_MM6;
+    } else if ( 0 == strcmp("mm7", s) ) {
+        reg = REG_MM7;
+    } else if ( 0 == strcmp("xmm0", s) ) {
+        reg = REG_XMM0;
+    } else if ( 0 == strcmp("xmm1", s) ) {
+        reg = REG_XMM1;
+    } else if ( 0 == strcmp("xmm2", s) ) {
+        reg = REG_XMM2;
+    } else if ( 0 == strcmp("xmm3", s) ) {
+        reg = REG_XMM3;
+    } else if ( 0 == strcmp("xmm4", s) ) {
+        reg = REG_XMM4;
+    } else if ( 0 == strcmp("xmm5", s) ) {
+        reg = REG_XMM5;
+    } else if ( 0 == strcmp("xmm6", s) ) {
+        reg = REG_XMM6;
+    } else if ( 0 == strcmp("xmm7", s) ) {
+        reg = REG_XMM7;
     } else {
         reg = REG_UNKNOWN;
     }

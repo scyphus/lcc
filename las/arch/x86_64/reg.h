@@ -107,6 +107,24 @@ typedef enum op_reg {
     REG_FLAGS,
     REG_EFLAGS,
     REG_RFLAGS,
+    /* MM */
+    REG_MM0,
+    REG_MM1,
+    REG_MM2,
+    REG_MM3,
+    REG_MM4,
+    REG_MM5,
+    REG_MM6,
+    REG_MM7,
+    /* XMM */
+    REG_XMM0,
+    REG_XMM1,
+    REG_XMM2,
+    REG_XMM3,
+    REG_XMM4,
+    REG_XMM5,
+    REG_XMM6,
+    REG_XMM7,
 } x86_64_reg_t;
 
 #ifdef __cplusplus
