@@ -114,6 +114,7 @@ extern "C" {
 #endif
 
     x86_64_reg_t strtoreg(const char *);
+    int regsize(x86_64_reg_t);
 
 #ifdef __cplusplus
 }

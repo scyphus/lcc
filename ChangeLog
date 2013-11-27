@@ -1,3 +1,10 @@
+2013-11-27  Hirochika Asai  <asai@scyphus.co.jp>
+
+    * las/arch/x86_64/reg.c: Implemented regsize() to get the effective size of
+                             the register
+    * las/arch/x86_64/reg.h: Added regsize()
+
+
 2013-11-26  Hirochika Asai  <asai@scyphus.co.jp>
 
     * las/arch/x86_64/reg.c: Moved register-related functions from

@@ -176,6 +176,105 @@ strtoreg(const char *s)
 }
 
 /*
+ * Obtain the register size
+ */
+int
+regsize(x86_64_reg_t r)
+{
+    int sz;
+    switch ( r ) {
+    case REG_AL:
+    case REG_AH:
+    case REG_CL:
+    case REG_CH:
+    case REG_DL:
+    case REG_DH:
+    case REG_BL:
+    case REG_BH:
+    case REG_SPL:
+    case REG_BPL:
+    case REG_SIL:
+    case REG_DIL:
+    case REG_R8L:
+    case REG_R9L:
+    case REG_R10L:
+    case REG_R11L:
+    case REG_R12L:
+    case REG_R13L:
+    case REG_R14L:
+    case REG_R15L:
+        sz = 8;
+        break;
+    case REG_AX:
+    case REG_CX:
+    case REG_DX:
+    case REG_BX:
+    case REG_SP:
+    case REG_BP:
+    case REG_SI:
+    case REG_DI:
+    case REG_R8W:
+    case REG_R9W:
+    case REG_R10W:
+    case REG_R11W:
+    case REG_R12W:
+    case REG_R13W:
+    case REG_R14W:
+    case REG_R15W:
+    case REG_CS:
+    case REG_DS:
+    case REG_ES:
+    case REG_FS:
+    case REG_GS:
+    case REG_FLAGS:
+        sz = 16;
+        break;
+    case REG_EAX:
+    case REG_ECX:
+    case REG_EDX:
+    case REG_EBX:
+    case REG_ESP:
+    case REG_EBP:
+    case REG_ESI:
+    case REG_EDI:
+    case REG_R8D:
+    case REG_R9D:
+    case REG_R10D:
+    case REG_R11D:
+    case REG_R12D:
+    case REG_R13D:
+    case REG_R14D:
+    case REG_R15D:
+    case REG_EFLAGS:
+        sz = 32;
+        break;
+    case REG_RAX:
+    case REG_RCX:
+    case REG_RDX:
+    case REG_RBX:
+    case REG_RSP:
+    case REG_RBP:
+    case REG_RSI:
+    case REG_RDI:
+    case REG_R8:
+    case REG_R9:
+    case REG_R10:
+    case REG_R11:
+    case REG_R12:
+    case REG_R13:
+    case REG_R14:
+    case REG_R15:
+    case REG_RFLAGS:
+        sz = 64;
+        break;
+    default:
+        sz = 0;
+    }
+
+    return sz;
+}
+
+/*
  * Local variables:
  * tab-width: 4
  * c-basic-offset: 4
