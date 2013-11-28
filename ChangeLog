@@ -5,7 +5,8 @@
     * las/arch/x86_64/eval.h: Implemented operand evaluator for register and
                               immediate operands
     * las/arch/x86_64/main.c: Implementing assembler functions for MOV and XOR
-                              instructions and added description of JMP
+                              instructions and added the description of JMP
+                              instruction
 
 
 2013-11-27  Hirochika Asai  <asai@scyphus.co.jp>
