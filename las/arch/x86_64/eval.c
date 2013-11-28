@@ -24,16 +24,28 @@ static x86_64_val_t * _eval_expr(expr_t *);
 static x86_64_val_t *
 _eval_expr_var(expr_t *expr)
 {
+    x86_64_val_t *val;
     x86_64_reg_t reg;
+
+    val = malloc(sizeof(x86_64_val_t));
+    if ( NULL == val ) {
+        return NULL;
+    }
 
     reg = strtoreg(expr->u.var);
     if ( REG_UNKNOWN == reg ) {
-        /* Symbol */
+        /* Symbol: To be implemented */
+        val->type = X86_64_VAL_IMM;
+        val->u.imm = 0;
+        val->opsize = 0;
     } else {
         /* Register */
+        val->type = X86_64_VAL_REG;
+        val->u.reg = reg;
+        val->opsize = regsize(reg);
     }
 
-    return NULL;
+    return val;
 }
 
 /*
@@ -48,8 +60,9 @@ _eval_expr_int(expr_t *expr)
     if ( NULL == val ) {
         return NULL;
     }
-    val->type = VAL_IMM;
+    val->type = X86_64_VAL_IMM;
     val->u.imm = expr->u.i;
+    val->opsize = 0;
 
     return val;
 }
@@ -70,6 +83,7 @@ _eval_expr_op(expr_t *expr)
     if ( NULL == val ) {
         return NULL;
     }
+    val->opsize = 0;
 
     if ( FIX_PREFIX == expr->u.op.fix_type ) {
         expr0 = vector_at(expr->u.op.args, 0);
@@ -111,19 +125,19 @@ _eval_expr_op(expr_t *expr)
         }
         switch ( expr->u.op.type ) {
         case OP_PLUS:
-            val->type = VAL_IMM;
+            val->type = X86_64_VAL_IMM;
             val->u.imm = lval->u.imm + rval->u.imm;
             break;
         case OP_MINUS:
-            val->type = VAL_IMM;
+            val->type = X86_64_VAL_IMM;
             val->u.imm = lval->u.imm - rval->u.imm;
             break;
         case OP_MUL:
-            val->type = VAL_IMM;
+            val->type = X86_64_VAL_IMM;
             val->u.imm = lval->u.imm * rval->u.imm;
             break;
         case OP_DIV:
-            val->type = VAL_IMM;
+            val->type = X86_64_VAL_IMM;
             val->u.imm = lval->u.imm / rval->u.imm;
             break;
         default:
@@ -135,9 +149,8 @@ _eval_expr_op(expr_t *expr)
     return val;
 }
 
-
 /*
- * Evaluate the expression
+ * Evaluate the expression (static function)
  */
 static x86_64_val_t *
 _eval_expr(expr_t *expr)
@@ -169,6 +182,73 @@ x86_64_eval_expr(expr_t *expr)
 }
 
 
+
+/*
+ * Evaluate the operand (immediate value or register)
+ */
+static x86_64_val_t *
+_eval_expr_imm_or_reg(expr_t *expr)
+{
+    x86_64_val_t *val;
+
+    switch ( expr->type ) {
+    case EXPR_VAR:
+        /* Register or immediate value (symbol) */
+        val = _eval_expr_var(expr);
+        break;
+    case EXPR_INT:
+        /* Immediate value */
+        val = _eval_expr_int(expr);
+        break;
+    case EXPR_OP:
+        /* Immediate value */
+        val = _eval_expr_op(expr);
+        break;
+    default:
+        val = NULL;
+    }
+
+    /* Verify the returned value */
+    if ( NULL == val ) {
+        return NULL;
+    } else if ( X86_64_VAL_REG != val->type && X86_64_VAL_IMM != val->type ) {
+        free(val);
+        return NULL;
+    }
+
+    return val;
+}
+
+/*
+ * Evaluate the operand (address operand)
+ */
+static x86_64_val_t *
+_eval_expr_addr(expr_t *expr)
+{
+    /* To be implemented */
+    return NULL;
+}
+
+
+
+/*
+ * Evaluate an operand
+ */
+x86_64_val_t *
+x86_64_eval_operand(operand_t *op)
+{
+    x86_64_val_t *val;
+
+    if ( OPERAND_EXPR == op->type ) {
+        /* Immediate value or register */
+        val = _eval_expr_imm_or_reg(op->op.expr);
+    } else {
+        /* Address */
+        val = _eval_expr_addr(op->op.expr);
+    }
+
+    return val;
+}
 
 /*
  * Local variables:

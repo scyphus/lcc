@@ -1,3 +1,13 @@
+2013-11-28  Hirochika Asai  <asai@scyphus.co.jp>
+
+    * las/arch/x86_64/eval.c: Implemented operand evaluator for register and
+                              immediate operands
+    * las/arch/x86_64/eval.h: Implemented operand evaluator for register and
+                              immediate operands
+    * las/arch/x86_64/main.c: Implementing assembler functions for MOV and XOR
+                              instructions and added description of JMP
+
+
 2013-11-27  Hirochika Asai  <asai@scyphus.co.jp>
 
     * las/arch/x86_64/reg.c: Implemented regsize() to get the effective size of

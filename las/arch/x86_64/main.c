@@ -33,21 +33,224 @@ struct y {
     struct xxx *ptr;
 };
 
-/* [base register + displacement + offset register * scalar multiplier] */
-typedef struct _operand_addr {
-    /* Base register */
-    x86_64_reg_t base;
-    /* Displacement */
-    int64_t disp;
-    /* Offset register */
-    x86_64_reg_t offset;
-    /* Scale multiplier */
-    int scale;
-} operand_addr_t;
+
+/*
+ * Vol. 2A 2-5
+ * Mod(2) | Reg(3) | R/M(3)
+ */
+static int
+_val_to_modrm(x86_64_val_t *val1, x86_64_val_t *val2)
+{
+    int mod;
+    int reg;
+    int rm;
+
+    /* REG */
+    if ( X86_64_VAL_REG != val1->type ) {
+        return -1;
+    }
+    switch ( val1->u.reg ) {
+    case REG_AL:
+    case REG_AX:
+    case REG_EAX:
+    case REG_MM0:
+    case REG_XMM0:
+        reg = 0;
+        break;
+    case REG_CL:
+    case REG_CX:
+    case REG_ECX:
+    case REG_MM1:
+    case REG_XMM1:
+        reg = 1;
+        break;
+    case REG_DL:
+    case REG_DX:
+    case REG_EDX:
+    case REG_MM2:
+    case REG_XMM2:
+        reg = 2;
+        break;
+    case REG_BL:
+    case REG_BX:
+    case REG_EBX:
+    case REG_MM3:
+    case REG_XMM3:
+        reg = 3;
+        break;
+    case REG_AH:
+    case REG_SP:
+    case REG_ESP:
+    case REG_MM4:
+    case REG_XMM4:
+        reg = 4;
+        break;
+    case REG_CH:
+    case REG_BP:
+    case REG_EBP:
+    case REG_MM5:
+    case REG_XMM5:
+        reg = 5;
+        break;
+    case REG_DH:
+    case REG_SI:
+    case REG_ESI:
+    case REG_MM6:
+    case REG_XMM6:
+        reg = 6;
+        break;
+    case REG_BH:
+    case REG_DI:
+    case REG_EDI:
+    case REG_MM7:
+    case REG_XMM7:
+        reg = 7;
+        break;
+    default:
+        reg = -1;
+    }
+    /* Check */
+    if ( reg < 0 ) {
+        return -1;
+    }
+
+    if ( X86_64_VAL_REG == val2->type ) {
+        mod = 3;
+        switch ( val2->u.reg ) {
+        case REG_EAX:
+        case REG_AX:
+        case REG_AL:
+        case REG_MM0:
+        case REG_XMM0:
+            rm = 0;
+            break;
+        case REG_ECX:
+        case REG_CX:
+        case REG_CL:
+        case REG_MM1:
+        case REG_XMM1:
+            rm = 1;
+            break;
+        case REG_EDX:
+        case REG_DX:
+        case REG_DL:
+        case REG_MM2:
+        case REG_XMM2:
+            rm = 2;
+            break;
+        case REG_EBX:
+        case REG_BX:
+        case REG_BL:
+        case REG_MM3:
+        case REG_XMM3:
+            rm = 3;
+            break;
+        case REG_ESP:
+        case REG_SP:
+        case REG_AH:
+        case REG_MM4:
+        case REG_XMM4:
+            rm = 4;
+            break;
+        case REG_EBP:
+        case REG_BP:
+        case REG_CH:
+        case REG_MM5:
+        case REG_XMM5:
+            rm = 5;
+            break;
+        case REG_ESI:
+        case REG_SI:
+        case REG_DH:
+        case REG_MM6:
+        case REG_XMM6:
+            rm = 6;
+            break;
+        case REG_EDI:
+        case REG_DI:
+        case REG_BH:
+        case REG_MM7:
+        case REG_XMM7:
+            rm = 7;
+            break;
+        default:
+            rm = -1;
+        }
+        /* Check */
+        if ( rm < 0 ) {
+            return -1;
+        }
+    } else {
+        /* Address or Immediate */
+        return -1;
+    }
+
+    return (mod << 6) | (reg << 3) | rm;
+}
 
 
 
 
+/*
+ * CLC (Vol. 2A 3-101)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      F8              CLC                     NP      Valid   Valid
+ */
+void
+_clc(operand_vector_t *operands)
+{
+    if ( 0 != mvector_size(operands) ) {
+        return;
+    }
+    printf("CLC F8\n");
+}
+
+
+/*
+ * CLD (Vol. 2A 3-102)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      FC              CLD                     NP      Valid   Valid
+ */
+void
+_cld(operand_vector_t *operands)
+{
+    if ( 0 != mvector_size(operands) ) {
+        return;
+    }
+    printf("CLD FC\n");
+}
+
+/*
+ * JMP (Vol. 2A 3-424)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      EB cb           JMP rel8                D       Valid   Valid
+ *      E9 cw           JMP rel16               D       N.S.    Valid
+ *      E9 cd           JMP rel32               D       Valid   Valid
+ *      FF /4           JMP r/m16               M       N.S.    Valid
+ *      FF /4           JMP r/m32               M       N.S.    Valid
+ *      FF /4           JMP r/m64               M       Valid   N.E.
+ *      EA cd           JMP ptr16:16            D       Inv.    Valid
+ *      EA cp           JMP ptr16:32            D       Inv.    Valid
+ *      FF /5           JMP m16:16              D       Valid   Valid
+ *      FF /5           JMP m16:32              D       Valid   Valid
+ *      REX.W + FF /5   JMP m16:64              D       Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      D       Offset          NA              NA              NA
+ *      M       ModR/M(r)       NA              NA              NA
+ */
+void
+_jmp(operand_vector_t *operands)
+{
+    if ( 1 != mvector_size(operands) ) {
+        return;
+    }
+    printf("JMP\n");
+}
 
 
 /*
@@ -111,7 +314,69 @@ typedef struct _operand_addr {
 void
 _mov(operand_vector_t *operands)
 {
-    printf("MOV (#args = %zu)\n", mvector_size(operands));
+    operand_t *op1;
+    operand_t *op2;
+    x86_64_val_t *val1;
+    x86_64_val_t *val2;
+    int opsize;
+
+    if ( 2 == mvector_size(operands) ) {
+        op1 = mvector_at(operands, 0);
+        op2 = mvector_at(operands, 1);
+
+        val1 = x86_64_eval_operand(op1);
+        if ( NULL == val1 ) {
+            /* Error */
+            return;
+        }
+        val2 = x86_64_eval_operand(op2);
+        if ( NULL == val2 ) {
+            /* Error */
+            free(val1);
+            return;
+        }
+
+        if ( val1->opsize == val2->opsize ) {
+            /* Operand size matches, but may be zero */
+            opsize = val1->opsize;
+        } else if ( 0 == val1->opsize && 0 != val2->opsize ) {
+            /* Operand size is adjusted to that of Operand2 */
+            opsize = val2->opsize;
+        } else if ( 0 != val1->opsize && 0 == val2->opsize ) {
+            /* Operand size is adjusted to that of Operand1 */
+            opsize = val1->opsize;
+        } else {
+            /* Operand size mismatches */
+            opsize = -1;
+        }
+
+        if ( opsize <= 0 ) {
+            /* Invalid operands (opsize: 0 for unknown, -1 for mismatch) */
+            printf("Invalid operands\n");
+            return;
+        }
+
+
+        if ( X86_64_VAL_REG == val1->type && X86_64_VAL_REG == val2->type ) {
+            if ( 8 == opsize ) {
+                printf("MOV 88 %X\n", _val_to_modrm(val1, val2));
+            } else if ( 16 == opsize ) {
+                printf("MOV 66 89 %X\n", _val_to_modrm(val1, val2));
+            } else if ( 32 == opsize ) {
+                printf("MOV 89 %X\n", _val_to_modrm(val1, val2));
+            } else if ( 64 == opsize ) {
+                /* REX.W = (1<<3) */
+                printf("MOV REX.W 89 %X\n", _val_to_modrm(val1, val2));
+            } else {
+                printf("Unsupported\n");
+            }
+        } else {
+            printf("MOV (#args = %zu)\n", mvector_size(operands));
+        }
+
+        free(val1);
+        free(val2);
+    }
 }
 
 /*
@@ -155,23 +420,78 @@ _mov(operand_vector_t *operands)
 void
 _xor(operand_vector_t *operands)
 {
-    int i;
-    operand_t *op;
-    expr_t *expr;
-    x86_64_val_t *val;
+    operand_t *op1;
+    operand_t *op2;
+    x86_64_val_t *val1;
+    x86_64_val_t *val2;
+    int opsize;
 
-    for ( i = 0; i < mvector_size(operands); i++ ) {
-        op = mvector_at(operands, i);
-        if ( OPERAND_ADDR_EXPR == op->type ) {
-            /* Address expression */
-        } else if ( OPERAND_EXPR == op->type ) {
-            /* Expression */
+    if ( 2 == mvector_size(operands) ) {
+        op1 = mvector_at(operands, 0);
+        op2 = mvector_at(operands, 1);
+
+        val1 = x86_64_eval_operand(op1);
+        if ( NULL == val1 ) {
+            /* Error */
+            return;
         }
-        expr = op->op.expr;
-        val = x86_64_eval_expr(expr);
-    }
+        val2 = x86_64_eval_operand(op2);
+        if ( NULL == val2 ) {
+            /* Error */
+            free(val1);
+            return;
+        }
 
-    printf("XOR (#args = %zu)\n", mvector_size(operands));
+        if ( val1->opsize == val2->opsize ) {
+            /* Operand size matches, but may be zero */
+            opsize = val1->opsize;
+        } else if ( 0 == val1->opsize && 0 != val2->opsize ) {
+            /* Operand size is adjusted to that of Operand2 */
+            opsize = val2->opsize;
+        } else if ( 0 != val1->opsize && 0 == val2->opsize ) {
+            /* Operand size is adjusted to that of Operand1 */
+            opsize = val1->opsize;
+        } else {
+            /* Operand size mismatches */
+            opsize = -1;
+        }
+
+        if ( opsize <= 0 ) {
+            /* Invalid operands (opsize: 0 for unknown, -1 for mismatch) */
+            printf("Invalid operands\n");
+            return;
+        }
+
+
+        if ( X86_64_VAL_REG == val1->type && REG_AL == val1->u.reg
+             && X86_64_VAL_IMM == val2->type ) {
+            printf("XOR 34 %llX\n", val2->u.imm);
+        } else if ( X86_64_VAL_REG == val1->type && REG_AX == val1->u.reg
+                    && X86_64_VAL_IMM == val2->type ) {
+            printf("XOR 66 35 %llX\n", val2->u.imm);
+        } else if ( X86_64_VAL_REG == val1->type && REG_EAX == val1->u.reg
+                    && X86_64_VAL_IMM == val2->type ) {
+            printf("XOR 35 %llX\n", val2->u.imm);
+        } else if ( X86_64_VAL_REG == val1->type && REG_RAX == val1->u.reg
+                    && X86_64_VAL_IMM == val2->type ) {
+            /* REX.W = (1<<3) */
+            printf("XOR REX.W 35 %llX\n", val2->u.imm);
+        } else if ( X86_64_VAL_REG == val1->type
+                    && X86_64_VAL_REG == val2->type ) {
+            if ( 16 == opsize ) {
+                printf("XOR 66 31 %X\n", _val_to_modrm(val1, val2));
+            } else if ( 32 == opsize ) {
+                printf("XOR 31 %X\n", _val_to_modrm(val1, val2));
+            } else if ( 64 == opsize ) {
+                printf("XOR REX.W 31 %X\n", _val_to_modrm(val1, val2));
+            } else {
+                printf("Unsupported\n");
+            }
+        }
+
+        free(val1);
+        free(val2);
+    }
 }
 
 
@@ -187,7 +507,16 @@ arch_assemble_x86_64(stmt_vector_t *vec)
     for ( i = 0; i < mvector_size(vec); i++ ){
         stmt = mvector_at(vec, i);
         if ( STMT_INSTR == stmt->type ) {
-            if ( 0 == strcmp("mov", stmt->u.instr->opcode) ) {
+            if ( 0 == strcmp("clc", stmt->u.instr->opcode) ) {
+                /* CLC */
+                _clc(stmt->u.instr->operands);
+            } else if ( 0 == strcmp("cld", stmt->u.instr->opcode) ) {
+                /* CLD */
+                _cld(stmt->u.instr->operands);
+            } else if ( 0 == strcmp("jmp", stmt->u.instr->opcode) ) {
+                /* JMP */
+                _jmp(stmt->u.instr->operands);
+            } else if ( 0 == strcmp("mov", stmt->u.instr->opcode) ) {
                 /* MOV */
                 _mov(stmt->u.instr->operands);
             } else if ( 0 == strcmp("xor", stmt->u.instr->opcode) ) {
