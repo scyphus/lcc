@@ -4,6 +4,8 @@
     * las/arch/x86_64/eval.h: Implemented the address operand evaluator
     * las/arch/x86_64/main.c: Added a print statement for unknown instruction
 
+    * las/arch/x86_64/main.c: Implemented the POPCNT instruction
+
 
 2013-11-28  Hirochika Asai  <asai@scyphus.co.jp>
 

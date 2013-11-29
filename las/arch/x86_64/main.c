@@ -380,6 +380,81 @@ _mov(operand_vector_t *operands)
 }
 
 /*
+ * POPCNT (Vol. 2B 4-270)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      F3 0F B8 /r     POPCNT r16,r/m16        RM      Valid   Valid
+ *      F3 0F B8 /r     POPCNT r32,r/m32        RM      Valid   Valid
+ *      F3 REX.W 0F B8 /r
+ *                      POPCNT r64,r/m64        RM      Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      RM      ModRM:reg(w)    ModRM:r/m(r)
+ */
+void
+_popcnt(operand_vector_t *operands)
+{
+    operand_t *op1;
+    operand_t *op2;
+    x86_64_val_t *val1;
+    x86_64_val_t *val2;
+    int opsize;
+
+    if ( 2 == mvector_size(operands) ) {
+        op1 = mvector_at(operands, 0);
+        op2 = mvector_at(operands, 1);
+
+        val1 = x86_64_eval_operand(op1);
+        if ( NULL == val1 ) {
+            /* Error */
+            return;
+        }
+        val2 = x86_64_eval_operand(op2);
+        if ( NULL == val2 ) {
+            /* Error */
+            free(val1);
+            return;
+        }
+
+        if ( val1->opsize == val2->opsize ) {
+            /* Operand size matches, but may be zero */
+            opsize = val1->opsize;
+        } else if ( 0 == val1->opsize && 0 != val2->opsize ) {
+            /* Operand size is adjusted to that of Operand2 */
+            opsize = val2->opsize;
+        } else if ( 0 != val1->opsize && 0 == val2->opsize ) {
+            /* Operand size is adjusted to that of Operand1 */
+            opsize = val1->opsize;
+        } else {
+            /* Operand size mismatches */
+            opsize = -1;
+        }
+
+        if ( opsize <= 0 ) {
+            /* Invalid operands (opsize: 0 for unknown, -1 for mismatch) */
+            printf("Invalid operands\n");
+            return;
+        }
+
+        if ( X86_64_VAL_REG == val1->type && X86_64_VAL_REG == val2->type ) {
+            if ( 16 == opsize ) {
+                printf("POPCNT F3 0F B8 %X\n", _val_to_modrm(val1, val2));
+            } else if ( 32 == opsize ) {
+                printf("POPCNT F3 0F B8 %X\n", _val_to_modrm(val1, val2));
+            } else if ( 64 == opsize ) {
+                printf("POPCNT F3 REX.W 0F B8 %X\n", _val_to_modrm(val1, val2));
+            } else {
+                printf("Unsupported\n");
+            }
+        }
+
+        free(val1);
+        free(val2);
+    }
+}
+
+/*
  * XOR (Vol. 2B 4-531)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -518,6 +593,9 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else if ( 0 == strcmp("mov", stmt->u.instr->opcode) ) {
                 /* MOV */
                 _mov(stmt->u.instr->operands);
+            } else if ( 0 == strcmp("popcnt", stmt->u.instr->opcode) ) {
+                /* POPCNT */
+                _popcnt(stmt->u.instr->operands);
             } else if ( 0 == strcmp("xor", stmt->u.instr->opcode) ) {
                 /* XOR */
                 _xor(stmt->u.instr->operands);
