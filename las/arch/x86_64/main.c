@@ -462,7 +462,6 @@ _xor(operand_vector_t *operands)
             return;
         }
 
-
         if ( X86_64_VAL_REG == val1->type && REG_AL == val1->u.reg
              && X86_64_VAL_IMM == val2->type ) {
             printf("XOR 34 %llX\n", val2->u.imm);
@@ -522,6 +521,9 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else if ( 0 == strcmp("xor", stmt->u.instr->opcode) ) {
                 /* XOR */
                 _xor(stmt->u.instr->operands);
+            } else {
+                /* Unknown */
+                printf("Unknown instruction: %s\n", stmt->u.instr->opcode);
             }
         }
     }

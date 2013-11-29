@@ -85,6 +85,7 @@ _eval_expr_op(expr_t *expr)
     }
     val->opsize = 0;
 
+    /* Refactoring is required... */
     if ( FIX_PREFIX == expr->u.op.fix_type ) {
         expr0 = vector_at(expr->u.op.args, 0);
         lval = _eval_expr(expr0);
@@ -125,20 +126,146 @@ _eval_expr_op(expr_t *expr)
         }
         switch ( expr->u.op.type ) {
         case OP_PLUS:
-            val->type = X86_64_VAL_IMM;
-            val->u.imm = lval->u.imm + rval->u.imm;
+            if ( X86_64_VAL_IMM == lval->type
+                 && X86_64_VAL_IMM == rval->type ) {
+                val->type = X86_64_VAL_IMM;
+                val->u.imm = lval->u.imm + rval->u.imm;
+                val->opsize = 0;
+            } else if ( X86_64_VAL_REG == lval->type
+                        && X86_64_VAL_IMM == rval->type ) {
+                /* Base register + Displacement */
+                val->type = X86_64_VAL_ADDR;
+                val->u.addr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
+                val->u.addr.base = lval->u.reg;
+                val->u.addr.disp = rval->u.imm;
+                val->opsize = 0;
+            } else if ( X86_64_VAL_IMM == lval->type
+                        && X86_64_VAL_REG == rval->type ) {
+                /* Base register + Displacement */
+                val->type = X86_64_VAL_ADDR;
+                val->u.addr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
+                val->u.addr.base = rval->u.reg;
+                val->u.addr.disp = lval->u.imm;
+                val->opsize = 0;
+            } else if ( X86_64_VAL_ADDR == lval->type ) {
+                if ( X86_64_VAL_REG == rval->type ) {
+                    /* Base register */
+                    if ( X86_64_ADDR_BASE & lval->u.addr.flags ) {
+                        /* Invalid syntax */
+                        free(val);
+                        free(lval);
+                        free(rval);
+                        return NULL;
+                    }
+                    val->type = X86_64_VAL_ADDR;
+                    val->u.addr.flags = X86_64_ADDR_BASE | lval->u.addr.flags;
+                    val->u.addr.base = rval->u.reg;
+                    val->opsize = 0;
+                } else if ( X86_64_VAL_IMM == rval->type ) {
+                    /* Displacement */
+                    if ( X86_64_ADDR_DISP & lval->u.addr.flags ) {
+                        /* Invalid syntax */
+                        free(val);
+                        free(lval);
+                        free(rval);
+                        return NULL;
+                    }
+                    val->type = X86_64_VAL_ADDR;
+                    val->u.addr.flags = X86_64_ADDR_DISP | lval->u.addr.flags;
+                    val->u.addr.disp = rval->u.imm;
+                    val->opsize = 0;
+                }
+            } else if ( X86_64_VAL_ADDR == rval->type ) {
+                if ( X86_64_VAL_REG == lval->type ) {
+                    /* Base register */
+                    if ( X86_64_ADDR_BASE & rval->u.addr.flags ) {
+                        /* Invalid syntax */
+                        free(val);
+                        free(lval);
+                        free(rval);
+                        return NULL;
+                    }
+                    val->type = X86_64_VAL_ADDR;
+                    val->u.addr.flags = X86_64_ADDR_BASE | rval->u.addr.flags;
+                    val->u.addr.base = lval->u.reg;
+                    val->opsize = 0;
+                } else if ( X86_64_VAL_IMM == lval->type ) {
+                    /* Displacement */
+                    if ( X86_64_ADDR_DISP & rval->u.addr.flags ) {
+                        /* Invalid syntax */
+                        free(val);
+                        free(lval);
+                        free(rval);
+                        return NULL;
+                    }
+                    val->type = X86_64_VAL_ADDR;
+                    val->u.addr.flags = X86_64_ADDR_DISP | rval->u.addr.flags;
+                    val->u.addr.disp = lval->u.imm;
+                    val->opsize = 0;
+                }
+            } else {
+                /* Invalid */
+                free(val);
+                free(lval);
+                free(rval);
+                return NULL;
+            }
             break;
         case OP_MINUS:
-            val->type = X86_64_VAL_IMM;
-            val->u.imm = lval->u.imm - rval->u.imm;
+            if ( X86_64_VAL_IMM == lval->type
+                 && X86_64_VAL_IMM == rval->type ) {
+                val->type = X86_64_VAL_IMM;
+                val->u.imm = lval->u.imm - rval->u.imm;
+                val->opsize = 0;
+            } else {
+                /* Invalid */
+                free(val);
+                free(lval);
+                free(rval);
+                return NULL;
+            }
             break;
         case OP_MUL:
-            val->type = X86_64_VAL_IMM;
-            val->u.imm = lval->u.imm * rval->u.imm;
+            if ( X86_64_VAL_IMM == lval->type
+                 && X86_64_VAL_IMM == rval->type ) {
+                val->type = X86_64_VAL_IMM;
+                val->u.imm = lval->u.imm * rval->u.imm;
+                val->opsize = 0;
+            } else if ( X86_64_VAL_IMM == lval->type
+                        && X86_64_VAL_REG == rval->type ) {
+                val->type = X86_64_VAL_ADDR;
+                val->u.addr.flags = X86_64_ADDR_OFFSET | X86_64_ADDR_SCALE;
+                val->u.addr.offset = rval->u.reg;
+                val->u.addr.scale = lval->u.imm;
+                val->opsize = 0;
+            } else if ( X86_64_VAL_REG == lval->type
+                        && X86_64_VAL_IMM == rval->type ) {
+                val->type = X86_64_VAL_ADDR;
+                val->u.addr.flags = X86_64_ADDR_OFFSET | X86_64_ADDR_SCALE;
+                val->u.addr.offset = lval->u.reg;
+                val->u.addr.scale = rval->u.imm;
+                val->opsize = 0;
+            } else {
+                /* Invalid */
+                free(val);
+                free(lval);
+                free(rval);
+                return NULL;
+            }
             break;
         case OP_DIV:
-            val->type = X86_64_VAL_IMM;
-            val->u.imm = lval->u.imm / rval->u.imm;
+            if ( X86_64_VAL_IMM == lval->type
+                 && X86_64_VAL_IMM == rval->type ) {
+                val->type = X86_64_VAL_IMM;
+                val->u.imm = lval->u.imm / rval->u.imm;
+                val->opsize = 0;
+            } else {
+                /* Invalid */
+                free(val);
+                free(lval);
+                free(rval);
+                return NULL;
+            }
             break;
         default:
             ;
@@ -167,21 +294,12 @@ _eval_expr(expr_t *expr)
     case EXPR_OP:
         val = _eval_expr_op(expr);
         break;
+    default:
+        val = NULL;
     }
 
     return val;
 }
-
-/*
- * Evaluate the expression
- */
-x86_64_val_t *
-x86_64_eval_expr(expr_t *expr)
-{
-    return _eval_expr(expr);
-}
-
-
 
 /*
  * Evaluate the operand (immediate value or register)
@@ -191,22 +309,7 @@ _eval_expr_imm_or_reg(expr_t *expr)
 {
     x86_64_val_t *val;
 
-    switch ( expr->type ) {
-    case EXPR_VAR:
-        /* Register or immediate value (symbol) */
-        val = _eval_expr_var(expr);
-        break;
-    case EXPR_INT:
-        /* Immediate value */
-        val = _eval_expr_int(expr);
-        break;
-    case EXPR_OP:
-        /* Immediate value */
-        val = _eval_expr_op(expr);
-        break;
-    default:
-        val = NULL;
-    }
+    val = _eval_expr(expr);
 
     /* Verify the returned value */
     if ( NULL == val ) {
@@ -225,11 +328,34 @@ _eval_expr_imm_or_reg(expr_t *expr)
 static x86_64_val_t *
 _eval_expr_addr(expr_t *expr)
 {
-    /* To be implemented */
-    return NULL;
+    x86_64_val_t *val;
+    x86_64_reg_t reg;
+    int64_t imm;
+
+    val = _eval_expr(expr);
+
+    if ( X86_64_VAL_REG == val->type ) {
+        reg = val->u.reg;
+        val->type = X86_64_VAL_ADDR;
+        val->u.addr.flags = X86_64_ADDR_BASE;
+        val->u.addr.base = reg;
+    } else if ( X86_64_VAL_IMM == val->type ) {
+        imm = val->u.imm;
+        val->type = X86_64_VAL_ADDR;
+        val->u.addr.flags = X86_64_ADDR_DISP;
+        val->u.addr.disp = imm;
+    }
+
+    /* Verify the returned value */
+    if ( NULL == val ) {
+        return NULL;
+    } else if ( X86_64_VAL_ADDR != val->type ) {
+        free(val);
+        return NULL;
+    }
+
+    return val;
 }
-
-
 
 /*
  * Evaluate an operand

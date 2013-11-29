@@ -15,32 +15,21 @@
 typedef enum _x86_64_val_type {
     X86_64_VAL_IMM,
     X86_64_VAL_REG,
-    X86_64_VAL_MODRM,
+    X86_64_VAL_ADDR,
 } x86_64_val_type_t;
 
-typedef int x86_64_modrm_flag_t;
-#define X86_64_MODRM_BASE       1
-#define X86_64_MODRM_DISP       2
-#define X86_64_MODRM_OFFSET     4
-#define X86_64_MODRM_SCALE      8
+typedef int x86_64_addr_flag_t;
+#define X86_64_ADDR_BASE        1
+#define X86_64_ADDR_DISP        2
+#define X86_64_ADDR_OFFSET      4
+#define X86_64_ADDR_SCALE       8
 
 /*
- * ModRM
+ * Address operand
  * [base register + displacement + offset register * scalar multiplier]
  */
-typedef struct _x86_64_modrm {
-    x86_64_modrm_flag_t flags;
-    /* Base register */
-    x86_64_reg_t base;
-    /* Displacement */
-    int64_t disp;
-    /* Offset register */
-    x86_64_reg_t offset;
-    /* Scale multiplier */
-    int scale;
-} x86_64_modrm_t;
 typedef struct _x86_64_addr {
-    x86_64_modrm_flag_t flags;
+    x86_64_addr_flag_t flags;
     /* Base register */
     x86_64_reg_t base;
     /* Displacement */
@@ -60,8 +49,8 @@ typedef struct _x86_64_val {
         uint64_t imm;
         /* Register */
         x86_64_reg_t reg;
-        /* Address */
-        x86_64_modrm_t modrm;
+        /* Offset register + Scale multiplier */
+        x86_64_addr_t addr;
     } u;
 } x86_64_val_t;
 
