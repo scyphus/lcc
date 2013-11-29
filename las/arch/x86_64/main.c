@@ -33,6 +33,186 @@ struct y {
     struct xxx *ptr;
 };
 
+/*
+ * Check the size of the immediate value
+ */
+static int
+_check_disp_size(int64_t i)
+{
+    if ( i > 127 || i < -128 ) {
+        return 32;
+    } else {
+        return 8;
+    }
+}
+
+
+#define REXB_NE         0
+#define REXB_NONE       0       /* Not encodable */
+#define REXB_YES        1
+
+/*
+ * Resolve register code (and REX.B)
+ * Vol. 2A 3-2
+ */
+static int
+_reg_code(x86_64_reg_t reg, int *code, int *rexb)
+{
+    switch ( reg ) {
+    case REG_AL:
+    case REG_AX:
+    case REG_EAX:
+    case REG_RAX:
+        *code = 0;
+        *rexb = REXB_NONE;
+        break;
+    case REG_CL:
+    case REG_CX:
+    case REG_ECX:
+    case REG_RCX:
+        *code = 1;
+        *rexb = REXB_NONE;
+        break;
+    case REG_DL:
+    case REG_DX:
+    case REG_EDX:
+    case REG_RDX:
+        *code = 2;
+        *rexb = REXB_NONE;
+        break;
+    case REG_BL:
+    case REG_BX:
+    case REG_EBX:
+    case REG_RBX:
+        *code = 3;
+        *rexb = REXB_NONE;
+        break;
+    case REG_AH:
+        *code = 4;
+        *rexb = REXB_NE;
+        break;
+    case REG_SP:
+    case REG_ESP:
+    case REG_RSP:
+        *code = 4;
+        *rexb = REXB_NONE;
+        break;
+    case REG_SPL:
+        *code = 4;
+        *rexb = REXB_YES;
+        break;
+    case REG_CH:
+        *code = 5;
+        *rexb = REXB_NE;
+        break;
+    case REG_BP:
+    case REG_EBP:
+    case REG_RBP:
+        *code = 5;
+        *rexb = REXB_NONE;
+        break;
+    case REG_BPL:
+        *code = 5;
+        *rexb = REXB_YES;
+        break;
+    case REG_DH:
+        *code = 6;
+        *rexb = REXB_NE;
+        break;
+    case REG_SI:
+    case REG_ESI:
+    case REG_RSI:
+        *code = 6;
+        *rexb = REXB_NONE;
+        break;
+    case REG_SIL:
+        *code = 6;
+        *rexb = REXB_YES;
+        break;
+    case REG_BH:
+        *code = 7;
+        *rexb = REXB_NE;
+        break;
+    case REG_DI:
+    case REG_EDI:
+    case REG_RDI:
+        *code = 7;
+        *rexb = REXB_NONE;
+        break;
+    case REG_DIL:
+        *code = 7;
+        *rexb = REXB_YES;
+        break;
+    case REG_R8L:
+    case REG_R8W:
+    case REG_R8D:
+    case REG_R8:
+        *code = 0;
+        *rexb = REXB_YES;
+        break;
+    case REG_R9L:
+    case REG_R9W:
+    case REG_R9D:
+    case REG_R9:
+        *code = 1;
+        *rexb = REXB_YES;
+        break;
+    case REG_R10L:
+    case REG_R10W:
+    case REG_R10D:
+    case REG_R10:
+        *code = 2;
+        *rexb = REXB_YES;
+        break;
+    case REG_R11L:
+    case REG_R11W:
+    case REG_R11D:
+    case REG_R11:
+        *code = 3;
+        *rexb = REXB_YES;
+        break;
+    case REG_R12L:
+    case REG_R12W:
+    case REG_R12D:
+    case REG_R12:
+        *code = 4;
+        *rexb = REXB_YES;
+        break;
+    case REG_R13L:
+    case REG_R13W:
+    case REG_R13D:
+    case REG_R13:
+        *code = 5;
+        *rexb = REXB_YES;
+        break;
+    case REG_R14L:
+    case REG_R14W:
+    case REG_R14D:
+    case REG_R14:
+        *code = 6;
+        *rexb = REXB_YES;
+        break;
+    case REG_R15L:
+    case REG_R15W:
+    case REG_R15D:
+    case REG_R15:
+        *code = 7;
+        *rexb = REXB_YES;
+        break;
+    default:
+        *code = -1;
+        *rexb = REXB_NE;
+    }
+
+    return 0;
+}
+
+/* REX prefix = [0100WRXB] */
+int
+_rex(int w, int r, int x, int b)
+{
+    return (1<<6) | (w<<3) | (r<<2) | (x<<1) | b;
+}
 
 /*
  * Vol. 2A 2-5
@@ -44,6 +224,7 @@ _val_to_modrm(x86_64_val_t *val1, x86_64_val_t *val2)
     int mod;
     int reg;
     int rm;
+    int sib;
 
     /* REG */
     if ( X86_64_VAL_REG != val1->type ) {
@@ -114,6 +295,8 @@ _val_to_modrm(x86_64_val_t *val1, x86_64_val_t *val2)
         return -1;
     }
 
+
+    /* R/M */
     if ( X86_64_VAL_REG == val2->type ) {
         mod = 3;
         switch ( val2->u.reg ) {
@@ -180,8 +363,82 @@ _val_to_modrm(x86_64_val_t *val1, x86_64_val_t *val2)
         if ( rm < 0 ) {
             return -1;
         }
+    } else if ( X86_64_VAL_ADDR == val2->type ) {
+        /* Address */
+
+        /* Displacement? */
+        if ( val2->u.addr.flags & X86_64_ADDR_DISP ) {
+            /* Has disp */
+            if ( 0 == val2->u.addr.disp ) {
+                mod = 0;
+            } else if ( 8 == _check_disp_size(val2->u.addr.disp) ) {
+                mod = 1;
+            } else {
+                mod = 2;
+            }
+        } else {
+            mod = 0;
+        }
+
+        /* SIB? */
+        if ( val2->u.addr.flags & X86_64_ADDR_OFFSET ) {
+            /* Has offset (SIB) */
+        } else {
+            /* Base register */
+            if ( val2->u.addr.flags & X86_64_ADDR_BASE ) {
+                switch ( val2->u.addr.base ) {
+                case REG_EAX:
+                    /* Add effective address size prefix */
+                    rm = 0;
+                    break;
+                case REG_RAX:
+                    rm = 0;
+                    break;
+                case REG_ECX:
+                    /* Add effective address size prefix */
+                    rm = 1;
+                    break;
+                case REG_RCX:
+                    rm = 1;
+                    break;
+                case REG_EDX:
+                    /* Add effective address size prefix */
+                    rm = 2;
+                    break;
+                case REG_RDX:
+                    rm = 2;
+                    break;
+                case REG_EBX:
+                    /* Add effective address size prefix */
+                    rm = 3;
+                    break;
+                case REG_RBX:
+                    rm = 3;
+                    break;
+                case REG_ESI:
+                    /* Add effective address size prefix */
+                    rm = 6;
+                    break;
+                case REG_RSI:
+                    rm = 6;
+                    break;
+                case REG_EDI:
+                    /* Add effective address size prefix */
+                    rm = 7;
+                    break;
+                case REG_RDI:
+                    rm = 7;
+                    break;
+                default:
+                    rm = -1;
+                }
+            } else {
+                sib = 0x25;
+                rm = 4;
+            }
+        }
     } else {
-        /* Address or Immediate */
+        /* Immediate */
         return -1;
     }
 
