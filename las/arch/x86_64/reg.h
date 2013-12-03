@@ -13,6 +13,9 @@
  */
 typedef enum op_reg {
     REG_UNKNOWN = -1,
+    /* IP */
+    REG_EIP,
+    REG_RIP,
     /* AX */
     REG_AL = 0,
     REG_AH,

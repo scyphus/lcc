@@ -16,7 +16,11 @@ strtoreg(const char *s)
 {
     x86_64_reg_t reg;
 
-    if ( 0 == strcmp("al", s) ) {
+    if ( 0 == strcmp("eip", s) ) {
+        reg = REG_EIP;
+    } else if ( 0 == strcmp("rip", s) ) {
+        reg = REG_RIP;
+    } else if ( 0 == strcmp("al", s) ) {
         reg = REG_AL;
     } else if ( 0 == strcmp("ah", s) ) {
         reg = REG_AH;
