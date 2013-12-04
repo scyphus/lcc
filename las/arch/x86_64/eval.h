@@ -54,6 +54,30 @@ typedef struct _x86_64_val {
     } u;
 } x86_64_val_t;
 
+/*
+ * Encoded operand
+ */
+typedef struct _x86_64_encoded_operand {
+    size_t opsz;
+    size_t addrsz;
+    struct {
+        int w;
+        int r;
+        int x;
+        int b;
+    } rex;
+    int modrm;
+    int sib;
+    struct {
+        size_t sz;
+        int64_t val;
+    } disp;
+    struct {
+        size_t sz;
+        int64_t val;
+    } imm;
+} x86_64_enop;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
