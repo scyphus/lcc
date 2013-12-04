@@ -17,6 +17,7 @@ static x86_64_val_t * _eval_expr_var(expr_t *);
 static x86_64_val_t * _eval_expr_int(expr_t *);
 static x86_64_val_t * _eval_expr_op(expr_t *);
 static x86_64_val_t * _eval_expr(expr_t *);
+static x86_64_val_t * _eval_pexpr(pexpr_t *);
 
 /*
  * Evaluate var expression
@@ -302,14 +303,24 @@ _eval_expr(expr_t *expr)
 }
 
 /*
+ * Evaluate the prefixed expression
+ */
+static x86_64_val_t *
+_eval_pexpr(pexpr_t *pexpr)
+{
+    //printf("XXXXXXXX = %d\n", pexpr->prefix);
+    return _eval_expr(pexpr->expr);
+}
+
+/*
  * Evaluate the operand (immediate value or register)
  */
 static x86_64_val_t *
-_eval_expr_imm_or_reg(expr_t *expr)
+_eval_expr_imm_or_reg(pexpr_t *pexpr)
 {
     x86_64_val_t *val;
 
-    val = _eval_expr(expr);
+    val = _eval_pexpr(pexpr);
 
     /* Verify the returned value */
     if ( NULL == val ) {
@@ -326,13 +337,13 @@ _eval_expr_imm_or_reg(expr_t *expr)
  * Evaluate the operand (address operand)
  */
 static x86_64_val_t *
-_eval_expr_addr(expr_t *expr)
+_eval_expr_addr(pexpr_t *pexpr)
 {
     x86_64_val_t *val;
     x86_64_reg_t reg;
     int64_t imm;
 
-    val = _eval_expr(expr);
+    val = _eval_pexpr(pexpr);
 
     if ( X86_64_VAL_REG == val->type ) {
         reg = val->u.reg;
@@ -367,10 +378,10 @@ x86_64_eval_operand(operand_t *op)
 
     if ( OPERAND_EXPR == op->type ) {
         /* Immediate value or register */
-        val = _eval_expr_imm_or_reg(op->op.expr);
+        val = _eval_expr_imm_or_reg(op->op.pexpr);
     } else {
         /* Address */
-        val = _eval_expr_addr(op->op.expr);
+        val = _eval_expr_addr(op->op.pexpr);
     }
 
     return val;

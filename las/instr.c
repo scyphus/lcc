@@ -9,6 +9,16 @@
 #include <stdlib.h>
 
 /*
+ * Free a prefixed expression
+ */
+void
+pexpr_free(pexpr_t *pexpr)
+{
+    expr_free(pexpr->expr);
+    free(pexpr);
+}
+
+/*
  * Free an operand
  */
 void
@@ -17,7 +27,7 @@ operand_free(operand_t *op)
     switch ( op->type ) {
     case OPERAND_ADDR_EXPR:
     case OPERAND_EXPR:
-        expr_free(op->op.expr);
+        pexpr_free(op->op.pexpr);
         break;
     default:
         ;

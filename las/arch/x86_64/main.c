@@ -1041,7 +1041,6 @@ _mov(operand_vector_t *operands)
             return;
         }
 
-
         if ( (X86_64_VAL_REG == val1->type || X86_64_VAL_ADDR == val1->type)
              && X86_64_VAL_REG == val2->type ) {
             /* MR Op/En */
@@ -1154,14 +1153,14 @@ _mov(operand_vector_t *operands)
                     && X86_64_VAL_IMM == val2->type ) {
             /* MI Op/En */
             if ( 8 == opsize ) {
-                ret = _encode_oi(val1, val2, 8, &enop);
+                ret = _encode_mi(val1, val2, 8, &enop);
                 if ( ret < 0 ) {
                     printf("Invalid operands\n");
                 } else {
                     printf("MOV %.2X %.2llX\n", 0xc6 + enop.opreg, enop.imm.val);
                 }
             } else if ( 16 == opsize ) {
-                ret = _encode_oi(val1, val2, 16, &enop);
+                ret = _encode_mi(val1, val2, 16, &enop);
                 if ( ret < 0 ) {
                     printf("Invalid operands\n");
                 } else {
@@ -1169,14 +1168,14 @@ _mov(operand_vector_t *operands)
                            enop.imm.val);
                 }
             } else if ( 32 == opsize ) {
-                ret = _encode_oi(val1, val2, 32, &enop);
+                ret = _encode_mi(val1, val2, 32, &enop);
                 if ( ret < 0 ) {
                     printf("Invalid operands\n");
                 } else {
                     printf("MOV %.2X %.8llX\n", 0xc7 + enop.opreg, enop.imm.val);
                 }
             } else if ( 64 == opsize ) {
-                ret = _encode_oi(val1, val2, 64, &enop);
+                ret = _encode_mi(val1, val2, 64, &enop);
                 if ( ret < 0 ) {
                     printf("Invalid operands\n");
                 } else {

@@ -38,17 +38,26 @@ portable one.  Its output format has not yet been fixed at the current time.
     expression ::=
                  or_expr
     
+    size_prefix ::=
+                 ( "byte" | "word" | "dword" | "qword" )
+    
+    prefixed_expr ::=
+                 ( size_prefix expression | expression )
+    
     operand_expr ::=
-                 expression
+                 prefixed_expr
     
     operand_addr ::=
-                 "[" expression "]"
+                 "[" prefixed_expr "]"
     
     operand ::=
                  ( operand_expr | operand_addr )
     
+    operands ::=
+                 operand ( "," operand )*
+
     instruction ::=
-                 opcode operand ( "," operand )*
+                 opcode (operands)
     
     label ::=
                  symbol ":"

@@ -8,6 +8,14 @@
     * las/arch/x86_64/main.c: Implemented OI and MI operand encoder and MOV
                               instruction
 
+    * las/tokenizer.c: Added byte, word, dword, and qword keywords
+    * las/token.h: Added byte, word, dword, and qword keywords
+    * las/parser.c: Added byte, word, dword, and qword keywords
+    * las/las.h: Added byte, word, dword, and qword keywords
+    * las/instr.c: Added byte, word, dword, and qword keywords
+    * las/arch/x86_64/eval.c: Added byte, word, dword, and qword keywords
+    * las/arch/x86_64/main.c: Added byte, word, dword, and qword keywords
+
 
 2013-12-03  Hirochika Asai  <asai@scyphus.co.jp>
 

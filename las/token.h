@@ -31,6 +31,10 @@ typedef enum _token_type {
 
     /* Keywords */
     TOK_KW_GLOBAL,
+    TOK_KW_BYTE,
+    TOK_KW_WORD,
+    TOK_KW_DWORD,
+    TOK_KW_QWORD,
 
     /* Integer */
     TOK_BININT,

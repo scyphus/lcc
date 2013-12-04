@@ -122,6 +122,21 @@ typedef struct preprocessor {
 } preprocessor_t;
 
 
+/*
+ * Size prefix
+ */
+typedef enum _size_prefix {
+    SIZE_PREFIX_NONE,
+    SIZE_PREFIX_BYTE,
+    SIZE_PREFIX_WORD,
+    SIZE_PREFIX_DWORD,
+    SIZE_PREFIX_QWORD,
+} size_prefix_t;
+
+typedef struct _prefixed_expr {
+    size_prefix_t prefix;
+    expr_t *expr;
+} pexpr_t;
 
 /*
  * Operand address
@@ -156,7 +171,7 @@ typedef struct _op_regsym {
 typedef struct operand {
     operand_type_t type;
     union {
-        expr_t *expr;
+        pexpr_t *pexpr;
     } op;
 } operand_t;
 typedef struct mvector operand_vector_t;
@@ -248,6 +263,7 @@ extern "C" {
     token_t * token_queue_cur(token_queue_t *);
     token_t * token_queue_next(token_queue_t *);
 
+    void pexpr_free(pexpr_t *);
 
     void assemble(pcode_t *);
 
