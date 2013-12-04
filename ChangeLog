@@ -2,6 +2,9 @@
 
     * las/arch/x86_64/reg.h: Fixed the definition of op_reg enum
 
+    * las/arch/x86_64/main.c: Implemented ModR/M and SIB encoder
+    * las/arch/x86_64/eval.h: Implemented ModR/M and SIB encoder
+
 
 2013-12-03  Hirochika Asai  <asai@scyphus.co.jp>
 

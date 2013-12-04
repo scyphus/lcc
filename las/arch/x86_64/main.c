@@ -82,179 +82,10 @@ _encode_rm(const x86_64_val_t *, const x86_64_val_t *, x86_64_enop_t *);
 
 
 
-/*
- * Check the size of the immediate value
- */
-static int
-_check_disp_size(int64_t i)
-{
-    if ( i > 127 || i < -128 ) {
-        return 32;
-    } else {
-        return 8;
-    }
-}
-
-
 
 /*
  * Resolve register code (and REX.B)
  * Vol. 2A 3-2
- */
-static int
-_reg_code2(x86_64_reg_t reg, int *code, int *rexb)
-{
-    switch ( reg ) {
-    case REG_AL:
-    case REG_AX:
-    case REG_EAX:
-    case REG_RAX:
-        *code = 0;
-        *rexb = REXB_NONE;
-        break;
-    case REG_CL:
-    case REG_CX:
-    case REG_ECX:
-    case REG_RCX:
-        *code = 1;
-        *rexb = REXB_NONE;
-        break;
-    case REG_DL:
-    case REG_DX:
-    case REG_EDX:
-    case REG_RDX:
-        *code = 2;
-        *rexb = REXB_NONE;
-        break;
-    case REG_BL:
-    case REG_BX:
-    case REG_EBX:
-    case REG_RBX:
-        *code = 3;
-        *rexb = REXB_NONE;
-        break;
-    case REG_AH:
-        *code = 4;
-        *rexb = REXB_NE;
-        break;
-    case REG_SP:
-    case REG_ESP:
-    case REG_RSP:
-        *code = 4;
-        *rexb = REXB_NONE;
-        break;
-    case REG_SPL:
-        *code = 4;
-        *rexb = REXB_YES;
-        break;
-    case REG_CH:
-        *code = 5;
-        *rexb = REXB_NE;
-        break;
-    case REG_BP:
-    case REG_EBP:
-    case REG_RBP:
-        *code = 5;
-        *rexb = REXB_NONE;
-        break;
-    case REG_BPL:
-        *code = 5;
-        *rexb = REXB_YES;
-        break;
-    case REG_DH:
-        *code = 6;
-        *rexb = REXB_NE;
-        break;
-    case REG_SI:
-    case REG_ESI:
-    case REG_RSI:
-        *code = 6;
-        *rexb = REXB_NONE;
-        break;
-    case REG_SIL:
-        *code = 6;
-        *rexb = REXB_YES;
-        break;
-    case REG_BH:
-        *code = 7;
-        *rexb = REXB_NE;
-        break;
-    case REG_DI:
-    case REG_EDI:
-    case REG_RDI:
-        *code = 7;
-        *rexb = REXB_NONE;
-        break;
-    case REG_DIL:
-        *code = 7;
-        *rexb = REXB_YES;
-        break;
-    case REG_R8L:
-    case REG_R8W:
-    case REG_R8D:
-    case REG_R8:
-        *code = 0;
-        *rexb = REXB_YES;
-        break;
-    case REG_R9L:
-    case REG_R9W:
-    case REG_R9D:
-    case REG_R9:
-        *code = 1;
-        *rexb = REXB_YES;
-        break;
-    case REG_R10L:
-    case REG_R10W:
-    case REG_R10D:
-    case REG_R10:
-        *code = 2;
-        *rexb = REXB_YES;
-        break;
-    case REG_R11L:
-    case REG_R11W:
-    case REG_R11D:
-    case REG_R11:
-        *code = 3;
-        *rexb = REXB_YES;
-        break;
-    case REG_R12L:
-    case REG_R12W:
-    case REG_R12D:
-    case REG_R12:
-        *code = 4;
-        *rexb = REXB_YES;
-        break;
-    case REG_R13L:
-    case REG_R13W:
-    case REG_R13D:
-    case REG_R13:
-        *code = 5;
-        *rexb = REXB_YES;
-        break;
-    case REG_R14L:
-    case REG_R14W:
-    case REG_R14D:
-    case REG_R14:
-        *code = 6;
-        *rexb = REXB_YES;
-        break;
-    case REG_R15L:
-    case REG_R15W:
-    case REG_R15D:
-    case REG_R15:
-        *code = 7;
-        *rexb = REXB_YES;
-        break;
-    default:
-        *code = -1;
-        *rexb = REXB_NE;
-    }
-
-    return 0;
-}
-
-/*
- * Resolve register code
  */
 static int
 _reg_code(x86_64_reg_t reg, int *code, int *rex)
@@ -452,501 +283,6 @@ _rex(int w, int r, int x, int b)
  * Vol. 2A 2-5
  * Mod(2) | Reg(3) | R/M(3)
  */
-
-
-/*
- * Register of ModR/M
- */
-static int
-_val_to_modrm_reg(x86_64_val_t *val)
-{
-    int reg;
-
-    if ( X86_64_VAL_REG != val->type ) {
-        return -1;
-    }
-    switch ( val->u.reg ) {
-    case REG_AL:
-    case REG_AX:
-    case REG_EAX:
-    case REG_RAX:
-    case REG_R8L:
-    case REG_R8W:
-    case REG_R8D:
-    case REG_R8:
-    case REG_MM0:
-    case REG_XMM0:
-        reg = 0;
-        break;
-    case REG_CL:
-    case REG_CX:
-    case REG_ECX:
-    case REG_RCX:
-    case REG_MM1:
-    case REG_XMM1:
-        reg = 1;
-        break;
-    case REG_DL:
-    case REG_DX:
-    case REG_EDX:
-    case REG_RDX:
-    case REG_MM2:
-    case REG_XMM2:
-        reg = 2;
-        break;
-    case REG_BL:
-    case REG_BX:
-    case REG_EBX:
-    case REG_RBX:
-    case REG_MM3:
-    case REG_XMM3:
-        reg = 3;
-        break;
-    case REG_AH:
-    case REG_SP:
-    case REG_ESP:
-    case REG_RSP:
-    case REG_MM4:
-    case REG_XMM4:
-        reg = 4;
-        break;
-    case REG_CH:
-    case REG_BP:
-    case REG_EBP:
-    case REG_RBP:
-    case REG_MM5:
-    case REG_XMM5:
-        reg = 5;
-        break;
-    case REG_DH:
-    case REG_SI:
-    case REG_ESI:
-    case REG_RSI:
-    case REG_MM6:
-    case REG_XMM6:
-        reg = 6;
-        break;
-    case REG_BH:
-    case REG_DI:
-    case REG_EDI:
-    case REG_RDI:
-    case REG_MM7:
-    case REG_XMM7:
-        reg = 7;
-        break;
-    default:
-        reg = -1;
-    }
-
-    return reg;
-}
-
-/*
- * Mod of ModR/M
- */
-static int
-_val_to_modrm_mod(x86_64_val_t *val)
-{
-    int mod;
-
-    if ( X86_64_VAL_REG == val->type ) {
-        mod = 3;
-    } else {
-        /* Displacement? */
-        if ( val->u.addr.flags & X86_64_ADDR_DISP ) {
-            /* Has disp */
-            if ( 0 == val->u.addr.disp ) {
-                mod = 0;
-            } else if ( val->u.addr.disp < -128 || val->u.addr.disp > 127 ) {
-                mod = 2;
-            } else {
-                mod = 1;
-            }
-        } else {
-            mod = 0;
-        }
-    }
-
-    return mod;
-}
-
-/*
- * SIB
- */
-static int
-_val_to_modrm_sib(x86_64_val_t *val)
-{
-    int base;
-    int rexb;
-    int eaddr;
-    int sib;
-    int ss;
-    int idx;
-
-    /* Base register */
-    if ( val->u.addr.flags & X86_64_ADDR_BASE ) {
-        switch ( val->u.addr.base ) {
-        case REG_EAX:
-            base = 0;
-            rexb = 0;
-            eaddr = 32;
-            break;
-        case REG_ECX:
-            base = 1;
-            rexb = 0;
-            eaddr = 32;
-            break;
-        case REG_EDX:
-            base = 2;
-            rexb = 0;
-            eaddr = 32;
-            break;
-        case REG_EBX:
-            base = 3;
-            rexb = 0;
-            eaddr = 32;
-            break;
-        case REG_ESP:
-            base = 4;
-            rexb = 0;
-            eaddr = 32;
-            break;
-        case REG_EBP:
-            base = 5;
-            rexb = 0;
-            eaddr = 32;
-            break;
-        case REG_ESI:
-            base = 6;
-            rexb = 0;
-            eaddr = 32;
-            break;
-        case REG_EDI:
-            base = 7;
-            rexb = 0;
-            eaddr = 32;
-            break;
-
-        case REG_RAX:
-            base = 0;
-            rexb = 0;
-            eaddr = 64;
-            break;
-        case REG_RCX:
-            base = 1;
-            rexb = 0;
-            eaddr = 64;
-            break;
-        case REG_RDX:
-            base = 2;
-            rexb = 0;
-            eaddr = 64;
-            break;
-        case REG_RBX:
-            base = 3;
-            rexb = 0;
-            eaddr = 64;
-            break;
-        case REG_RSP:
-            base = 4;
-            rexb = 0;
-            eaddr = 64;
-            break;
-        case REG_RBP:
-            base = 5;
-            rexb = 0;
-            eaddr = 64;
-            break;
-        case REG_RSI:
-            base = 6;
-            rexb = 0;
-            eaddr = 64;
-            break;
-        case REG_RDI:
-            base = 7;
-            rexb = 0;
-            eaddr = 64;
-            break;
-
-        case REG_R8:
-            base = 0;
-            rexb = 1;
-            eaddr = 32;
-            break;
-        case REG_R9:
-            base = 1;
-            rexb = 1;
-            eaddr = 32;
-            break;
-        case REG_R10:
-            base = 2;
-            rexb = 1;
-            eaddr = 32;
-            break;
-        case REG_R11:
-            base = 3;
-            rexb = 1;
-            eaddr = 32;
-            break;
-        case REG_R12:
-            base = 4;
-            rexb = 1;
-            eaddr = 32;
-            break;
-        case REG_R13:
-            base = 5;
-            rexb = 1;
-            eaddr = 32;
-            break;
-        case REG_R14:
-            base = 6;
-            rexb = 1;
-            eaddr = 32;
-            break;
-        case REG_R15:
-            base = 6;
-            rexb = 1;
-            eaddr = 32;
-            break;
-
-        case REG_R8D:
-            base = 0;
-            rexb = 1;
-            eaddr = 64;
-            break;
-        case REG_R9D:
-            base = 1;
-            rexb = 1;
-            eaddr = 64;
-            break;
-        case REG_R10D:
-            base = 2;
-            rexb = 1;
-            eaddr = 64;
-            break;
-        case REG_R11D:
-            base = 3;
-            rexb = 1;
-            eaddr = 64;
-            break;
-        case REG_R12D:
-            base = 4;
-            rexb = 1;
-            eaddr = 64;
-            break;
-        case REG_R13D:
-            base = 5;
-            rexb = 1;
-            eaddr = 64;
-            break;
-        case REG_R14D:
-            base = 6;
-            rexb = 1;
-            eaddr = 64;
-            break;
-        case REG_R15D:
-            base = 6;
-            rexb = 1;
-            eaddr = 64;
-            break;
-
-        default:
-            base = -1;
-            rexb = 0;
-            eaddr = 0;
-        }
-    } else {
-        /* If base register is not specified */
-        base = 5;
-        rexb = 0;
-        eaddr = 0;
-    }
-
-    /* Offset register and scale multiplier */
-    if ( val->u.addr.flags & X86_64_ADDR_OFFSET ) {
-        /* Has offset (SIB) */
-        if ( val->u.addr.flags & X86_64_ADDR_SCALE ) {
-            /* Scale */
-            switch ( val->u.addr.scale ) {
-            case 1:
-                ss = 0;
-                break;
-            case 2:
-                ss = 1;
-                break;
-            case 4:
-                ss = 2;
-                break;
-            case 8:
-                ss = 3;
-                break;
-            default:
-                ss = -1;
-            }
-        } else {
-            ss = 0;
-        }
-
-        if ( ss < 0 ) {
-            /* Invalid scale */
-            return -1;
-        }
-
-        switch ( val->u.addr.offset ) {
-        case REG_EAX:
-        case REG_RAX:
-            idx = 0;
-            break;
-        case REG_ECX:
-        case REG_RCX:
-            idx = 1;
-            break;
-        case REG_EDX:
-        case REG_RDX:
-            idx = 2;
-            break;
-        case REG_EBX:
-        case REG_RBX:
-            idx = 3;
-            break;
-        case REG_EBP:
-        case REG_RBP:
-            idx = 5;
-            break;
-        case REG_ESI:
-        case REG_RSI:
-            idx = 6;
-            break;
-        case REG_EDI:
-        case REG_RDI:
-            idx = 7;
-            break;
-        default:
-            idx = -1;
-        }
-
-    } else {
-        ss = 0;
-        idx = 4;
-    }
-
-    if ( ss < 0 || idx < 0 || base < 0 ) {
-        return -1;
-    }
-
-    return (ss << 6) | (idx << 3) | base;
-}
-
-static int
-_val_to_modrm(x86_64_val_t *val1, x86_64_val_t *val2)
-{
-    int mod;
-    int reg;
-    int rm;
-    int sib;
-    int64_t disp;
-    int eaddr;
-
-    x86_64_enop_t enop;
-    printf("\tret = %d", _encode_rm(val1, val2, &enop));
-    printf(", ModRM = %x\n", enop.modrm);
-
-
-    /* REG */
-    reg = _val_to_modrm_reg(val1);
-    if ( reg < 0 ) {
-        return -1;
-    }
-
-    /* Mod */
-    mod = _val_to_modrm_mod(val2);
-    if ( mod < 0 ) {
-        return -1;
-    }
-
-    /* SIB */
-    sib = _val_to_modrm_sib(val2);
-    if ( sib < 0 ) {
-        return -1;
-    }
-
-    /* Displacement */
-    if ( val2->u.addr.flags & X86_64_ADDR_DISP ) {
-        /* Has disp */
-        disp = val2->u.addr.disp;
-    } else {
-        disp = 0;
-    }
-
-    if ( 0 == mod ) {
-        /* Base register */
-        if ( val2->u.addr.flags & X86_64_ADDR_BASE ) {
-            switch ( val2->u.addr.base ) {
-            case REG_EAX:
-                /* Add effective address size prefix */
-                rm = 0;
-                eaddr = EADDR32;
-                break;
-            case REG_RAX:
-                rm = 0;
-                eaddr = EADDR64;
-                break;
-            case REG_ECX:
-                /* Add effective address size prefix */
-                rm = 1;
-                eaddr = EADDR32;
-                break;
-            case REG_RCX:
-                rm = 1;
-                eaddr = EADDR64;
-                break;
-            case REG_EDX:
-                /* Add effective address size prefix */
-                rm = 2;
-                eaddr = EADDR32;
-                break;
-            case REG_RDX:
-                rm = 2;
-                eaddr = EADDR64;
-                break;
-            case REG_EBX:
-                /* Add effective address size prefix */
-                rm = 3;
-                eaddr = EADDR32;
-                break;
-            case REG_RBX:
-                rm = 3;
-                eaddr = EADDR64;
-                break;
-            case REG_ESI:
-                /* Add effective address size prefix */
-                rm = 6;
-                eaddr = EADDR32;
-                break;
-            case REG_RSI:
-                rm = 6;
-                eaddr = EADDR64;
-                break;
-            case REG_EDI:
-                /* Add effective address size prefix */
-                rm = 7;
-                eaddr = EADDR32;
-                break;
-            case REG_RDI:
-                rm = 7;
-                eaddr = EADDR64;
-                break;
-            default:
-                rm = -1;
-            }
-        } else {
-            sib = 0x25;
-            rm = 4;
-        }
-    }
-
-    return (mod << 6) | (reg << 3) | rm;
-}
 
 /*
  * Encode ModR/M
@@ -1426,7 +762,12 @@ _encode_rm(const x86_64_val_t *val1, const x86_64_val_t *val2,
     return 0;
 }
 
-
+static int
+_encode_mr(const x86_64_val_t *val1, const x86_64_val_t *val2,
+           x86_64_enop_t *enop)
+{
+    return _encode_rm(val1, val2, enop);
+}
 
 
 
@@ -1558,6 +899,8 @@ _mov(operand_vector_t *operands)
     x86_64_val_t *val1;
     x86_64_val_t *val2;
     int opsize;
+    int ret;
+    x86_64_enop_t enop;
 
     if ( 2 == mvector_size(operands) ) {
         op1 = mvector_at(operands, 0);
@@ -1598,14 +941,34 @@ _mov(operand_vector_t *operands)
 
         if ( X86_64_VAL_REG == val1->type && X86_64_VAL_REG == val2->type ) {
             if ( 8 == opsize ) {
-                printf("MOV 88 %X\n", _val_to_modrm(val1, val2));
+                ret = _encode_mr(val1, val2, &enop);
+                if ( ret < 0 ) {
+                    printf("Invalid operands\n");
+                } else {
+                    printf("MOV 88 %X\n", enop.modrm);
+                }
             } else if ( 16 == opsize ) {
-                printf("MOV 66 89 %X\n", _val_to_modrm(val1, val2));
+                ret = _encode_mr(val1, val2, &enop);
+                if ( ret < 0 ) {
+                    printf("Invalid operands\n");
+                } else {
+                    printf("MOV 66 89 %X\n", enop.modrm);
+                }
             } else if ( 32 == opsize ) {
-                printf("MOV 89 %X\n", _val_to_modrm(val1, val2));
+                ret = _encode_mr(val1, val2, &enop);
+                if ( ret < 0 ) {
+                    printf("Invalid operands\n");
+                } else {
+                    printf("MOV 89 %X\n", enop.modrm);
+                }
             } else if ( 64 == opsize ) {
-                /* REX.W = (1<<3) */
-                printf("MOV REX.W 89 %X\n", _val_to_modrm(val1, val2));
+                ret = _encode_mr(val1, val2, &enop);
+                if ( ret < 0 ) {
+                    printf("Invalid operands\n");
+                } else {
+                    /* REX.W = (1<<3) */
+                    printf("MOV REX.W 89 %X\n", enop.modrm);
+                }
             } else {
                 printf("Unsupported\n");
             }
@@ -1639,6 +1002,8 @@ _popcnt(operand_vector_t *operands)
     x86_64_val_t *val1;
     x86_64_val_t *val2;
     int opsize;
+    int ret;
+    x86_64_enop_t enop;
 
     if ( 2 == mvector_size(operands) ) {
         op1 = mvector_at(operands, 0);
@@ -1678,11 +1043,26 @@ _popcnt(operand_vector_t *operands)
 
         if ( X86_64_VAL_REG == val1->type && X86_64_VAL_REG == val2->type ) {
             if ( 16 == opsize ) {
-                printf("POPCNT F3 0F B8 %X\n", _val_to_modrm(val1, val2));
+                ret = _encode_rm(val1, val2, &enop);
+                if ( ret < 0 ) {
+                    printf("Invalid operands\n");
+                } else {
+                    printf("POPCNT F3 0F B8 %X\n", enop.modrm);
+                }
             } else if ( 32 == opsize ) {
-                printf("POPCNT F3 0F B8 %X\n", _val_to_modrm(val1, val2));
+                ret = _encode_rm(val1, val2, &enop);
+                if ( ret < 0 ) {
+                    printf("Invalid operands\n");
+                } else {
+                    printf("POPCNT F3 0F B8 %X\n", enop.modrm);
+                }
             } else if ( 64 == opsize ) {
-                printf("POPCNT F3 REX.W 0F B8 %X\n", _val_to_modrm(val1, val2));
+                ret = _encode_rm(val1, val2, &enop);
+                if ( ret < 0 ) {
+                    printf("Invalid operands\n");
+                } else {
+                    printf("POPCNT F3 REX.W 0F B8 %X\n", enop.modrm);
+                }
             } else {
                 printf("Unsupported\n");
             }
@@ -1739,6 +1119,8 @@ _xor(operand_vector_t *operands)
     x86_64_val_t *val1;
     x86_64_val_t *val2;
     int opsize;
+    int ret;
+    x86_64_enop_t enop;
 
     if ( 2 == mvector_size(operands) ) {
         op1 = mvector_at(operands, 0);
@@ -1792,11 +1174,26 @@ _xor(operand_vector_t *operands)
         } else if ( X86_64_VAL_REG == val1->type
                     && X86_64_VAL_REG == val2->type ) {
             if ( 16 == opsize ) {
-                printf("XOR 66 31 %X\n", _val_to_modrm(val1, val2));
+                ret = _encode_mr(val1, val2, &enop);
+                if ( ret < 0 ) {
+                    printf("Invalid operands\n");
+                } else {
+                    printf("XOR 66 31 %X\n", enop.modrm);
+                }
             } else if ( 32 == opsize ) {
-                printf("XOR 31 %X\n", _val_to_modrm(val1, val2));
+                ret = _encode_mr(val1, val2, &enop);
+                if ( ret < 0 ) {
+                    printf("Invalid operands\n");
+                } else {
+                    printf("XOR 31 %X\n", enop.modrm);
+                }
             } else if ( 64 == opsize ) {
-                printf("XOR REX.W 31 %X\n", _val_to_modrm(val1, val2));
+                ret = _encode_mr(val1, val2, &enop);
+                if ( ret < 0 ) {
+                    printf("Invalid operands\n");
+                } else {
+                    printf("XOR REX.W 31 %X\n", enop.modrm);
+                }
             } else {
                 printf("Unsupported\n");
             }
