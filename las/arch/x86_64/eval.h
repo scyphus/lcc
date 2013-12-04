@@ -76,7 +76,7 @@ typedef struct _x86_64_encoded_operand {
         size_t sz;
         int64_t val;
     } imm;
-} x86_64_enop;
+} x86_64_enop_t;
 
 #ifdef __cplusplus
 extern "C" {

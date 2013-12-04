@@ -12,6 +12,7 @@
 #include "eval.h"
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 
 #define REX_NE          -2      /* Not encodable */
@@ -71,6 +72,15 @@ struct y {
     char *label;
     struct xxx *ptr;
 };
+
+
+
+static int
+_encode_rm(const x86_64_val_t *, const x86_64_val_t *, x86_64_enop_t *);
+
+
+
+
 
 /*
  * Check the size of the immediate value
@@ -837,6 +847,11 @@ _val_to_modrm(x86_64_val_t *val1, x86_64_val_t *val2)
     int64_t disp;
     int eaddr;
 
+    x86_64_enop_t enop;
+    printf("\tret = %d", _encode_rm(val1, val2, &enop));
+    printf(", ModRM = %x\n", enop.modrm);
+
+
     /* REG */
     reg = _val_to_modrm_reg(val1);
     if ( reg < 0 ) {
@@ -957,6 +972,8 @@ _encode_sib(int base, int idx, int ss)
 static int
 _encode_scaled_index(const x86_64_val_t *val, int *idx, int *rexx, int *ss)
 {
+    int ret;
+
     assert( X86_64_VAL_ADDR == val->type );
 
     /* Encode scaled index */
@@ -1013,8 +1030,10 @@ _encode_disp(const x86_64_val_t *val, int64_t *disp, size_t *dispsz)
     assert( X86_64_VAL_ADDR == val->type );
 
     if ( val->u.addr.flags & X86_64_ADDR_DISP ) {
-        *disp = val2->u.addr.disp;
-        if ( *disp >= -128 && *disp <= 127 ) {
+        *disp = val->u.addr.disp;
+        if ( 0 == *disp ) {
+            *dispsz = 0;
+        } else if ( *disp >= -128 && *disp <= 127 ) {
             *dispsz = 1;
         } else {
             *dispsz = 4;
@@ -1028,25 +1047,37 @@ _encode_disp(const x86_64_val_t *val, int64_t *disp, size_t *dispsz)
 }
 
 
+/*
+ * Encode the second operand with the addr type that specifies a base register
+ */
 static int
 _encode_rm_second_addr_with_base(int reg, int rexr, const x86_64_val_t *val,
-                                 x86_64_enop *enop)
+                                 x86_64_enop_t *enop)
 {
     int ret;
     int mod;
     int rm;
+    int modrm;
+    int base;
+    int idx;
+    int ss;
     int sib;
+    int rexx;
+    int rexb;
     size_t dispsz;
     int64_t disp;
 
     assert( X86_64_VAL_ADDR == val->type );
     assert( X86_64_ADDR_BASE & val->u.addr.flags );
 
+    rexx = REX_NONE;
+    rexb = REX_NONE;
+
     /* Is the base register EIP/RIP? */
-    if ( REG_EIP == val2->u.addr.base || REG_RIP == val2->u.addr.base ) {
+    if ( REG_EIP == val->u.addr.base || REG_RIP == val->u.addr.base ) {
         /* The base register is EIP/RIP */
-        if ( (X86_64_ADDR_OFFSET & val2->u.addr.flags)
-             || (X86_64_ADDR_SCALE & val2->u.addr.flags) ) {
+        if ( (X86_64_ADDR_OFFSET & val->u.addr.flags)
+             || (X86_64_ADDR_SCALE & val->u.addr.flags) ) {
             /* Must not have scaled index */
             return -1;
         }
@@ -1058,7 +1089,7 @@ _encode_rm_second_addr_with_base(int reg, int rexr, const x86_64_val_t *val,
         sib = -1;
 
         /* Encode displacement */
-        ret = _encode_disp(val2, &disp, &dispsz);
+        ret = _encode_disp(val, &disp, &dispsz);
         /* Extend the size of displacement to 4 bytes */
         dispsz = 4;
 
@@ -1069,9 +1100,9 @@ _encode_rm_second_addr_with_base(int reg, int rexr, const x86_64_val_t *val,
         enop->rex.b = REX_NONE;
         /* ModR/M */
         enop->modrm = modrm;
-        /* No SIB */
+        /* SIB */
         enop->sib = sib;
-        /* No displacement */
+        /* Displacement */
         enop->disp.sz = dispsz;
         enop->disp.val = disp;
         /* No immediate value */
@@ -1081,6 +1112,146 @@ _encode_rm_second_addr_with_base(int reg, int rexr, const x86_64_val_t *val,
         return 0;
     } else {
         /* The base register is not EIP/RIP and needs to specify SIB */
+
+        /* Resolve the register code of the base register */
+        ret = _reg_code(val->u.addr.base, &base, &rexb);
+        if ( ret < 0 ) {
+            /* Cannot resolve the register code */
+            return -1;
+        }
+
+        /* Encode displacement */
+        ret = _encode_disp(val, &disp, &dispsz);
+        if ( ret < 0 ) {
+            return -1;
+        }
+
+        if ( X86_64_ADDR_OFFSET & val->u.addr.flags ) {
+            /* Requires SIB */
+            ret = _encode_scaled_index(val, &idx, &rexx, &ss);
+            if ( ret < 0 ) {
+                return -1;
+            }
+
+            /* Check the base register */
+            if ( 5 == base && (REX_NONE == rexb || REX_FALSE == rexb) ) {
+                /* Special encoding is required if it's EBP/RBP */
+                if ( 0 == dispsz || 1 == dispsz ) {
+                    mod = 1;
+                    rm = 4;
+                    dispsz = 1;
+                } else if ( 4 == dispsz ) {
+                    mod = 2;
+                    rm = 4;
+                } else {
+                    return -1;
+                }
+            } else {
+                if ( 0 == dispsz ) {
+                    mod = 0;
+                    rm = 4;
+                } else if ( 1 == dispsz ) {
+                    mod = 1;
+                    rm = 4;
+                } else if ( 4 == dispsz ) {
+                    mod = 2;
+                    rm = 4;
+                } else {
+                    return -1;
+                }
+            }
+
+            /* Encode ModR/M */
+            modrm = _encode_modrm(reg, mod, rm);
+            sib = _encode_sib(base, idx, ss);
+        } else {
+            /* Scaled index is not specified */
+
+            if ( 0 == disp ) {
+                if ( 5 == base && (REX_NONE == rexb || REX_FALSE == rexb) ) {
+                    /* Go to SIB */
+                    mod = 1;
+                    rm = 4;
+                    dispsz = 1;
+                    idx = 4;
+                    ss = 0;
+                    /* Encode ModR/M */
+                    modrm = _encode_modrm(reg, mod, rm);
+                    sib = _encode_sib(base, idx, ss);
+                } else if ( 4 == base
+                            && (REX_NONE == rexb || REX_FALSE == rexb) ) {
+                    /* Go to SIB */
+                    mod = 0;
+                    rm = 4;
+                    idx = 4;
+                    ss = 0;
+                    /* Encode ModR/M */
+                    modrm = _encode_modrm(reg, mod, rm);
+                    sib = _encode_sib(base, idx, ss);
+                } else {
+                    /* ModR/M */
+                    mod = 0;
+                    rm = base;
+                    /* Encode ModR/M */
+                    modrm = _encode_modrm(reg, mod, rm);
+                    sib = -1;
+                }
+            } else if ( 1 == disp ) {
+                mod = 1;
+                if ( 4 == base && (REX_NONE == rexb || REX_FALSE == rexb) ) {
+                    /* Go to SIB */
+                    rm = 4;
+                    idx = 4;
+                    ss = 0;
+                    /* Encode ModR/M */
+                    modrm = _encode_modrm(reg, mod, rm);
+                    sib = _encode_sib(base, idx, ss);
+                } else {
+                    /* ModR/M */
+                    rm = base;
+                    /* Encode ModR/M */
+                    modrm = _encode_modrm(reg, mod, rm);
+                    sib = -1;
+                }
+            } else if ( 4 == disp ) {
+                mod = 2;
+                if ( 4 == base && (REX_NONE == rexb || REX_FALSE == rexb) ) {
+                    /* Go to SIB */
+                    rm = 4;
+                    idx = 4;
+                    ss = 0;
+                    /* Encode ModR/M */
+                    modrm = _encode_modrm(reg, mod, rm);
+                    sib = _encode_sib(base, idx, ss);
+                } else {
+                    /* ModR/M */
+                    rm = base;
+                    /* Encode ModR/M */
+                    modrm = _encode_modrm(reg, mod, rm);
+                    sib = -1;
+                }
+            } else {
+                return -1;
+            }
+        }
+
+        /* REX */
+        enop->rex.w = REX_NONE;
+        enop->rex.r = rexr;
+        enop->rex.x = rexx;
+        enop->rex.b = rexb;
+        /* ModR/M */
+        enop->modrm = modrm;
+        /* SIB */
+        enop->sib = sib;
+        /* Displacement */
+        enop->disp.sz = dispsz;
+        enop->disp.val = disp;
+        /* No immediate value */
+        enop->imm.sz = 0;
+        enop->imm.val = 0;
+
+        return 0;
     }
 
     return 0;
@@ -1091,15 +1262,15 @@ _encode_rm_second_addr_with_base(int reg, int rexr, const x86_64_val_t *val,
  */
 static int
 _encode_rm_second_addr_without_base(int reg, int rexr, const x86_64_val_t *val,
-                                    x86_64_enop *enop)
+                                    x86_64_enop_t *enop)
 {
     int ret;
     int mod;
     int rm;
+    int base;
     int idx;
     int ss;
     int rexx;
-    int sib;
     size_t dispsz;
     int64_t disp;
 
@@ -1133,7 +1304,7 @@ _encode_rm_second_addr_without_base(int reg, int rexr, const x86_64_val_t *val,
     enop->rex.b = REX_NONE;
     /* ModR/M */
     enop->modrm = _encode_modrm(reg, mod, rm);
-    /* No SIB */
+    /* SIB */
     enop->sib = _encode_sib(base, idx, ss);
     /* Set displacement */
     enop->disp.sz = dispsz;
@@ -1148,7 +1319,7 @@ _encode_rm_second_addr_without_base(int reg, int rexr, const x86_64_val_t *val,
 
 static int
 _encode_rm_second_addr(int reg, int rexr, const x86_64_val_t *val,
-                       x86_64_enop *enop)
+                       x86_64_enop_t *enop)
 {
     int ret;
 
@@ -1165,32 +1336,62 @@ _encode_rm_second_addr(int reg, int rexr, const x86_64_val_t *val,
     return 0;
 }
 
+static int
+_encode_rm_second_reg(int reg, int rexr, const x86_64_val_t *val,
+                      x86_64_enop_t *enop)
+{
+    int ret;
+    int mod;
+    int rm;
+    int rexb;
+    int modrm;
+
+    assert( X86_64_VAL_REG == val->type );
+
+    /* Mod = 3 where  R/M is register */
+    mod = 3;
+
+    /* Resolve the register code of the second operand */
+    ret = _reg_code(val->u.reg, &rm, &rexb);
+    if ( ret < 0 ) {
+        /* Cannot resolve the register code */
+        return -1;
+    }
+    /* Encode ModR/M */
+    modrm = _encode_modrm(reg, mod, rm);
+
+    /* REX */
+    enop->rex.w = REX_NONE;
+    enop->rex.r = rexr;
+    enop->rex.x = REX_NONE;
+    enop->rex.b = rexb;
+    /* ModR/M */
+    enop->modrm = modrm;
+    /* No SIB */
+    enop->sib = -1;
+    /* No displacement */
+    enop->disp.sz = 0;
+    enop->disp.val = 0;
+    /* No immediate value */
+    enop->imm.sz = 0;
+    enop->imm.val = 0;
+
+    return 0;
+}
+
 
 /*
  * Encode operands with R/M
  */
 static int
 _encode_rm(const x86_64_val_t *val1, const x86_64_val_t *val2,
-           x86_64_enop *enop)
+           x86_64_enop_t *enop)
 {
-    size_t opsz;
-    size_t addrsz;
+    //size_t opsz;
+    //size_t addrsz;
     int ret;
-    int mod;
     int reg;
-    int rm;
-    int modrm;
-    int rexw;
     int rexr;
-    int rexx;
-    int rexb;
-    int base;
-    int ss;
-    int idx;
-    int sib;
-    size_t dispsz;
-    int64_t disp;
-
 
     /* Check the first operand */
     if ( X86_64_VAL_REG != val1->type ) {
@@ -1206,33 +1407,10 @@ _encode_rm(const x86_64_val_t *val1, const x86_64_val_t *val2,
 
     /* Check the second operand */
     if ( X86_64_VAL_REG == val2->type ) {
-        mod = 3;
-
-        /* Resolve the register code of the second operand */
-        ret = _reg_code(val2->u.reg, &rm, &rexb);
+        ret = _encode_rm_second_reg(reg, rexr, val2, enop);
         if ( ret < 0 ) {
-            /* Cannot resolve the register code */
             return -1;
         }
-        /* Encode ModR/M */
-        modrm = _encode_modrm(reg, mod, rm);
-        sib = -1;
-
-        /* REX */
-        enop->rex.w = REX_NONE;
-        enop->rex.r = rexr;
-        enop->rex.x = REX_NONE;
-        enop->rex.b = rexb;
-        /* ModR/M */
-        enop->modrm = modrm;
-        /* No SIB */
-        enop->sib = sib;
-        /* No displacement */
-        enop->disp.sz = 0;
-        enop->disp.val = 0;
-        /* No immediate value */
-        enop->imm.sz = 0;
-        enop->imm.val = 0;
 
         return 0;
     } else if ( X86_64_VAL_ADDR == val2->type ) {
@@ -1241,213 +1419,6 @@ _encode_rm(const x86_64_val_t *val1, const x86_64_val_t *val2,
         if ( ret < 0 ) {
             return -1;
         }
-
-
-
-#if 0
-        /* w/ base register? */
-        if ( X86_64_ADDR_BASE & val2->u.addr.flags ) {
-            /* Is the base register EIP/RIP? */
-            if ( REG_EIP == val2->u.addr.base
-                 || REG_RIP == val2->u.addr.base ) {
-                /* The base register is EIP/RIP */
-                if ( (X86_64_ADDR_OFFSET & val2->u.addr.flags)
-                     || (X86_64_ADDR_SCALE & val2->u.addr.flags) ) {
-                    /* Must not have scaled index */
-                    return -1;
-                }
-                mod = 0;
-                rm = 5;
-
-                /* Encode ModR/M */
-                modrm = _encode_modrm(reg, mod, rm);
-                sib = -1;
-                /* Encode displacement */
-                ret = _encode_disp(val2, &disp, &dispsz);
-                /* Extend the size of displacement to 4 bytes */
-                dispsz = 4;
-
-                /* REX */
-                enop->rex.w = REX_NONE;
-                enop->rex.r = rexr;
-                enop->rex.x = REX_NONE;
-                enop->rex.b = REX_NONE;
-                /* ModR/M */
-                enop->modrm = modrm;
-                /* No SIB */
-                enop->sib = sib;
-                /* No displacement */
-                enop->disp.sz = dispsz;
-                enop->disp.val = disp;
-                /* No immediate value */
-                enop->imm.sz = 0;
-                enop->imm.val = 0;
-
-                return 0;
-            } else if ( X86_64_ADDR_OFFSET & val2->u.addr.flags ) {
-                /* The base register is not EIP/RIP and needs to specify SIB */
-
-                /* Resolve the register code of the base register */
-                ret = _reg_code(val2->u.addr.base, &rm, &rexb);
-                if ( ret < 0 ) {
-                    /* Cannot resolve the register code */
-                    return -1;
-                }
-
-                /* Encode displacement */
-                if ( val2->u.addr.flags & X86_64_ADDR_DISP ) {
-                    disp = val2->u.addr.disp;
-                    if ( 0 == disp ) {
-                        mod = 0;
-                        dispsz = 0;
-                    } else if ( val2->u.addr.disp < -128
-                                || val2->u.addr.disp > 127 ) {
-                        mod = 2;
-                        dispsz = 4;
-                    } else {
-                        mod = 1;
-                        dispsz = 1;
-                    }
-                } else {
-                    mod = 0;
-                    disp = 0;
-                    dispsz = 0;
-                }
-
-                /* SIB */
-                base = rm;
-                rm = 4;
-                if ( 0 == mod ) {
-                    mod = 1;
-                    dispsz = 1;
-                }
-                /* Resolve the register code of the base register */
-                ret = _reg_code(val2->u.addr.offset, &idx, &rexx);
-                if ( ret < 0 ) {
-                    /* Cannot resolve the register code */
-                    return -1;
-                }
-                /* Check scale multiplier */
-                if ( X86_64_ADDR_SCALE & val2->u.addr.flags ) {
-                    switch ( val2->u.addr.scale ) {
-                    case 1:
-                        ss = 0;
-                        break;
-                    case 2:
-                        ss = 1;
-                        break;
-                    case 4:
-                        ss = 2;
-                        break;
-                    case 8:
-                        ss = 3;
-                        break;
-                    default:
-                        /* Invalid scale multiplier */
-                        return -1;
-                    }
-                } else {
-                    ss = 0;
-                }
-                /* Encode Mod/RM */
-                modrm = (mod << 6) | (reg << 3) | rm;
-                sib = (ss << 6) | (idx << 3) | base;
-
-            } else {
-
-
-
-                /* Encode displacement */
-                if ( val2->u.addr.flags & X86_64_ADDR_DISP ) {
-                    disp = val2->u.addr.disp;
-                    if ( 0 == disp ) {
-                        mod = 0;
-                        dispsz = 0;
-                    } else if ( val2->u.addr.disp < -128
-                                || val2->u.addr.disp > 127 ) {
-                        mod = 2;
-                        dispsz = 4;
-                    } else {
-                        mod = 1;
-                        dispsz = 1;
-                    }
-                } else {
-                    mod = 0;
-                    disp = 0;
-                    dispsz = 0;
-                }
-
-
-
-                /* Encode scaled index */
-                if ( X86_64_ADDR_OFFSET & val2->u.addr.flags ) {
-                    /* SIB */
-                    base = rm;
-                    rm = 4;
-                    if ( 0 == mod ) {
-                        mod = 1;
-                        dispsz = 1;
-                    }
-                    /* Resolve the register code of the base register */
-                    ret = _reg_code(val2->u.addr.offset, &idx, &rexx);
-                    if ( ret < 0 ) {
-                        /* Cannot resolve the register code */
-                        return -1;
-                    }
-                    /* Check scale multiplier */
-                    if ( X86_64_ADDR_SCALE & val2->u.addr.flags ) {
-                        switch ( val2->u.addr.scale ) {
-                        case 1:
-                            ss = 0;
-                            break;
-                        case 2:
-                            ss = 1;
-                            break;
-                        case 4:
-                            ss = 2;
-                            break;
-                        case 8:
-                            ss = 3;
-                            break;
-                        default:
-                            /* Invalid scale multiplier */
-                            return -1;
-                        }
-                    } else {
-                        ss = 0;
-                    }
-                    /* Encode Mod/RM */
-                    modrm = (mod << 6) | (reg << 3) | rm;
-                    sib = (ss << 6) | (idx << 3) | base;
-                } else {
-                    /* Do not have scaled index */
-                    if ( 0 == mod ) {
-                        if ( (4 == rm && (REX_NONE == rexb
-                                          || REX_FALSE == rexb))
-                             || 5 == rm && (REX_NONE == rexb
-                                            || REX_FALSE == rexb) ) {
-                            /* Encode SIB */
-                            base = rm;
-                            rm = 4;
-                            idx = 4;
-                            ss = 0;
-                        }
-                        /* NEED REFACTORING */
-                    } else {
-                        if ( 4 == rm
-                             && (REX_NONE == rexb || REX_FALSE == rexb) ) {
-                            /* Encode SIB */
-                            base = rm;
-                            rm = 4;
-                            idx = 4;
-                            ss = 0;
-                        }
-                        /* NEED REFACTORING */
-                    }
-                }
-            }
-        }
-#endif
     } else {
         return -1;
     }
