@@ -5,6 +5,9 @@
     * las/arch/x86_64/main.c: Implemented ModR/M and SIB encoder
     * las/arch/x86_64/eval.h: Implemented ModR/M and SIB encoder
 
+    * las/arch/x86_64/main.c: Implemented OI and MI operand encoder and MOV
+                              instruction
+
 
 2013-12-03  Hirochika Asai  <asai@scyphus.co.jp>
 
