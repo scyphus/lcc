@@ -58,8 +58,9 @@ typedef struct _x86_64_val {
  * Encoded operand
  */
 typedef struct _x86_64_encoded_operand {
-    size_t opsz;
-    size_t addrsz;
+    //size_t opsz;
+    //size_t addrsz;
+    int opreg;
     struct {
         int w;
         int r;
