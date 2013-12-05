@@ -6,6 +6,9 @@
 
     * las/arch/x86_64/main.c: Implemented ADD instruction
 
+    * las/arch/x86_64/main.c: Implemented AND instruction
+
+
 
 2013-12-04  Hirochika Asai  <asai@scyphus.co.jp>
 
