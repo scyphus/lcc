@@ -5,6 +5,7 @@
  *      Hirochika Asai  <asai@scyphus.co.jp>
  */
 
+#include "../../las.h"
 #include "reg.h"
 #include <string.h>
 
@@ -239,7 +240,7 @@ regsize(x86_64_reg_t r)
     case REG_R13L:
     case REG_R14L:
     case REG_R15L:
-        sz = 8;
+        sz = SIZE8;
         break;
     case REG_AX:
     case REG_CX:
@@ -263,7 +264,7 @@ regsize(x86_64_reg_t r)
     case REG_FS:
     case REG_GS:
     case REG_FLAGS:
-        sz = 16;
+        sz = SIZE16;
         break;
     case REG_EAX:
     case REG_ECX:
@@ -282,7 +283,7 @@ regsize(x86_64_reg_t r)
     case REG_R14D:
     case REG_R15D:
     case REG_EFLAGS:
-        sz = 32;
+        sz = SIZE32;
         break;
     case REG_RAX:
     case REG_RCX:
@@ -301,7 +302,7 @@ regsize(x86_64_reg_t r)
     case REG_R14:
     case REG_R15:
     case REG_RFLAGS:
-        sz = 64;
+        sz = SIZE64;
         break;
     default:
         sz = 0;
