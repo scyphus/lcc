@@ -17,6 +17,12 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#define SIZE8   1
+#define SIZE16  2
+#define SIZE32  4
+#define SIZE64  8
+
+
 /*
  * String (can be binary)
  */

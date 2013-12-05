@@ -46,7 +46,7 @@ typedef struct _x86_64_val {
     int opsize;
     union {
         /* Immediate value */
-        uint64_t imm;
+        int64_t imm;
         /* Register */
         x86_64_reg_t reg;
         /* Offset register + Scale multiplier */
