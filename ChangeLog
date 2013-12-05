@@ -8,6 +8,12 @@
 
     * las/arch/x86_64/main.c: Implemented AND instruction
 
+    * las/las.h: Fixed the operand and address size prefix
+    * las/parser.c: Fixed the operand and address size prefix parser
+    * las/arch/x86_64/eval.c: Fixed the operand and address size prefix
+                              evaluation
+    * las/arch/x86_64/eval.h: Fixed the operand and address size prefix
+                              evaluation
 
 
 2013-12-04  Hirochika Asai  <asai@scyphus.co.jp>

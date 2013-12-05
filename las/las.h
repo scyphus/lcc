@@ -145,20 +145,6 @@ typedef struct _prefixed_expr {
 } pexpr_t;
 
 /*
- * Operand address
- */
-typedef struct op_addr {
-    /* Base register */
-    char *base;
-    /* Displacement */
-    int64_t disp;
-    /* Offset register */
-    char *offset;
-    /* Scale multiplier */
-    int scale;
-} op_addr_t;
-
-/*
  * Operand type
  */
 typedef enum operand_type {
@@ -166,17 +152,14 @@ typedef enum operand_type {
     OPERAND_EXPR,
 } operand_type_t;
 
-typedef struct _op_regsym {
-    char *regsym;
-    int64_t offset;
-} op_regsym_t;
-
 /*
  * Operand
  */
 typedef struct operand {
     operand_type_t type;
+    size_prefix_t prefix;
     union {
+        expr_t *expr;
         pexpr_t *pexpr;
     } op;
 } operand_t;

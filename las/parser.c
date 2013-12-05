@@ -674,28 +674,28 @@ parse_prefixed_expr(pcode_t *pcode)
  * Parse an expr
  *
  * operand_expr ::=
- *              prefixed_expression
+ *              expression
  */
 operand_t *
 parse_operand_expr(pcode_t *pcode)
 {
-    pexpr_t *pexpr;
+    expr_t *expr;
     operand_t *op;
 
-    /* Parse the prefixed expression */
-    pexpr = parse_prefixed_expr(pcode);
-    if ( NULL == pexpr ) {
+    /* Parse the expression */
+    expr = parse_expr(pcode);
+    if ( NULL == expr ) {
         /* Parse error */
         return NULL;
     }
-    /* Expression to op_regsym_t */
+    /* Allocate operand */
     op = malloc(sizeof(operand_t));
     if ( NULL == op ) {
-        pexpr_free(pexpr);
+        expr_free(expr);
         return NULL;
     }
     op->type = OPERAND_EXPR;
-    op->op.pexpr = pexpr;
+    op->op.expr = expr;
 
     return op;
 }
@@ -754,15 +754,36 @@ parse_operand(pcode_t *pcode)
 {
     operand_t *op;
     token_t *tok;
+    size_prefix_t prefix;
+
+    /* Get the current token */
+    tok = token_queue_cur(pcode->token_queue);
+    if ( tok == NULL ) {
+        return NULL;
+    }
+    /* Parse the size prefix */
+    if ( TOK_KW_BYTE == tok->type ) {
+        prefix = SIZE_PREFIX_BYTE;
+        (void)token_queue_next(pcode->token_queue);
+    } else if ( TOK_KW_WORD == tok->type ) {
+        prefix = SIZE_PREFIX_WORD;
+        (void)token_queue_next(pcode->token_queue);
+    } else if ( TOK_KW_DWORD == tok->type ) {
+        prefix = SIZE_PREFIX_DWORD;
+        (void)token_queue_next(pcode->token_queue);
+    } else if ( TOK_KW_QWORD == tok->type ) {
+        prefix = SIZE_PREFIX_QWORD;
+        (void)token_queue_next(pcode->token_queue);
+    } else {
+        prefix = SIZE_PREFIX_NONE;
+    }
 
     /* Get the current token and check it */
     tok = token_queue_cur(pcode->token_queue);
     if ( TOK_BININT == tok->type || TOK_OCTINT == tok->type
          || TOK_DECINT == tok->type || TOK_HEXINT == tok->type
          || TOK_OP_PLUS == tok->type || TOK_OP_MINUS == tok->type
-         || TOK_OP_TILDE == tok->type || TOK_SYMBOL == tok->type
-         || TOK_KW_BYTE == tok->type || TOK_KW_WORD == tok->type
-         || TOK_KW_DWORD == tok->type || TOK_KW_QWORD == tok->type ) {
+         || TOK_OP_TILDE == tok->type || TOK_SYMBOL == tok->type ) {
         /* Symbol, register, or immediate value */
         op = parse_operand_expr(pcode);
     } else if ( TOK_LBRACKET == tok->type ) {

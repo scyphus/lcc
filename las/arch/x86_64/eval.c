@@ -17,7 +17,6 @@ static x86_64_val_t * _eval_expr_var(expr_t *);
 static x86_64_val_t * _eval_expr_int(expr_t *);
 static x86_64_val_t * _eval_expr_op(expr_t *);
 static x86_64_val_t * _eval_expr(expr_t *);
-static x86_64_val_t * _eval_pexpr(pexpr_t *);
 
 /*
  * Evaluate var expression
@@ -43,7 +42,7 @@ _eval_expr_var(expr_t *expr)
         /* Register */
         val->type = X86_64_VAL_REG;
         val->u.reg = reg;
-        val->opsize = regsize(reg);
+        val->opsize = 0;
     }
 
     return val;
@@ -139,6 +138,7 @@ _eval_expr_op(expr_t *expr)
                 val->u.addr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
                 val->u.addr.base = lval->u.reg;
                 val->u.addr.disp = rval->u.imm;
+                val->u.addr.addrsize = 0;
                 val->opsize = 0;
             } else if ( X86_64_VAL_IMM == lval->type
                         && X86_64_VAL_REG == rval->type ) {
@@ -147,6 +147,7 @@ _eval_expr_op(expr_t *expr)
                 val->u.addr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
                 val->u.addr.base = rval->u.reg;
                 val->u.addr.disp = lval->u.imm;
+                val->u.addr.addrsize = 0;
                 val->opsize = 0;
             } else if ( X86_64_VAL_ADDR == lval->type ) {
                 if ( X86_64_VAL_REG == rval->type ) {
@@ -161,6 +162,7 @@ _eval_expr_op(expr_t *expr)
                     val->type = X86_64_VAL_ADDR;
                     val->u.addr.flags = X86_64_ADDR_BASE | lval->u.addr.flags;
                     val->u.addr.base = rval->u.reg;
+                    val->u.addr.addrsize = 0;
                     val->opsize = 0;
                 } else if ( X86_64_VAL_IMM == rval->type ) {
                     /* Displacement */
@@ -174,6 +176,7 @@ _eval_expr_op(expr_t *expr)
                     val->type = X86_64_VAL_ADDR;
                     val->u.addr.flags = X86_64_ADDR_DISP | lval->u.addr.flags;
                     val->u.addr.disp = rval->u.imm;
+                    val->u.addr.addrsize = 0;
                     val->opsize = 0;
                 }
             } else if ( X86_64_VAL_ADDR == rval->type ) {
@@ -189,6 +192,7 @@ _eval_expr_op(expr_t *expr)
                     val->type = X86_64_VAL_ADDR;
                     val->u.addr.flags = X86_64_ADDR_BASE | rval->u.addr.flags;
                     val->u.addr.base = lval->u.reg;
+                    val->u.addr.addrsize = 0;
                     val->opsize = 0;
                 } else if ( X86_64_VAL_IMM == lval->type ) {
                     /* Displacement */
@@ -202,6 +206,7 @@ _eval_expr_op(expr_t *expr)
                     val->type = X86_64_VAL_ADDR;
                     val->u.addr.flags = X86_64_ADDR_DISP | rval->u.addr.flags;
                     val->u.addr.disp = lval->u.imm;
+                    val->u.addr.addrsize = 0;
                     val->opsize = 0;
                 }
             } else {
@@ -238,6 +243,7 @@ _eval_expr_op(expr_t *expr)
                 val->u.addr.flags = X86_64_ADDR_OFFSET | X86_64_ADDR_SCALE;
                 val->u.addr.offset = rval->u.reg;
                 val->u.addr.scale = lval->u.imm;
+                val->u.addr.addrsize = 0;
                 val->opsize = 0;
             } else if ( X86_64_VAL_REG == lval->type
                         && X86_64_VAL_IMM == rval->type ) {
@@ -245,6 +251,7 @@ _eval_expr_op(expr_t *expr)
                 val->u.addr.flags = X86_64_ADDR_OFFSET | X86_64_ADDR_SCALE;
                 val->u.addr.offset = lval->u.reg;
                 val->u.addr.scale = rval->u.imm;
+                val->u.addr.addrsize = 0;
                 val->opsize = 0;
             } else {
                 /* Invalid */
@@ -303,24 +310,14 @@ _eval_expr(expr_t *expr)
 }
 
 /*
- * Evaluate the prefixed expression
- */
-static x86_64_val_t *
-_eval_pexpr(pexpr_t *pexpr)
-{
-    //printf("XXXXXXXX = %d\n", pexpr->prefix);
-    return _eval_expr(pexpr->expr);
-}
-
-/*
  * Evaluate the operand (immediate value or register)
  */
 static x86_64_val_t *
-_eval_expr_imm_or_reg(pexpr_t *pexpr)
+_eval_expr_imm_or_reg(expr_t *expr)
 {
     x86_64_val_t *val;
 
-    val = _eval_pexpr(pexpr);
+    val = _eval_expr(expr);
 
     /* Verify the returned value */
     if ( NULL == val ) {
@@ -343,24 +340,49 @@ _eval_expr_addr(pexpr_t *pexpr)
     x86_64_reg_t reg;
     int64_t imm;
 
-    val = _eval_pexpr(pexpr);
+    val = _eval_expr(pexpr->expr);
+    if ( NULL == val ) {
+        return NULL;
+    }
 
+    /* Convert the type to address operand */
     if ( X86_64_VAL_REG == val->type ) {
         reg = val->u.reg;
         val->type = X86_64_VAL_ADDR;
         val->u.addr.flags = X86_64_ADDR_BASE;
         val->u.addr.base = reg;
+        val->u.addr.addrsize = val->opsize;
+        val->opsize = 0;
     } else if ( X86_64_VAL_IMM == val->type ) {
         imm = val->u.imm;
         val->type = X86_64_VAL_ADDR;
         val->u.addr.flags = X86_64_ADDR_DISP;
         val->u.addr.disp = imm;
+        val->u.addr.addrsize = val->opsize;
+        val->opsize = 0;
+    }
+
+    /* Check the operand prefix */
+    switch ( pexpr->prefix ) {
+    case SIZE_PREFIX_BYTE:
+        val->opsize = SIZE8;
+        break;
+    case SIZE_PREFIX_WORD:
+        val->opsize = SIZE16;
+        break;
+    case SIZE_PREFIX_DWORD:
+        val->opsize = SIZE32;
+        break;
+    case SIZE_PREFIX_QWORD:
+        val->opsize = SIZE64;
+        break;
+    case SIZE_PREFIX_NONE:
+    default:
+        ;
     }
 
     /* Verify the returned value */
-    if ( NULL == val ) {
-        return NULL;
-    } else if ( X86_64_VAL_ADDR != val->type ) {
+    if ( X86_64_VAL_ADDR != val->type ) {
         free(val);
         return NULL;
     }
@@ -375,13 +397,73 @@ x86_64_val_t *
 x86_64_eval_operand(operand_t *op)
 {
     x86_64_val_t *val;
+    size_t sz;
 
     if ( OPERAND_EXPR == op->type ) {
         /* Immediate value or register */
-        val = _eval_expr_imm_or_reg(op->op.pexpr);
+        val = _eval_expr_imm_or_reg(op->op.expr);
     } else {
         /* Address */
         val = _eval_expr_addr(op->op.pexpr);
+    }
+    /* Check the returned value */
+    if ( NULL == val ) {
+        return NULL;
+    }
+
+    /* Check the operand prefix */
+    switch ( op->prefix ) {
+    case SIZE_PREFIX_BYTE:
+        val->opsize = SIZE8;
+        break;
+    case SIZE_PREFIX_WORD:
+        val->opsize = SIZE16;
+        break;
+    case SIZE_PREFIX_DWORD:
+        val->opsize = SIZE32;
+        break;
+    case SIZE_PREFIX_QWORD:
+        val->opsize = SIZE64;
+        break;
+    case SIZE_PREFIX_NONE:
+    default:
+        ;
+    }
+
+    /* Complement and validate the operand size and address size */
+    switch ( val->type ) {
+    case X86_64_VAL_IMM:
+        /* Check nothing */
+        break;
+    case X86_64_VAL_REG:
+        sz = regsize(val->u.reg);
+        if ( 0 != val->opsize && sz != val->opsize ) {
+            /* Invalid operand size */
+            free(val);
+            return NULL;
+        }
+        val->opsize = sz;
+        break;
+    case X86_64_VAL_ADDR:
+        if ( X86_64_ADDR_BASE & val->u.addr.flags ) {
+            sz = regsize(val->u.addr.base);
+            if ( 0 != val->u.addr.addrsize && sz != val->u.addr.addrsize ) {
+                /* Invalid operand size */
+                free(val);
+                return NULL;
+            }
+            val->u.addr.addrsize = sz;
+        }
+        if ( X86_64_ADDR_OFFSET & val->u.addr.flags ) {
+            sz = regsize(val->u.addr.offset);
+            if ( 0 != val->u.addr.addrsize && sz != val->u.addr.addrsize ) {
+                /* Invalid operand size */
+                free(val);
+                return NULL;
+            }
+            val->u.addr.addrsize = sz;
+        }
+        break;
     }
 
     return val;

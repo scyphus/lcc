@@ -45,13 +45,13 @@ portable one.  Its output format has not yet been fixed at the current time.
                  ( size_prefix expression | expression )
     
     operand_expr ::=
-                 prefixed_expr
+                 expression
     
     operand_addr ::=
                  "[" prefixed_expr "]"
     
     operand ::=
-                 ( operand_expr | operand_addr )
+                 ( size_prefix )? ( operand_expr | operand_addr )
     
     operands ::=
                  operand ( "," operand )*

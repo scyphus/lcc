@@ -29,7 +29,10 @@ typedef int x86_64_addr_flag_t;
  * [base register + displacement + offset register * scalar multiplier]
  */
 typedef struct _x86_64_addr {
+    /* Flags for each field */
     x86_64_addr_flag_t flags;
+    /* Address size */
+    size_t addrsize;
     /* Base register */
     x86_64_reg_t base;
     /* Displacement */
@@ -40,16 +43,19 @@ typedef struct _x86_64_addr {
     int scale;
 } x86_64_addr_t;
 
+/*
+ * Operand value
+ */
 typedef struct _x86_64_val {
     x86_64_val_type_t type;
     /* Operand size */
-    int opsize;
+    size_t opsize;
     union {
         /* Immediate value */
         int64_t imm;
         /* Register */
         x86_64_reg_t reg;
-        /* Offset register + Scale multiplier */
+        /* Address operand */
         x86_64_addr_t addr;
     } u;
 } x86_64_val_t;
