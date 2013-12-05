@@ -268,6 +268,19 @@ _is_imm32(x86_64_val_t *val)
         return 0;
     }
 }
+static __inline__ int
+_is_imm64(x86_64_val_t *val)
+{
+    if ( X86_64_VAL_IMM != val->type ) {
+        return 0;
+    } else if ( 0 == val->opsize ) {
+        return 1;
+    } else if ( SIZE64 == val->opsize ) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
 
 
 
@@ -1709,148 +1722,123 @@ _mov(operand_vector_t *operands)
             return -1;
         }
 
-        if ( (X86_64_VAL_REG == val1->type || X86_64_VAL_ADDR == val1->type)
-             && X86_64_VAL_REG == val2->type ) {
+        if ( _is_reg_addr8(val1) && _is_reg8(val2) ) {
             /* MR Op/En */
-            if ( SIZE8 == opsize ) {
-                ret = _encode_mr(val1, val2, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    printf("MOV 88 %.2X\n", enop.modrm);
-                }
-            } else if ( SIZE16 == opsize ) {
-                ret = _encode_mr(val1, val2, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    printf("MOV 66 89 %.2X\n", enop.modrm);
-                }
-            } else if ( SIZE32 == opsize ) {
-                ret = _encode_mr(val1, val2, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    printf("MOV 89 %.2X\n", enop.modrm);
-                }
-            } else if ( SIZE64 == opsize ) {
-                ret = _encode_mr(val1, val2, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    /* REX.W = (1<<3) */
-                    printf("MOV REX.W 89 %.2X\n", enop.modrm);
-                }
+            ret = _encode_mr(val1, val2, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
             } else {
-                printf("Unsupported\n");
+                printf("MOV 88 %.2X\n", enop.modrm);
             }
-        } else if ( X86_64_VAL_REG == val1->type
-                    && (X86_64_VAL_REG == val2->type
-                        || X86_64_VAL_ADDR == val2->type) ) {
+        } else if ( _is_reg_addr16(val1) && _is_reg16(val2) ) {
+            ret = _encode_mr(val1, val2, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("MOV 66 89 %.2X\n", enop.modrm);
+            }
+        } else if ( _is_reg_addr32(val1) && _is_reg32(val2) ) {
+            ret = _encode_mr(val1, val2, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("MOV 89 %.2X\n", enop.modrm);
+            }
+        } else if ( _is_reg_addr64(val1) && _is_reg64(val2) ) {
+            ret = _encode_mr(val1, val2, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                /* REX.W = (1<<3) */
+                printf("MOV REX.W 89 %.2X\n", enop.modrm);
+            }
+        } else if ( _is_reg8(val1) && _is_reg_addr8(val2) ) {
             /* RM Op/En */
-            if ( SIZE8 == opsize ) {
-                ret = _encode_rm(val1, val2, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    printf("MOV 8A %.2X\n", enop.modrm);
-                }
-            } else if ( SIZE16 == opsize ) {
-                ret = _encode_rm(val1, val2, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    printf("MOV 66 8B %.2X\n", enop.modrm);
-                }
-            } else if ( SIZE32 == opsize ) {
-                ret = _encode_rm(val1, val2, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    printf("MOV 8B %.2X\n", enop.modrm);
-                }
-            } else if ( SIZE64 == opsize ) {
-                ret = _encode_rm(val1, val2, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    /* REX.W = (1<<3) */
-                    printf("MOV REX.W 8B %.2X\n", enop.modrm);
-                }
+            ret = _encode_rm(val1, val2, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
             } else {
-                printf("Unsupported\n");
+                printf("MOV 8A %.2X\n", enop.modrm);
             }
-        } else if ( X86_64_VAL_REG == val1->type
-                    && X86_64_VAL_IMM == val2->type ) {
+        } else if ( _is_reg16(val1) && _is_reg_addr16(val2) ) {
+            ret = _encode_rm(val1, val2, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("MOV 66 8B %.2X\n", enop.modrm);
+            }
+        } else if ( _is_reg32(val1) && _is_reg_addr32(val2) ) {
+            ret = _encode_rm(val1, val2, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("MOV 8B %.2X\n", enop.modrm);
+            }
+        } else if ( _is_reg64(val1) && _is_reg_addr64(val2) ) {
+            ret = _encode_rm(val1, val2, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("MOV REX.W 8B %.2X\n", enop.modrm);
+            }
+        } else if ( _is_reg8(val1) && _is_imm8(val2) ) {
             /* OI Op/En */
-            if ( SIZE8 == opsize ) {
-                ret = _encode_oi(val1, val2, SIZE8, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    printf("MOV %.2X %.2llX\n", 0xb0 + enop.opreg, enop.imm.val);
-                }
-            } else if ( SIZE16 == opsize ) {
-                ret = _encode_oi(val1, val2, SIZE16, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    printf("MOV 66 %.2X %.4llX\n", 0xb8 + enop.opreg,
-                           enop.imm.val);
-                }
-            } else if ( SIZE32 == opsize ) {
-                ret = _encode_oi(val1, val2, SIZE32, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    printf("MOV %.2X %.8llX\n", 0xb8 + enop.opreg, enop.imm.val);
-                }
-            } else if ( SIZE64 == opsize ) {
-                ret = _encode_oi(val1, val2, SIZE64, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    /* REX.W = (1<<3) */
-                    printf("MOV REX.W %.2X %.8llX\n", 0xb8 + enop.opreg,
-                           enop.imm.val);
-                }
+            ret = _encode_oi(val1, val2, SIZE8, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
             } else {
-                printf("Unsupported\n");
+                printf("MOV %.2X %.2llX\n", 0xb0 + enop.opreg, enop.imm.val);
             }
-        } else if ( X86_64_VAL_ADDR == val1->type
-                    && X86_64_VAL_IMM == val2->type ) {
-            /* MI Op/En */
-            if ( SIZE8 == opsize ) {
-                ret = _encode_mi(val1, val2, 0, SIZE8, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    printf("MOV C6 %.2llX\n", enop.imm.val);
-                }
-            } else if ( SIZE16 == opsize ) {
-                ret = _encode_mi(val1, val2, 0, SIZE16, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    printf("MOV 66 C7 %.4llX\n", enop.imm.val);
-                }
-            } else if ( SIZE32 == opsize ) {
-                ret = _encode_mi(val1, val2, 0, SIZE32, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    printf("MOV C7 %.8llX\n", enop.imm.val);
-                }
-            } else if ( SIZE64 == opsize ) {
-                ret = _encode_mi(val1, val2, 0, SIZE64, &enop);
-                if ( ret < 0 ) {
-                    printf("Invalid operands\n");
-                } else {
-                    /* REX.W = (1<<3) */
-                    printf("MOV REX.W C7 %.8llX\n", enop.imm.val);
-                }
+        } else if ( _is_reg16(val1) && _is_imm16(val2) ) {
+            ret = _encode_oi(val1, val2, SIZE16, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
             } else {
-                printf("Unsupported\n");
+                printf("MOV 66 %.2X %.4llX\n", 0xb8 + enop.opreg, enop.imm.val);
+            }
+        } else if ( _is_reg32(val1) && _is_imm32(val2) ) {
+            ret = _encode_oi(val1, val2, SIZE32, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("MOV %.2X %.8llX\n", 0xb8 + enop.opreg, enop.imm.val);
+            }
+        } else if ( _is_reg64(val1) && _is_imm64(val2) ) {
+            ret = _encode_oi(val1, val2, SIZE64, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("MOV REX.W %.2X %.8llX\n", 0xb8 + enop.opreg,
+                       enop.imm.val);
+            }
+        } else if ( _is_reg_addr8(val1) && _is_imm8(val2) ) {
+            /* MI Op/En */
+            ret = _encode_mi(val1, val2, 0, SIZE8, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("MOV C6 %.2llX\n", enop.imm.val);
+            }
+        } else if ( _is_reg_addr16(val1) && _is_imm16(val2) ) {
+            ret = _encode_mi(val1, val2, 0, SIZE16, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("MOV 66 C7 %.4llX\n", enop.imm.val);
+            }
+        } else if ( _is_reg_addr32(val1) && _is_imm32(val2) ) {
+            ret = _encode_mi(val1, val2, 0, SIZE32, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("MOV C7 %.8llX\n", enop.imm.val);
+            }
+        } else if ( _is_reg_addr64(val1) && _is_imm64(val2) ) {
+            ret = _encode_mi(val1, val2, 0, SIZE64, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("MOV REX.W C7 %.8llX\n", enop.imm.val);
             }
         } else {
             printf("MOV (#args = %zu)\n", mvector_size(operands));
