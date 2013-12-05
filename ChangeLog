@@ -4,6 +4,8 @@
     * las/arch/x86_64/eval.h: Added the definitions of operand size
     * las/arch/x86_64/reg.c: Changed to use the SIZE constants
 
+    * las/arch/x86_64/main.c: Implemented ADD instruction
+
 
 2013-12-04  Hirochika Asai  <asai@scyphus.co.jp>
 
