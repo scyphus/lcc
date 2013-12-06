@@ -793,6 +793,7 @@ parse_operand(pcode_t *pcode)
         /* Parse error */
         return NULL;
     }
+    op->prefix = prefix;
 
     return op;
 }

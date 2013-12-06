@@ -44,15 +44,6 @@
 #define REXB_NONE       0       /* Not encodable */
 #define REXB_YES        1
 
-#define EADDR32         32
-#define EADDR64         64
-
-#define OPSIZE8         8
-#define OPSIZE16        16
-#define OPSIZE32        32
-#define OPSIZE64        64
-
-
 
 /*
  * Pseudo instruction
@@ -282,6 +273,230 @@ _is_imm64(x86_64_val_t *val)
     }
 }
 
+static __inline__ int
+_is_rm8_r8(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( X86_64_VAL_REG == val2->type && SIZE8 == val2->opsize
+         && (X86_64_VAL_REG == val1->type || X86_64_VAL_ADDR == val1->type)
+         && (0 == val1->opsize || SIZE8 == val1->opsize) ) {
+        return 1;
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_rm16_r16(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( X86_64_VAL_REG == val2->type && SIZE16 == val2->opsize
+         && (X86_64_VAL_REG == val1->type || X86_64_VAL_ADDR == val1->type)
+         && (0 == val1->opsize || SIZE16 == val1->opsize) ) {
+        return 1;
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_rm32_r32(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( X86_64_VAL_REG == val2->type && SIZE32 == val2->opsize
+         && (X86_64_VAL_REG == val1->type || X86_64_VAL_ADDR == val1->type)
+         && (0 == val1->opsize || SIZE32 == val1->opsize) ) {
+        return 1;
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_rm64_r64(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( X86_64_VAL_REG == val2->type && SIZE64 == val2->opsize
+         && (X86_64_VAL_REG == val1->type || X86_64_VAL_ADDR == val1->type)
+         && (0 == val1->opsize || SIZE64 == val1->opsize) ) {
+        return 1;
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_r8_rm8(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    return _is_rm8_r8(val2, val1);
+}
+static __inline__ int
+_is_r16_rm16(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    return _is_rm16_r16(val2, val1);
+}
+static __inline__ int
+_is_r32_rm32(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    return _is_rm32_r32(val2, val1);
+}
+static __inline__ int
+_is_r64_rm64(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    return _is_rm64_r64(val2, val1);
+}
+static __inline__ int
+_is_r8_imm8(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( X86_64_VAL_REG == val1->type && SIZE8 == val1->opsize
+         && X86_64_VAL_IMM == val2->type ) {
+        if ( 0 == val2->opsize ) {
+            if ( val2->u.imm >= -128 && val2->u.imm <= 127 ) {
+                return 1;
+            }
+        } else if ( SIZE8 == val2->opsize ) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_r16_imm16(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( X86_64_VAL_REG == val1->type && SIZE16 == val1->opsize
+         && X86_64_VAL_IMM == val2->type ) {
+        if ( 0 == val2->opsize ) {
+            if ( val2->u.imm >= -32768 && val2->u.imm <= 32767 ) {
+                return 1;
+            }
+        } else if ( SIZE16 == val2->opsize ) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_r32_imm32(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( X86_64_VAL_REG == val1->type && SIZE32 == val1->opsize
+         && X86_64_VAL_IMM == val2->type ) {
+        if ( 0 == val2->opsize ) {
+            if ( val2->u.imm >= -2147483648 && val2->u.imm <= 2147483647 ) {
+                return 1;
+            }
+        } else if ( SIZE32 == val2->opsize ) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_r64_imm64(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( X86_64_VAL_REG == val1->type && SIZE64 == val1->opsize
+         && X86_64_VAL_IMM == val2->type ) {
+        if ( 0 == val2->opsize ) {
+            return 1;
+        } else if ( SIZE64 == val2->opsize ) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_rm8_imm8(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( (X86_64_VAL_REG == val1->type || X86_64_VAL_ADDR == val1->type)
+         && X86_64_VAL_IMM == val2->type ) {
+        if ( SIZE8 == val1->opsize ) {
+            if ( 0 == val2->opsize ) {
+                if ( val2->u.imm >= -128 && val2->u.imm <= 127 ) {
+                    return 1;
+                }
+            } else if ( SIZE8 == val2->opsize ) {
+                return 1;
+            }
+        } else if ( 0 == val1->opsize ) {
+            if ( SIZE8 == val2->opsize ) {
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_rm16_imm16(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( (X86_64_VAL_REG == val1->type || X86_64_VAL_ADDR == val1->type)
+         && X86_64_VAL_IMM == val2->type ) {
+        if ( SIZE16 == val1->opsize ) {
+            if ( 0 == val2->opsize ) {
+                if ( val2->u.imm >= -32768 && val2->u.imm <= 32767 ) {
+                    return 1;
+                }
+            } else if ( SIZE16 == val2->opsize ) {
+                return 1;
+            }
+        } else if ( 0 == val1->opsize ) {
+            if ( SIZE16 == val2->opsize ) {
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_rm32_imm32(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( (X86_64_VAL_REG == val1->type || X86_64_VAL_ADDR == val1->type)
+         && X86_64_VAL_IMM == val2->type ) {
+        if ( SIZE32 == val1->opsize ) {
+            if ( 0 == val2->opsize ) {
+                if ( val2->u.imm >= -2147483648 && val2->u.imm <= 2147483647 ) {
+                    return 1;
+                }
+            } else if ( SIZE32 == val2->opsize ) {
+                return 1;
+            }
+        } else if ( 0 == val1->opsize ) {
+            if ( SIZE32 == val2->opsize ) {
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_rm64_imm64(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( (X86_64_VAL_REG == val1->type || X86_64_VAL_ADDR == val1->type)
+         && X86_64_VAL_IMM == val2->type ) {
+        if ( SIZE64 == val1->opsize ) {
+            if ( 0 == val2->opsize ) {
+                return 1;
+            } else if ( SIZE64 == val2->opsize ) {
+                return 1;
+            }
+        } else if ( 0 == val1->opsize ) {
+            if ( SIZE64 == val2->opsize ) {
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
 
 
 
@@ -1680,7 +1895,6 @@ _mov(operand_vector_t *operands)
     operand_t *op2;
     x86_64_val_t *val1;
     x86_64_val_t *val2;
-    int opsize;
     int ret;
     x86_64_enop_t enop;
 
@@ -1700,29 +1914,7 @@ _mov(operand_vector_t *operands)
             return -1;
         }
 
-        if ( val1->opsize == val2->opsize ) {
-            /* Operand size matches, but may be zero */
-            opsize = val1->opsize;
-        } else if ( 0 == val1->opsize && 0 != val2->opsize ) {
-            /* Operand size is adjusted to that of Operand2 */
-            opsize = val2->opsize;
-        } else if ( 0 != val1->opsize && 0 == val2->opsize ) {
-            /* Operand size is adjusted to that of Operand1 */
-            opsize = val1->opsize;
-        } else {
-            /* Operand size mismatches */
-            opsize = -1;
-        }
-
-        if ( opsize <= 0 ) {
-            /* Invalid operands (opsize: 0 for unknown, -1 for mismatch) */
-            printf("Invalid operands\n");
-            free(val1);
-            free(val2);
-            return -1;
-        }
-
-        if ( _is_reg_addr8(val1) && _is_reg8(val2) ) {
+        if ( _is_rm8_r8(val1, val2) ) {
             /* MR Op/En */
             ret = _encode_mr(val1, val2, &enop);
             if ( ret < 0 ) {
@@ -1730,21 +1922,21 @@ _mov(operand_vector_t *operands)
             } else {
                 printf("MOV 88 %.2X\n", enop.modrm);
             }
-        } else if ( _is_reg_addr16(val1) && _is_reg16(val2) ) {
+        } else if ( _is_rm16_r16(val1, val2) ) {
             ret = _encode_mr(val1, val2, &enop);
             if ( ret < 0 ) {
                 printf("Invalid operands\n");
             } else {
                 printf("MOV 66 89 %.2X\n", enop.modrm);
             }
-        } else if ( _is_reg_addr32(val1) && _is_reg32(val2) ) {
+        } else if ( _is_rm32_r32(val1, val2) ) {
             ret = _encode_mr(val1, val2, &enop);
             if ( ret < 0 ) {
                 printf("Invalid operands\n");
             } else {
                 printf("MOV 89 %.2X\n", enop.modrm);
             }
-        } else if ( _is_reg_addr64(val1) && _is_reg64(val2) ) {
+        } else if ( _is_rm64_r64(val1, val2) ) {
             ret = _encode_mr(val1, val2, &enop);
             if ( ret < 0 ) {
                 printf("Invalid operands\n");
@@ -1752,7 +1944,7 @@ _mov(operand_vector_t *operands)
                 /* REX.W = (1<<3) */
                 printf("MOV REX.W 89 %.2X\n", enop.modrm);
             }
-        } else if ( _is_reg8(val1) && _is_reg_addr8(val2) ) {
+        } else if ( _is_r8_rm8(val1, val2) ) {
             /* RM Op/En */
             ret = _encode_rm(val1, val2, &enop);
             if ( ret < 0 ) {
@@ -1760,28 +1952,28 @@ _mov(operand_vector_t *operands)
             } else {
                 printf("MOV 8A %.2X\n", enop.modrm);
             }
-        } else if ( _is_reg16(val1) && _is_reg_addr16(val2) ) {
+        } else if ( _is_r16_rm16(val1, val2) ) {
             ret = _encode_rm(val1, val2, &enop);
             if ( ret < 0 ) {
                 printf("Invalid operands\n");
             } else {
                 printf("MOV 66 8B %.2X\n", enop.modrm);
             }
-        } else if ( _is_reg32(val1) && _is_reg_addr32(val2) ) {
+        } else if ( _is_r32_rm32(val1, val2) ) {
             ret = _encode_rm(val1, val2, &enop);
             if ( ret < 0 ) {
                 printf("Invalid operands\n");
             } else {
                 printf("MOV 8B %.2X\n", enop.modrm);
             }
-        } else if ( _is_reg64(val1) && _is_reg_addr64(val2) ) {
+        } else if ( _is_r64_rm64(val1, val2) ) {
             ret = _encode_rm(val1, val2, &enop);
             if ( ret < 0 ) {
                 printf("Invalid operands\n");
             } else {
                 printf("MOV REX.W 8B %.2X\n", enop.modrm);
             }
-        } else if ( _is_reg8(val1) && _is_imm8(val2) ) {
+        } else if ( _is_r8_imm8(val1, val2) ) {
             /* OI Op/En */
             ret = _encode_oi(val1, val2, SIZE8, &enop);
             if ( ret < 0 ) {
@@ -1789,21 +1981,21 @@ _mov(operand_vector_t *operands)
             } else {
                 printf("MOV %.2X %.2llX\n", 0xb0 + enop.opreg, enop.imm.val);
             }
-        } else if ( _is_reg16(val1) && _is_imm16(val2) ) {
+        } else if ( _is_r16_imm16(val1, val2) ) {
             ret = _encode_oi(val1, val2, SIZE16, &enop);
             if ( ret < 0 ) {
                 printf("Invalid operands\n");
             } else {
                 printf("MOV 66 %.2X %.4llX\n", 0xb8 + enop.opreg, enop.imm.val);
             }
-        } else if ( _is_reg32(val1) && _is_imm32(val2) ) {
+        } else if ( _is_r32_imm32(val1, val2) ) {
             ret = _encode_oi(val1, val2, SIZE32, &enop);
             if ( ret < 0 ) {
                 printf("Invalid operands\n");
             } else {
                 printf("MOV %.2X %.8llX\n", 0xb8 + enop.opreg, enop.imm.val);
             }
-        } else if ( _is_reg64(val1) && _is_imm64(val2) ) {
+        } else if ( _is_r64_imm64(val1, val2) ) {
             ret = _encode_oi(val1, val2, SIZE64, &enop);
             if ( ret < 0 ) {
                 printf("Invalid operands\n");
@@ -1811,7 +2003,7 @@ _mov(operand_vector_t *operands)
                 printf("MOV REX.W %.2X %.8llX\n", 0xb8 + enop.opreg,
                        enop.imm.val);
             }
-        } else if ( _is_reg_addr8(val1) && _is_imm8(val2) ) {
+        } else if ( _is_rm8_imm8(val1, val2) ) {
             /* MI Op/En */
             ret = _encode_mi(val1, val2, 0, SIZE8, &enop);
             if ( ret < 0 ) {
@@ -1819,21 +2011,21 @@ _mov(operand_vector_t *operands)
             } else {
                 printf("MOV C6 %.2llX\n", enop.imm.val);
             }
-        } else if ( _is_reg_addr16(val1) && _is_imm16(val2) ) {
+        } else if ( _is_rm16_imm16(val1, val2) ) {
             ret = _encode_mi(val1, val2, 0, SIZE16, &enop);
             if ( ret < 0 ) {
                 printf("Invalid operands\n");
             } else {
                 printf("MOV 66 C7 %.4llX\n", enop.imm.val);
             }
-        } else if ( _is_reg_addr32(val1) && _is_imm32(val2) ) {
+        } else if ( _is_rm32_imm32(val1, val2) ) {
             ret = _encode_mi(val1, val2, 0, SIZE32, &enop);
             if ( ret < 0 ) {
                 printf("Invalid operands\n");
             } else {
                 printf("MOV C7 %.8llX\n", enop.imm.val);
             }
-        } else if ( _is_reg_addr64(val1) && _is_imm64(val2) ) {
+        } else if ( _is_rm64_imm64(val1, val2) ) {
             ret = _encode_mi(val1, val2, 0, SIZE64, &enop);
             if ( ret < 0 ) {
                 printf("Invalid operands\n");
@@ -1841,7 +2033,7 @@ _mov(operand_vector_t *operands)
                 printf("MOV REX.W C7 %.8llX\n", enop.imm.val);
             }
         } else {
-            printf("MOV (#args = %zu)\n", mvector_size(operands));
+            printf("Invalid operands\n");
         }
 
         free(val1);
@@ -2096,28 +2288,31 @@ arch_assemble_x86_64(stmt_vector_t *vec)
     for ( i = 0; i < mvector_size(vec); i++ ){
         stmt = mvector_at(vec, i);
         if ( STMT_INSTR == stmt->type ) {
-            if ( 0 == strcmp("add", stmt->u.instr->opcode) ) {
+            if ( 0 == strcasecmp("add", stmt->u.instr->opcode) ) {
                 /* ADD */
                 ret = _add(stmt->u.instr->operands);
-            } else if ( 0 == strcmp("clc", stmt->u.instr->opcode) ) {
+            } else if ( 0 == strcasecmp("and", stmt->u.instr->opcode) ) {
+                /* AND */
+                ret = _and(stmt->u.instr->operands);
+            } else if ( 0 == strcasecmp("clc", stmt->u.instr->opcode) ) {
                 /* CLC */
                 ret = _clc(stmt->u.instr->operands);
-            } else if ( 0 == strcmp("cld", stmt->u.instr->opcode) ) {
+            } else if ( 0 == strcasecmp("cld", stmt->u.instr->opcode) ) {
                 /* CLD */
                 ret = _cld(stmt->u.instr->operands);
-            } else if ( 0 == strcmp("jmp", stmt->u.instr->opcode) ) {
+            } else if ( 0 == strcasecmp("jmp", stmt->u.instr->opcode) ) {
                 /* JMP */
                 ret = _jmp(stmt->u.instr->operands);
-            } else if ( 0 == strcmp("monitor", stmt->u.instr->opcode) ) {
+            } else if ( 0 == strcasecmp("monitor", stmt->u.instr->opcode) ) {
                 /* MONITOR */
                 ret = _monitor(stmt->u.instr->operands);
-            } else if ( 0 == strcmp("mov", stmt->u.instr->opcode) ) {
+            } else if ( 0 == strcasecmp("mov", stmt->u.instr->opcode) ) {
                 /* MOV */
                 ret = _mov(stmt->u.instr->operands);
-            } else if ( 0 == strcmp("popcnt", stmt->u.instr->opcode) ) {
+            } else if ( 0 == strcasecmp("popcnt", stmt->u.instr->opcode) ) {
                 /* POPCNT */
                 ret = _popcnt(stmt->u.instr->operands);
-            } else if ( 0 == strcmp("xor", stmt->u.instr->opcode) ) {
+            } else if ( 0 == strcasecmp("xor", stmt->u.instr->opcode) ) {
                 /* XOR */
                 ret = _xor(stmt->u.instr->operands);
             } else {
