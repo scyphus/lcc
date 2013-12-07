@@ -10,6 +10,8 @@
 
     * las/arch/x86_64/main.c: Added the BTR instruction
 
+    * las/arch/x86_64/main.c: Added the BTS instruction
+
 
 2013-12-06  Hirochika Asai  <asai@scyphus.co.jp>
 
