@@ -1282,6 +1282,36 @@ _encode_mi(const x86_64_val_t *val1, const x86_64_val_t *val2, int reg,
     return 0;
 }
 static int
+_encode_o(const x86_64_val_t *val, x86_64_enop_t *enop)
+{
+    int ret;
+    int reg;
+    int rexb;
+
+    /* Check the first operand */
+    if ( X86_64_VAL_REG != val->type ) {
+        return -1;
+    }
+    ret = _reg_code(val->u.reg, &reg, &rexb);
+    if ( ret < 0 ) {
+        return -1;
+    }
+
+    enop->opreg = reg;
+    enop->rex.w = REX_NONE;
+    enop->rex.r = REX_NONE;
+    enop->rex.x = REX_NONE;
+    enop->rex.b = rexb;
+    enop->modrm = -1;
+    enop->sib = -1;
+    enop->disp.sz = 0;
+    enop->disp.val = 0;
+    enop->imm.sz = 0;
+    enop->imm.val = 0;
+
+    return 0;
+}
+static int
 _encode_i(const x86_64_val_t *val, size_t immsz, x86_64_enop_t *enop)
 {
     /* Check the second operand */
@@ -1879,6 +1909,61 @@ _bsr(operand_vector_t *operands)
     return 0;
 }
 
+/*
+ * BSWAP (Vol. 2A 3-79)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F C8+rd        BSWAP r32               O       Valid   Valid
+ *      REX.W + 0F C8+rd
+ *                      BSWAP r64               O      Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      O       opcode+rd(r,w)  NA              NA              NA
+ */
+int
+_bswap(operand_vector_t *operands)
+{
+    operand_t *op;
+    x86_64_val_t *val;
+    int ret;
+    x86_64_enop_t enop;
+
+    if ( 1 == mvector_size(operands) ) {
+        op = mvector_at(operands, 0);
+
+        val = x86_64_eval_operand(op);
+        if ( NULL == val ) {
+            /* Error */
+            return -1;
+        }
+
+        if ( _is_reg32(val) ) {
+            ret = _encode_o(val, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("BSWAP 0F %.2X\n", 0xc8 + enop.opreg);
+            }
+        } else if ( _is_reg64(val) ) {
+            ret = _encode_o(val, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("BSWAP REX.W + 0F %.2X\n", 0xc8 + enop.opreg);
+            }
+        } else {
+            printf("Invalid operands\n");
+        }
+        free(val);
+    } else {
+        printf("Invalid operands\n");
+        return -1;
+    }
+
+    return 0;
+}
+
 
 /*
  * CLC (Vol. 2A 3-101)
@@ -2446,7 +2531,10 @@ arch_assemble_x86_64(stmt_vector_t *vec)
                 ret = _bsf(stmt->u.instr->operands);
             } else if ( 0 == strcasecmp("bsr", stmt->u.instr->opcode) ) {
                 /* BSR */
-                ret = _bsf(stmt->u.instr->operands);
+                ret = _bsr(stmt->u.instr->operands);
+            } else if ( 0 == strcasecmp("bswap", stmt->u.instr->opcode) ) {
+                /* BSWAP */
+                ret = _bswap(stmt->u.instr->operands);
             } else if ( 0 == strcasecmp("clc", stmt->u.instr->opcode) ) {
                 /* CLC */
                 ret = _clc(stmt->u.instr->operands);
