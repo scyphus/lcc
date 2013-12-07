@@ -1806,6 +1806,79 @@ _bsf(operand_vector_t *operands)
     return 0;
 }
 
+/*
+ * BSR (Vol. 2A 3-76)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F BD /r        BSR r16,r/m16           RM      Valid   Valid
+ *      0F BD /r        BSR r32,r/m32           RM      Valid   Valid
+ *      REX.W + 0F BD /r
+ *                      BSR r64,r/m64           RM      Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      RM      ModRM:reg(w)    ModRM:r/m(r)    NA              NA
+ */
+int
+_bsr(operand_vector_t *operands)
+{
+    operand_t *op1;
+    operand_t *op2;
+    x86_64_val_t *val1;
+    x86_64_val_t *val2;
+    int ret;
+    x86_64_enop_t enop;
+
+    if ( 2 == mvector_size(operands) ) {
+        op1 = mvector_at(operands, 0);
+        op2 = mvector_at(operands, 1);
+
+        val1 = x86_64_eval_operand(op1);
+        if ( NULL == val1 ) {
+            /* Error */
+            return -1;
+        }
+        val2 = x86_64_eval_operand(op2);
+        if ( NULL == val2 ) {
+            /* Error */
+            free(val1);
+            return -1;
+        }
+
+        if ( _is_rm16_r16(val1, val2) ) {
+            ret = _encode_rm(val1, val2, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("BSR 66 0F BD %.2X\n", enop.modrm);
+            }
+        } else if ( _is_rm32_r32(val1, val2) ) {
+            ret = _encode_rm(val1, val2, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("BSR 0F BD %.2X\n", enop.modrm);
+            }
+        } else if ( _is_rm64_r64(val1, val2) ) {
+            ret = _encode_rm(val1, val2, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("BSR REX.W + 0F BD %.2X\n", enop.modrm);
+            }
+        } else {
+            printf("Invalid operands\n");
+        }
+        free(val1);
+        free(val2);
+    } else {
+        printf("Invalid operands\n");
+        return -1;
+    }
+
+    return 0;
+}
+
 
 /*
  * CLC (Vol. 2A 3-101)
@@ -2370,6 +2443,9 @@ arch_assemble_x86_64(stmt_vector_t *vec)
                 ret = _and(stmt->u.instr->operands);
             } else if ( 0 == strcasecmp("bsf", stmt->u.instr->opcode) ) {
                 /* BSF */
+                ret = _bsf(stmt->u.instr->operands);
+            } else if ( 0 == strcasecmp("bsr", stmt->u.instr->opcode) ) {
+                /* BSR */
                 ret = _bsf(stmt->u.instr->operands);
             } else if ( 0 == strcasecmp("clc", stmt->u.instr->opcode) ) {
                 /* CLC */

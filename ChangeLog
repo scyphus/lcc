@@ -1,3 +1,8 @@
+2013-12-07  Hirochika Asai  <asai@scyphus.co.jp>
+
+    * las/arch/x86_64/main.c: Added the BSR instruction
+
+
 2013-12-06  Hirochika Asai  <asai@scyphus.co.jp>
 
     * las/arch/x86_64/main.c: Added the BSF instruction
