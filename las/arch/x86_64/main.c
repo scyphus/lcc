@@ -139,6 +139,19 @@ _is_reg64(const x86_64_val_t *val)
     }
 }
 static __inline__ int
+_is_addr8(const x86_64_val_t *val)
+{
+    if ( X86_64_VAL_ADDR == val->type ) {
+        if ( SIZE8 == val->opsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+static __inline__ int
 _is_reg_addr(const x86_64_val_t *val)
 {
     if ( X86_64_VAL_REG == val->type || X86_64_VAL_ADDR == val->type ) {
@@ -1282,6 +1295,33 @@ _encode_mi(const x86_64_val_t *val1, const x86_64_val_t *val2, int reg,
     return 0;
 }
 static int
+_encode_m(const x86_64_val_t *val, int reg, x86_64_enop_t *enop)
+{
+    int ret;
+    int rexr;
+
+    /* /reg */
+    rexr = REX_NONE;
+
+    /* Check the first operand */
+    if ( X86_64_VAL_REG == val->type ) {
+        ret = _encode_rm_second_reg(reg, rexr, val, enop);
+        if ( ret < 0 ) {
+            return -1;
+        }
+    } else if ( X86_64_VAL_ADDR == val->type ) {
+        /* Encode the first operand with the addr type */
+        ret = _encode_rm_second_addr(reg, rexr, val, enop);
+        if ( ret < 0 ) {
+            return -1;
+        }
+    } else {
+        return -1;
+    }
+
+    return 0;
+}
+static int
 _encode_o(const x86_64_val_t *val, x86_64_enop_t *enop)
 {
     int ret;
@@ -2416,7 +2456,6 @@ _cdqe(operand_vector_t *operands)
     return 0;
 }
 
-
 /*
  * CLC (Vol. 2A 3-101)
  *
@@ -2438,7 +2477,6 @@ _clc(operand_vector_t *operands)
     return 0;
 }
 
-
 /*
  * CLD (Vol. 2A 3-102)
  *
@@ -2456,6 +2494,52 @@ _cld(operand_vector_t *operands)
         return -1;
     }
     printf("CLD FC\n");
+
+    return 0;
+}
+
+/*
+ * CLFLUSH (Vol. 2A 3-103)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F AE /7        CLFLUSH m8              NP      Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      M       ModR/M(w)       NA              NA              NA
+ */
+int
+_clflush(operand_vector_t *operands)
+{
+    operand_t *op;
+    x86_64_val_t *val;
+    int ret;
+    x86_64_enop_t enop;
+
+    if ( 1 == mvector_size(operands) ) {
+        op = mvector_at(operands, 0);
+
+        val = x86_64_eval_operand(op);
+        if ( NULL == val ) {
+            /* Error */
+            return -1;
+        }
+
+        if ( _is_addr8(val) ) {
+            ret = _encode_m(val, 7, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("CLFLUSH 0F AE %.2X\n", enop.modrm);
+            }
+        } else {
+            printf("Invalid operands\n");
+        }
+        free(val);
+    } else {
+        printf("Invalid operands\n");
+        return -1;
+    }
 
     return 0;
 }
@@ -3014,6 +3098,9 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else if ( 0 == strcasecmp("cld", stmt->u.instr->opcode) ) {
                 /* CLD */
                 ret = _cld(stmt->u.instr->operands);
+            } else if ( 0 == strcasecmp("clflush", stmt->u.instr->opcode) ) {
+                /* CLFLUSH */
+                ret = _clflush(stmt->u.instr->operands);
             } else if ( 0 == strcasecmp("jmp", stmt->u.instr->opcode) ) {
                 /* JMP */
                 ret = _jmp(stmt->u.instr->operands);
