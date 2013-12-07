@@ -2374,6 +2374,50 @@ _bts(operand_vector_t *operands)
 }
 
 /*
+ * CBW/CWDE/CDQE (Vol. 2A 3-100)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      98              CBW                     NP      Valid   Valid
+ *      98              CWDE                    NP      Valid   Valid
+ *      REX.W + 98      CDQE                    NP      Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+int
+_cbw(operand_vector_t *operands)
+{
+    if ( 0 != mvector_size(operands) ) {
+        return -1;
+    }
+    printf("CBW 66 98\n");
+
+    return 0;
+}
+int
+_cwde(operand_vector_t *operands)
+{
+    if ( 0 != mvector_size(operands) ) {
+        return -1;
+    }
+    printf("CWDE 98\n");
+
+    return 0;
+}
+int
+_cdqe(operand_vector_t *operands)
+{
+    if ( 0 != mvector_size(operands) ) {
+        return -1;
+    }
+    printf("CDQE REX.W + 98\n");
+
+    return 0;
+}
+
+
+/*
  * CLC (Vol. 2A 3-101)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -2955,6 +2999,15 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else if ( 0 == strcasecmp("bts", stmt->u.instr->opcode) ) {
                 /* BTS */
                 ret = _bts(stmt->u.instr->operands);
+            } else if ( 0 == strcasecmp("cbw", stmt->u.instr->opcode) ) {
+                /* CBW */
+                ret = _cbw(stmt->u.instr->operands);
+            } else if ( 0 == strcasecmp("cwde", stmt->u.instr->opcode) ) {
+                /* CWDE */
+                ret = _cwde(stmt->u.instr->operands);
+            } else if ( 0 == strcasecmp("cdqe", stmt->u.instr->opcode) ) {
+                /* CDQE */
+                ret = _cdqe(stmt->u.instr->operands);
             } else if ( 0 == strcasecmp("clc", stmt->u.instr->opcode) ) {
                 /* CLC */
                 ret = _clc(stmt->u.instr->operands);
