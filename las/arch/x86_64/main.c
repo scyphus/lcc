@@ -2545,6 +2545,27 @@ _clflush(operand_vector_t *operands)
 }
 
 /*
+ * CLI (Vol. 2A 3-105)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      FA              CLI                     NP      Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+int
+_cli(operand_vector_t *operands)
+{
+    if ( 0 != mvector_size(operands) ) {
+        return -1;
+    }
+    printf("CLI FA\n");
+
+    return 0;
+}
+
+/*
  * JMP (Vol. 2A 3-424)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -3046,7 +3067,7 @@ _xor(operand_vector_t *operands)
 /*
  * Assemble x86-64 code
  */
-void
+int
 arch_assemble_x86_64(stmt_vector_t *vec)
 {
     size_t i;
@@ -3101,6 +3122,9 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else if ( 0 == strcasecmp("clflush", stmt->u.instr->opcode) ) {
                 /* CLFLUSH */
                 ret = _clflush(stmt->u.instr->operands);
+            } else if ( 0 == strcasecmp("cli", stmt->u.instr->opcode) ) {
+                /* CLI */
+                ret = _cli(stmt->u.instr->operands);
             } else if ( 0 == strcasecmp("jmp", stmt->u.instr->opcode) ) {
                 /* JMP */
                 ret = _jmp(stmt->u.instr->operands);
@@ -3119,12 +3143,12 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else {
                 /* Unknown */
                 printf("Unknown instruction: %s\n", stmt->u.instr->opcode);
-                ret = 0;
+                ret = -1;
             }
         }
     }
 
-    return;
+    return ret;
 }
 
 
