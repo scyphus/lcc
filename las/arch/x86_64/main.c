@@ -1910,7 +1910,7 @@ _bsr(operand_vector_t *operands)
 }
 
 /*
- * BSWAP (Vol. 2A 3-79)
+ * BSWAP (Vol. 2A 3-78)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
  *      0F C8+rd        BSWAP r32               O       Valid   Valid
@@ -1956,6 +1956,108 @@ _bswap(operand_vector_t *operands)
             printf("Invalid operands\n");
         }
         free(val);
+    } else {
+        printf("Invalid operands\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+/*
+ * BT (Vol. 2A 3-79)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F A3 /r        BT r/m16,r16            MR      Valid   Valid
+ *      0F A3 /r        BT r/m32,r32            MR      Valid   Valid
+ *      REX.W + 0F A3 /r
+ *                      BT r/m64,r64            MR      Valid   N.E.
+ *      0F BA /4 ib     BT r/m16,imm8           MI      Valid   Valid
+ *      0F BA /4 ib     BT r/m32,imm8           MI      Valid   Valid
+ *      REX.W + 0F BA /4 ib
+ *                      BT r/m64,imm8           MI      Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      MR      ModRM:r/m(r)    ModRM:reg(r)    NA              NA
+ *      MI      ModRM:r/m(r)    imm8            NA              NA
+ */
+int
+_bt(operand_vector_t *operands)
+{
+    operand_t *op1;
+    operand_t *op2;
+    x86_64_val_t *val1;
+    x86_64_val_t *val2;
+    int ret;
+    x86_64_enop_t enop;
+
+    if ( 2 == mvector_size(operands) ) {
+        op1 = mvector_at(operands, 0);
+        op2 = mvector_at(operands, 1);
+
+        val1 = x86_64_eval_operand(op1);
+        if ( NULL == val1 ) {
+            /* Error */
+            return -1;
+        }
+        val2 = x86_64_eval_operand(op2);
+        if ( NULL == val2 ) {
+            /* Error */
+            free(val1);
+            return -1;
+        }
+
+        if ( _is_rm16_r16(val1, val2) ) {
+            ret = _encode_mr(val1, val2, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("BT 66 0F A3 %.2X\n", enop.modrm);
+            }
+        } else if ( _is_rm32_r32(val1, val2) ) {
+            ret = _encode_mr(val1, val2, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("BT 0F A3 %.2X\n", enop.modrm);
+            }
+        } else if ( _is_rm64_r64(val1, val2) ) {
+            ret = _encode_mr(val1, val2, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("BT REX.W + 0F A3 %.2X\n", enop.modrm);
+            }
+        } else if ( _is_reg_addr16(val1) && _is_imm8(val2) ) {
+            ret = _encode_mi(val1, val2, 4, SIZE8, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("BT 66 0F BA %.2X %.2X\n", enop.modrm,
+                       (int8_t)enop.imm.val);
+            }
+        } else if ( _is_reg_addr32(val1) && _is_imm8(val2) ) {
+            ret = _encode_mi(val1, val2, 4, SIZE8, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("BT 0F BA %.2X %.2X\n", enop.modrm,
+                       (int8_t)enop.imm.val);
+            }
+        } else if ( _is_reg_addr64(val1) && _is_imm8(val2) ) {
+            ret = _encode_mi(val1, val2, 4, SIZE8, &enop);
+            if ( ret < 0 ) {
+                printf("Invalid operands\n");
+            } else {
+                printf("BT REX.W + 0F BA %.2X %.2X\n", enop.modrm,
+                       (int8_t)enop.imm.val);
+            }
+        } else {
+            printf("Invalid operands\n");
+        }
+        free(val1);
+        free(val2);
     } else {
         printf("Invalid operands\n");
         return -1;
@@ -2535,6 +2637,9 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else if ( 0 == strcasecmp("bswap", stmt->u.instr->opcode) ) {
                 /* BSWAP */
                 ret = _bswap(stmt->u.instr->operands);
+            } else if ( 0 == strcasecmp("bt", stmt->u.instr->opcode) ) {
+                /* BT */
+                ret = _bt(stmt->u.instr->operands);
             } else if ( 0 == strcasecmp("clc", stmt->u.instr->opcode) ) {
                 /* CLC */
                 ret = _clc(stmt->u.instr->operands);

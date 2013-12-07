@@ -4,6 +4,8 @@
 
     * las/arch/x86_64/main.c: Added the BSWAP instruction
 
+    * las/arch/x86_64/main.c: Added the BT instruction
+
 
 2013-12-06  Hirochika Asai  <asai@scyphus.co.jp>
 
