@@ -938,6 +938,56 @@ _print_instruction(const x86_64_instr_t *instr)
 
     return 0;
 }
+int
+_print_instruction_bin(const x86_64_instr_t *instr)
+{
+    int i;
+    int64_t val;
+
+    if ( instr->prefix1 >= 0 ) {
+        printf("%c", instr->prefix1);
+    }
+    if ( instr->prefix2 >= 0 ) {
+        printf("%c", instr->prefix2);
+    }
+    if ( instr->prefix3 >= 0 ) {
+        printf("%c", instr->prefix3);
+    }
+    if ( instr->prefix4 >= 0 ) {
+        printf("%c", instr->prefix4);
+    }
+    if ( instr->rex >= 0 ) {
+        printf("%c", instr->rex);
+    }
+    if ( instr->opcode1 >= 0 ) {
+        printf("%c", instr->opcode1);
+    }
+    if ( instr->opcode2 >= 0 ) {
+        printf("%c", instr->opcode2);
+    }
+    if ( instr->opcode3 >= 0 ) {
+        printf("%c", instr->opcode3);
+    }
+    if ( instr->modrm >= 0 ) {
+        printf("%c", instr->modrm);
+    }
+    if ( instr->sib >= 0 ) {
+        printf("%c", instr->sib);
+    }
+    /* Little endian */
+    val = instr->disp.val;
+    for ( i = 0; i < instr->disp.sz; i++ ) {
+        printf("%c", (unsigned char)val & 0xff);
+        val >>= 8;
+    }
+    val = instr->imm.val;
+    for ( i = 0; i < instr->imm.sz; i++ ) {
+        printf("%c", (unsigned char)val & 0xff);
+        val >>= 8;
+    }
+
+    return 0;
+}
 
 
 
@@ -1390,8 +1440,6 @@ static int
 _encode_rm(const x86_64_val_t *val1, const x86_64_val_t *val2,
            x86_64_enop_t *enop)
 {
-    //size_t opsz;
-    //size_t addrsz;
     int ret;
     int reg;
     int rexr;
@@ -3094,8 +3142,7 @@ _clflush(x86_64_target_t target, const operand_vector_t *operands,
             opcode2 = 0xae;
             opcode3 = -1;
         } else {
-            return -1;
-            printf("Invalid operands\n");
+            ret = -1;
         }
 
         if ( ret < 0 ) {
@@ -3200,7 +3247,7 @@ _jmp(x86_64_target_t target, const operand_vector_t *operands,
     if ( 1 != mvector_size(operands) ) {
         return -EOPERAND;
     }
-    printf("JMP\n");
+    fprintf(stderr, "JMP\n");
 
     return -EUNKNOWN;
 }
@@ -3902,15 +3949,17 @@ arch_assemble_x86_64(stmt_vector_t *vec)
                 ret = _xor(target, stmt->u.instr->operands, &instr);
             } else {
                 /* Unknown */
-                printf("Unknown instruction: %s\n", stmt->u.instr->opcode);
+                fprintf(stderr, "Unknown instruction: %s\n",
+                        stmt->u.instr->opcode);
                 ret = -1;
             }
             if ( ret >= 0 ) {
+                /*_print_instruction_bin(&instr);*/
                 _print_instruction(&instr);
                 printf("\n");
             } else {
                 /* Error */
-                printf("Error\n");
+                fprintf(stderr, "Error\n");
             }
         }
     }

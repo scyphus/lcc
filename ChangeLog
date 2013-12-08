@@ -1,3 +1,8 @@
+2013-12-08  Hirochika Asai  <asai@scyphus.co.jp>
+
+    * las/arch/x86_64/main.c: Implemented a part of the assembler
+
+
 2013-12-07  Hirochika Asai  <asai@scyphus.co.jp>
 
     * las/arch/x86_64/main.c: Added the BSR instruction
