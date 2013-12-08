@@ -1092,19 +1092,6 @@ _encode_rm_second_addr_with_base(int reg, int rexr, const x86_64_val_t *val,
         /* Extend the size of displacement to 4 bytes */
         dispsz = 4;
 
-#if 0
-        /* Operand/Address size */
-        opsize = _resolve_operand_size1(val);
-        if ( opsize < 0 ) {
-            return -1;
-        }
-        addrsize = _resolve_address_size1(val);
-        if ( addrsize < 0 ) {
-            return -1;
-        }
-        enop->opsize = opsize;
-        enop->addrsize = addrsize;
-#endif
         /* Opcode register */
         enop->opreg = -1;
         /* REX */
@@ -2834,32 +2821,119 @@ _bts(x86_64_target_t target, const operand_vector_t *operands,
  *      NP      NA              NA              NA              NA
  */
 int
-_cbw(operand_vector_t *operands)
+_cbw(x86_64_target_t target, const operand_vector_t *operands,
+     x86_64_instr_t *instr)
 {
+    int ret;
+    x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+
     if ( 0 != mvector_size(operands) ) {
-        return -1;
+        return -EOPERAND;
     }
-    printf("CBW 66 98\n");
+
+    enop.opreg = -1;
+    enop.rex.r = REX_NONE;
+    enop.rex.x = REX_NONE;
+    enop.rex.b = REX_NONE;
+    enop.modrm = -1;
+    enop.sib = -1;
+    enop.disp.sz = 0;
+    enop.disp.val = 0;
+    enop.imm.sz = 0;
+    enop.imm.val = 0;
+    opsize = SIZE16;
+    addrsize = 0;
+    opcode1 = 0x98;
+    opcode2 = -1;
+    opcode3 = -1;
+
+    ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+    if ( ret < 0 ) {
+        return -EOPERAND;
+    }
 
     return 0;
 }
 int
-_cwde(operand_vector_t *operands)
+_cwde(x86_64_target_t target, const operand_vector_t *operands,
+      x86_64_instr_t *instr)
 {
+    int ret;
+    x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+
     if ( 0 != mvector_size(operands) ) {
-        return -1;
+        return -EOPERAND;
     }
-    printf("CWDE 98\n");
+
+    enop.opreg = -1;
+    enop.rex.r = REX_NONE;
+    enop.rex.x = REX_NONE;
+    enop.rex.b = REX_NONE;
+    enop.modrm = -1;
+    enop.sib = -1;
+    enop.disp.sz = 0;
+    enop.disp.val = 0;
+    enop.imm.sz = 0;
+    enop.imm.val = 0;
+    opsize = SIZE32;
+    addrsize = 0;
+    opcode1 = 0x98;
+    opcode2 = -1;
+    opcode3 = -1;
+
+    ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+    if ( ret < 0 ) {
+        return -EOPERAND;
+    }
 
     return 0;
 }
 int
-_cdqe(operand_vector_t *operands)
+_cdqe(x86_64_target_t target, const operand_vector_t *operands,
+      x86_64_instr_t *instr)
 {
+    int ret;
+    x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+
     if ( 0 != mvector_size(operands) ) {
-        return -1;
+        return -EOPERAND;
     }
-    printf("CDQE REX.W + 98\n");
+
+    enop.opreg = -1;
+    enop.rex.r = REX_NONE;
+    enop.rex.x = REX_NONE;
+    enop.rex.b = REX_NONE;
+    enop.modrm = -1;
+    enop.sib = -1;
+    enop.disp.sz = 0;
+    enop.disp.val = 0;
+    enop.imm.sz = 0;
+    enop.imm.val = 0;
+    opsize = SIZE64;
+    addrsize = 0;
+    opcode1 = 0x98;
+    opcode2 = -1;
+    opcode3 = -1;
+
+    ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+    if ( ret < 0 ) {
+        return -EOPERAND;
+    }
 
     return 0;
 }
@@ -3582,13 +3656,34 @@ arch_assemble_x86_64(stmt_vector_t *vec)
                 }
             } else if ( 0 == strcasecmp("cbw", stmt->u.instr->opcode) ) {
                 /* CBW */
-                ret = _cbw(stmt->u.instr->operands);
+                ret = _cbw(target, stmt->u.instr->operands, &instr);
+                if ( ret >= 0 ) {
+                    _print_instruction(&instr);
+                    printf("\n");
+                } else {
+                    /* Error */
+                    printf("Error\n");
+                }
             } else if ( 0 == strcasecmp("cwde", stmt->u.instr->opcode) ) {
                 /* CWDE */
-                ret = _cwde(stmt->u.instr->operands);
+                ret = _cwde(target, stmt->u.instr->operands, &instr);
+                if ( ret >= 0 ) {
+                    _print_instruction(&instr);
+                    printf("\n");
+                } else {
+                    /* Error */
+                    printf("Error\n");
+                }
             } else if ( 0 == strcasecmp("cdqe", stmt->u.instr->opcode) ) {
                 /* CDQE */
-                ret = _cdqe(stmt->u.instr->operands);
+                ret = _cdqe(target, stmt->u.instr->operands, &instr);
+                if ( ret >= 0 ) {
+                    _print_instruction(&instr);
+                    printf("\n");
+                } else {
+                    /* Error */
+                    printf("Error\n");
+                }
             } else if ( 0 == strcasecmp("clc", stmt->u.instr->opcode) ) {
                 /* CLC */
                 ret = _clc(stmt->u.instr->operands);
