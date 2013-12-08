@@ -1726,98 +1726,98 @@ _add(x86_64_target_t target, const operand_vector_t *operands,
         } else if ( _is_reg_addr16(val1) && _is_imm8(val2) ) {
             ret = _encode_mi(val1, val2, 0, SIZE8, &enop);
             opsize = SIZE16;
-            addrsize = 0;
+            addrsize = _resolve_address_size1(val1);
             opcode1 = 0x83;
             opcode2 = -1;
             opcode3 = -1;
         } else if ( _is_reg_addr16(val1) && _is_imm16(val2) ) {
             ret = _encode_mi(val1, val2, 0, SIZE16, &enop);
             opsize = SIZE16;
-            addrsize = 0;
+            addrsize = _resolve_address_size1(val1);
             opcode1 = 0x81;
             opcode2 = -1;
             opcode3 = -1;
         } else if ( _is_reg_addr32(val1) && _is_imm8(val2) ) {
             ret = _encode_mi(val1, val2, 0, SIZE8, &enop);
             opsize = SIZE32;
-            addrsize = 0;
+            addrsize = _resolve_address_size1(val1);
             opcode1 = 0x83;
             opcode2 = -1;
             opcode3 = -1;
         } else if ( _is_reg_addr32(val1) && _is_imm32(val2) ) {
             ret = _encode_mi(val1, val2, 0, SIZE32, &enop);
             opsize = SIZE32;
-            addrsize = 0;
+            addrsize = _resolve_address_size1(val1);
             opcode1 = 0x81;
             opcode2 = -1;
             opcode3 = -1;
         } else if ( _is_reg_addr64(val1) && _is_imm8(val2) ) {
             ret = _encode_mi(val1, val2, 0, SIZE8, &enop);
             opsize = SIZE64;
-            addrsize = 0;
+            addrsize = _resolve_address_size1(val1);
             opcode1 = 0x83;
             opcode2 = -1;
             opcode3 = -1;
         } else if ( _is_reg_addr64(val1) && _is_imm32(val2) ) {
             ret = _encode_mi(val1, val2, 0, SIZE32, &enop);
             opsize = SIZE64;
-            addrsize = 0;
+            addrsize = _resolve_address_size1(val1);
             opcode1 = 0x81;
             opcode2 = -1;
             opcode3 = -1;
         } else if ( _is_reg_addr8(val1) && _is_reg8(val2) ) {
             ret = _encode_mr(val1, val2, &enop);
             opsize = SIZE8;
-            addrsize = 0;
+            addrsize = _resolve_address_size1(val1);
             opcode1 = 0x00;
             opcode2 = -1;
             opcode3 = -1;
         } else if ( _is_reg_addr16(val1) && _is_reg16(val2) ) {
             ret = _encode_mr(val1, val2, &enop);
             opsize = SIZE16;
-            addrsize = 0;
+            addrsize = _resolve_address_size1(val1);
             opcode1 = 0x01;
             opcode2 = -1;
             opcode3 = -1;
         } else if ( _is_reg_addr32(val1) && _is_reg32(val2) ) {
             ret = _encode_mr(val1, val2, &enop);
             opsize = SIZE32;
-            addrsize = 0;
+            addrsize = _resolve_address_size1(val1);
             opcode1 = 0x01;
             opcode2 = -1;
             opcode3 = -1;
         } else if ( _is_reg_addr64(val1) && _is_reg64(val2) ) {
             ret = _encode_mr(val1, val2, &enop);
             opsize = SIZE64;
-            addrsize = 0;
+            addrsize = _resolve_address_size1(val1);
             opcode1 = 0x01;
             opcode2 = -1;
             opcode3 = -1;
         } else if ( _is_reg8(val1) && _is_reg_addr8(val2) ) {
             ret = _encode_rm(val1, val2, &enop);
             opsize = SIZE8;
-            addrsize = 0;
+            addrsize = _resolve_address_size1(val2);
             opcode1 = 0x02;
             opcode2 = -1;
             opcode3 = -1;
         } else if ( _is_reg16(val1) && _is_reg_addr16(val2) ) {
             ret = _encode_rm(val1, val2, &enop);
             opsize = SIZE16;
-            addrsize = 0;
+            addrsize = _resolve_address_size1(val2);
             opcode1 = 0x03;
             opcode2 = -1;
             opcode3 = -1;
         } else if ( _is_reg32(val1) && _is_reg_addr32(val2) ) {
             ret = _encode_rm(val1, val2, &enop);
             opsize = SIZE32;
-            addrsize = 0;
+            addrsize = _resolve_address_size1(val2);
             opcode1 = 0x03;
             opcode2 = -1;
             opcode3 = -1;
         } else if ( _is_reg64(val1) && _is_reg_addr64(val2) ) {
             ret = _encode_rm(val1, val2, &enop);
             opsize = SIZE64;
-            addrsize = 0;
+            addrsize = _resolve_address_size1(val2);
             opcode1 = 0x03;
             opcode2 = -1;
             opcode3 = -1;
