@@ -17,7 +17,7 @@
 
 /* Errors */
 #define EUNKNOWN        1
-#define EOPERAND  2
+#define EOPERAND        2
 
 
 
@@ -1842,11 +1842,11 @@ _add(x86_64_target_t target, const operand_vector_t *operands,
 
         free(val1);
         free(val2);
+
+        return 0;
     } else {
         return -EOPERAND;
     }
-
-    return 0;
 }
 
 /*
@@ -1885,8 +1885,9 @@ _add(x86_64_target_t target, const operand_vector_t *operands,
  *      MI      ModRM:r/m(r,w)  imm8/16/32      NA              NA
  *      I       AL/AX/EAX/RAX   imm8/16/32      NA              NA
  */
-int
-_and(operand_vector_t *operands)
+static int
+_and(x86_64_target_t target, const operand_vector_t *operands,
+     x86_64_instr_t *instr)
 {
     operand_t *op1;
     operand_t *op2;
@@ -1894,6 +1895,11 @@ _and(operand_vector_t *operands)
     x86_64_val_t *val2;
     int ret;
     x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
 
     if ( 2 == mvector_size(operands) ) {
         op1 = mvector_at(operands, 0);
@@ -1913,152 +1919,163 @@ _and(operand_vector_t *operands)
 
         if ( _eq_reg(val1, REG_AL) && _is_imm8(val2) ) {
             ret = _encode_i(val2, SIZE8, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND 24 %.2X\n", (int8_t)enop.imm.val);
-            }
+            opsize = SIZE8;
+            addrsize = 0;
+            opcode1 = 0x24;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _eq_reg(val1, REG_AX) && _is_imm16(val2) ) {
             ret = _encode_i(val2, SIZE16, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND 66 25 %.4X\n", (int16_t)enop.imm.val);
-            }
+            opsize = SIZE16;
+            addrsize = 0;
+            opcode1 = 0x25;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _eq_reg(val1, REG_EAX) && _is_imm32(val2) ) {
             ret = _encode_i(val2, SIZE32, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND 25 %.8X\n", (int32_t)enop.imm.val);
-            }
+            opsize = SIZE32;
+            addrsize = 0;
+            opcode1 = 0x25;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _eq_reg(val1, REG_RAX) && _is_imm32(val2) ) {
             ret = _encode_i(val2, SIZE32, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND REX.W + 25 %.8X\n", (int32_t)enop.imm.val);
-            }
+            opsize = SIZE64;
+            addrsize = 0;
+            opcode1 = 0x25;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg_addr8(val1) && _is_imm8(val2) ) {
             ret = _encode_mi(val1, val2, 4, SIZE8, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND 80 %.2X %.2X\n", enop.modrm, (int8_t)enop.imm.val);
-            }
+            opsize = SIZE8;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0x80;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg_addr16(val1) && _is_imm8(val2) ) {
             ret = _encode_mi(val1, val2, 4, SIZE8, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND 66 83 %.2X %.2X\n", enop.modrm,
-                       (int8_t)enop.imm.val);
-            }
+            opsize = SIZE16;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0x83;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg_addr16(val1) && _is_imm16(val2) ) {
             ret = _encode_mi(val1, val2, 4, SIZE16, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND 66 81 %.2X %.4X\n", enop.modrm,
-                       (int16_t)enop.imm.val);
-            }
+            opsize = SIZE16;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0x81;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg_addr32(val1) && _is_imm8(val2) ) {
             ret = _encode_mi(val1, val2, 4, SIZE8, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND 83 %.2X %.2X\n", enop.modrm, (int8_t)enop.imm.val);
-            }
+            opsize = SIZE32;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0x83;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg_addr32(val1) && _is_imm32(val2) ) {
             ret = _encode_mi(val1, val2, 4, SIZE32, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND 81 %.2X %.8X\n", enop.modrm, (int32_t)enop.imm.val);
-            }
+            opsize = SIZE32;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0x81;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg_addr64(val1) && _is_imm8(val2) ) {
             ret = _encode_mi(val1, val2, 4, SIZE8, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND REX.W + 83 %.2X %.2X\n", enop.modrm,
-                       (int8_t)enop.imm.val);
-            }
+            opsize = SIZE64;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0x83;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg_addr64(val1) && _is_imm32(val2) ) {
             ret = _encode_mi(val1, val2, 4, SIZE32, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND REX.W + 81 %.2X %.16llX\n", enop.modrm,
-                       enop.imm.val);
-            }
+            opsize = SIZE64;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0x81;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg_addr8(val1) && _is_reg8(val2) ) {
             ret = _encode_mr(val1, val2, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND 20 %.2X\n", enop.modrm);
-            }
+            opsize = SIZE8;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0x20;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg_addr16(val1) && _is_reg16(val2) ) {
             ret = _encode_mr(val1, val2, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND 66 21 %.2X\n", enop.modrm);
-            }
+            opsize = SIZE16;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0x21;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg_addr32(val1) && _is_reg32(val2) ) {
             ret = _encode_mr(val1, val2, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND 21 %.2X\n", enop.modrm);
-            }
+            opsize = SIZE32;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0x21;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg_addr64(val1) && _is_reg64(val2) ) {
             ret = _encode_mr(val1, val2, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND REX.W + 21 %.2X\n", enop.modrm);
-            }
+            opsize = SIZE64;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0x21;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg8(val1) && _is_reg_addr8(val2) ) {
             ret = _encode_rm(val1, val2, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND 22 %.2X\n", enop.modrm);
-            }
+            opsize = SIZE8;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x22;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg16(val1) && _is_reg_addr16(val2) ) {
             ret = _encode_rm(val1, val2, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND 66 23 %.2X\n", enop.modrm);
-            }
+            opsize = SIZE16;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x23;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg32(val1) && _is_reg_addr32(val2) ) {
             ret = _encode_rm(val1, val2, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND 23 %.2X\n", enop.modrm);
-            }
+            opsize = SIZE32;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x23;
+            opcode2 = -1;
+            opcode3 = -1;
         } else if ( _is_reg64(val1) && _is_reg_addr64(val2) ) {
             ret = _encode_rm(val1, val2, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("AND REX.W + 23 %.2X\n", enop.modrm);
-            }
+            opsize = SIZE64;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x23;
+            opcode2 = -1;
+            opcode3 = -1;
         } else {
-            printf("Invalid operands\n");
+            ret = -1;
         }
+
+        if ( ret < 0 ) {
+            free(val1);
+            free(val2);
+            return -EOPERAND;
+        }
+        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+        if ( ret < 0 ) {
+            free(val1);
+            free(val2);
+            return -EOPERAND;
+        }
+        instr->opcode1 = opcode1;
+        instr->opcode2 = opcode2;
+        instr->opcode3 = opcode3;
+
         free(val1);
         free(val2);
-    } else {
-        printf("Invalid operands\n");
-        return -1;
-    }
 
-    return 0;
+        return 0;
+    } else {
+        return -EOPERAND;
+    }
 }
 
 /*
@@ -3352,7 +3369,14 @@ arch_assemble_x86_64(stmt_vector_t *vec)
                 }
             } else if ( 0 == strcasecmp("and", stmt->u.instr->opcode) ) {
                 /* AND */
-                ret = _and(stmt->u.instr->operands);
+                ret = _and(target, stmt->u.instr->operands, &instr);
+                if ( ret >= 0 ) {
+                    _print_instruction(&instr);
+                    printf("\n");
+                } else {
+                    /* Error */
+                    printf("Error\n");
+                }
             } else if ( 0 == strcasecmp("bsf", stmt->u.instr->opcode) ) {
                 /* BSF */
                 ret = _bsf(stmt->u.instr->operands);
