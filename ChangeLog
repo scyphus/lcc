@@ -4,6 +4,8 @@
 
     * las/arch/x86_64/main.c: Added the CMP instruction
 
+    * las/arch/x86_64/main.c: Added the CMPXCHG instruction
+
 
 2013-12-07  Hirochika Asai  <asai@scyphus.co.jp>
 
