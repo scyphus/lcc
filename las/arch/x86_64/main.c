@@ -2856,6 +2856,9 @@ _cbw(x86_64_target_t target, const operand_vector_t *operands,
     if ( ret < 0 ) {
         return -EOPERAND;
     }
+    instr->opcode1 = opcode1;
+    instr->opcode2 = opcode2;
+    instr->opcode3 = opcode3;
 
     return 0;
 }
@@ -2895,6 +2898,9 @@ _cwde(x86_64_target_t target, const operand_vector_t *operands,
     if ( ret < 0 ) {
         return -EOPERAND;
     }
+    instr->opcode1 = opcode1;
+    instr->opcode2 = opcode2;
+    instr->opcode3 = opcode3;
 
     return 0;
 }
@@ -2934,6 +2940,9 @@ _cdqe(x86_64_target_t target, const operand_vector_t *operands,
     if ( ret < 0 ) {
         return -EOPERAND;
     }
+    instr->opcode1 = opcode1;
+    instr->opcode2 = opcode2;
+    instr->opcode3 = opcode3;
 
     return 0;
 }
@@ -2984,6 +2993,9 @@ _clc(x86_64_target_t target, const operand_vector_t *operands,
     if ( ret < 0 ) {
         return -EOPERAND;
     }
+    instr->opcode1 = opcode1;
+    instr->opcode2 = opcode2;
+    instr->opcode3 = opcode3;
 
     return 0;
 }
@@ -3034,6 +3046,9 @@ _cld(x86_64_target_t target, const operand_vector_t *operands,
     if ( ret < 0 ) {
         return -EOPERAND;
     }
+    instr->opcode1 = opcode1;
+    instr->opcode2 = opcode2;
+    instr->opcode3 = opcode3;
 
     return 0;
 }
@@ -3049,12 +3064,18 @@ _cld(x86_64_target_t target, const operand_vector_t *operands,
  *      M       ModR/M(w)       NA              NA              NA
  */
 int
-_clflush(operand_vector_t *operands)
+_clflush(x86_64_target_t target, const operand_vector_t *operands,
+         x86_64_instr_t *instr)
 {
     operand_t *op;
     x86_64_val_t *val;
     int ret;
     x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
 
     if ( 1 == mvector_size(operands) ) {
         op = mvector_at(operands, 0);
@@ -3067,21 +3088,35 @@ _clflush(operand_vector_t *operands)
 
         if ( _is_addr8(val) ) {
             ret = _encode_m(val, 7, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("CLFLUSH 0F AE %.2X\n", enop.modrm);
-            }
+            opsize = 0;
+            addrsize = _resolve_address_size1(val);
+            opcode1 = 0x0f;
+            opcode2 = 0xae;
+            opcode3 = -1;
         } else {
+            return -1;
             printf("Invalid operands\n");
         }
-        free(val);
-    } else {
-        printf("Invalid operands\n");
-        return -1;
-    }
 
-    return 0;
+        if ( ret < 0 ) {
+            free(val);
+            return -EOPERAND;
+        }
+        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+        if ( ret < 0 ) {
+            free(val);
+            return -EOPERAND;
+        }
+        instr->opcode1 = opcode1;
+        instr->opcode2 = opcode2;
+        instr->opcode3 = opcode3;
+
+        free(val);
+
+        return 0;
+    } else {
+        return -EOPERAND;
+    }
 }
 
 /*
@@ -3095,12 +3130,44 @@ _clflush(operand_vector_t *operands)
  *      NP      NA              NA              NA              NA
  */
 int
-_cli(operand_vector_t *operands)
+_cli(x86_64_target_t target, const operand_vector_t *operands,
+     x86_64_instr_t *instr)
 {
+    int ret;
+    x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+
     if ( 0 != mvector_size(operands) ) {
-        return -1;
+        return -EOPERAND;
     }
-    printf("CLI FA\n");
+
+    enop.opreg = -1;
+    enop.rex.r = REX_NONE;
+    enop.rex.x = REX_NONE;
+    enop.rex.b = REX_NONE;
+    enop.modrm = -1;
+    enop.sib = -1;
+    enop.disp.sz = 0;
+    enop.disp.val = 0;
+    enop.imm.sz = 0;
+    enop.imm.val = 0;
+    opsize = 0;
+    addrsize = 0;
+    opcode1 = 0xfa;
+    opcode2 = -1;
+    opcode3 = -1;
+
+    ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+    if ( ret < 0 ) {
+        return -EOPERAND;
+    }
+    instr->opcode1 = opcode1;
+    instr->opcode2 = opcode2;
+    instr->opcode3 = opcode3;
 
     return 0;
 }
@@ -3764,10 +3831,24 @@ arch_assemble_x86_64(stmt_vector_t *vec)
                 }
             } else if ( 0 == strcasecmp("clflush", stmt->u.instr->opcode) ) {
                 /* CLFLUSH */
-                ret = _clflush(stmt->u.instr->operands);
+                ret = _clflush(target, stmt->u.instr->operands, &instr);
+                if ( ret >= 0 ) {
+                    _print_instruction(&instr);
+                    printf("\n");
+                } else {
+                    /* Error */
+                    printf("Error\n");
+                }
             } else if ( 0 == strcasecmp("cli", stmt->u.instr->opcode) ) {
                 /* CLI */
-                ret = _cli(stmt->u.instr->operands);
+                ret = _cli(target, stmt->u.instr->operands, &instr);
+                if ( ret >= 0 ) {
+                    _print_instruction(&instr);
+                    printf("\n");
+                } else {
+                    /* Error */
+                    printf("Error\n");
+                }
             } else if ( 0 == strcasecmp("jmp", stmt->u.instr->opcode) ) {
                 /* JMP */
                 ret = _jmp(stmt->u.instr->operands);
