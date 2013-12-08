@@ -6,6 +6,8 @@
 
     * las/arch/x86_64/main.c: Added the HLT instruction
 
+    * las/arch/x86_64/main.c: Added the IDIV instruction
+
 
 2013-12-08  Hirochika Asai  <asai@scyphus.co.jp>
 
