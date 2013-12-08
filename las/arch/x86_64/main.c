@@ -308,10 +308,46 @@ _is_rm8_r8(const x86_64_val_t *val1, const x86_64_val_t *val2)
     return 0;
 }
 static __inline__ int
+_is_rm8_r32(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( X86_64_VAL_REG == val2->type && SIZE32 == val2->sopsize
+         && (X86_64_VAL_REG == val1->type || X86_64_VAL_ADDR == val1->type)
+         && (0 == val1->sopsize || SIZE8 == val1->sopsize) ) {
+        return 1;
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_rm8_r64(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( X86_64_VAL_REG == val2->type && SIZE64 == val2->sopsize
+         && (X86_64_VAL_REG == val1->type || X86_64_VAL_ADDR == val1->type)
+         && (0 == val1->sopsize || SIZE8 == val1->sopsize) ) {
+        return 1;
+    }
+
+    return 0;
+}
+static __inline__ int
 _is_rm16_r16(const x86_64_val_t *val1, const x86_64_val_t *val2)
 {
     /* Check the first and second operands */
     if ( X86_64_VAL_REG == val2->type && SIZE16 == val2->sopsize
+         && (X86_64_VAL_REG == val1->type || X86_64_VAL_ADDR == val1->type)
+         && (0 == val1->sopsize || SIZE16 == val1->sopsize) ) {
+        return 1;
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_rm16_r32(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    /* Check the first and second operands */
+    if ( X86_64_VAL_REG == val2->type && SIZE32 == val2->sopsize
          && (X86_64_VAL_REG == val1->type || X86_64_VAL_ADDR == val1->type)
          && (0 == val1->sopsize || SIZE16 == val1->sopsize) ) {
         return 1;
@@ -354,9 +390,24 @@ _is_r16_rm16(const x86_64_val_t *val1, const x86_64_val_t *val2)
     return _is_rm16_r16(val2, val1);
 }
 static __inline__ int
+_is_r32_rm8(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    return _is_rm8_r32(val2, val1);
+}
+static __inline__ int
+_is_r32_rm16(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    return _is_rm16_r32(val2, val1);
+}
+static __inline__ int
 _is_r32_rm32(const x86_64_val_t *val1, const x86_64_val_t *val2)
 {
     return _is_rm32_r32(val2, val1);
+}
+static __inline__ int
+_is_r64_rm8(const x86_64_val_t *val1, const x86_64_val_t *val2)
+{
+    return _is_rm8_r64(val2, val1);
 }
 static __inline__ int
 _is_r64_rm64(const x86_64_val_t *val1, const x86_64_val_t *val2)
@@ -3615,6 +3666,123 @@ _cpuid(x86_64_target_t target, const operand_vector_t *operands,
 }
 
 /*
+ * CRC32 (Vol. 2A 3-176)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      F2 0F 38 F0 /r  CRC32 r32,r/m8          RM      Valid   Valid
+ *      F2 REX 0F 38 F0 /r
+ *                      CRC32 r32,r/m8*         RM      Valid   Valid
+ *      F2 0F 38 F1 /r  CRC32 r32,r/m16         RM      Valid   Valid
+ *      F2 0F 38 F1 /r  CRC32 r32,r/m32         RM      Valid   Valid
+ *      F2 REX.W 0F 38 F0 /r
+ *                      CRC32 r64,r/m8          RM      Valid   Valid
+ *      F2 REX.W 0F 38 F1 /r
+ *                      CRC32 r64,r/m64         RM      Valid   Valid
+ *
+ *      * In 64-bit mode, AH, BH, CH, DH cannot be accessed if a REX prefix is
+ *        used
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      RM      ModRM:reg(r,w)  ModRM:r/m(r)    NA              NA
+ */
+static int
+_crc32(x86_64_target_t target, const operand_vector_t *operands,
+       x86_64_instr_t *instr)
+{
+    operand_t *op1;
+    operand_t *op2;
+    x86_64_val_t *val1;
+    x86_64_val_t *val2;
+    int ret;
+    x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+
+    if ( 2 == mvector_size(operands) ) {
+        op1 = mvector_at(operands, 0);
+        op2 = mvector_at(operands, 1);
+
+        val1 = x86_64_eval_operand(op1);
+        if ( NULL == val1 ) {
+            /* Error */
+            return -1;
+        }
+        val2 = x86_64_eval_operand(op2);
+        if ( NULL == val2 ) {
+            /* Error */
+            free(val1);
+            return -1;
+        }
+
+        if ( _is_r32_rm8(val1, val2) ) {
+            ret = _encode_rm(val1, val2, &enop);
+            opsize = SIZE32;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x0f;
+            opcode2 = 0x38;
+            opcode3 = 0xf0;
+        } else if ( _is_r32_rm16(val1, val2) ) {
+            ret = _encode_rm(val1, val2, &enop);
+            opsize = SIZE16;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x0f;
+            opcode2 = 0x38;
+            opcode3 = 0xf1;
+        } else if ( _is_r32_rm32(val1, val2) ) {
+            ret = _encode_rm(val1, val2, &enop);
+            opsize = SIZE32;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x0f;
+            opcode2 = 0x38;
+            opcode3 = 0xf1;
+        } else if ( _is_r64_rm8(val1, val2) ) {
+            ret = _encode_rm(val1, val2, &enop);
+            opsize = SIZE64;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x0f;
+            opcode2 = 0x38;
+            opcode3 = 0xf0;
+        } else if ( _is_r64_rm64(val1, val2) ) {
+            ret = _encode_rm(val1, val2, &enop);
+            opsize = SIZE64;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x0f;
+            opcode2 = 0x38;
+            opcode3 = 0xf1;
+        } else {
+            ret = -1;
+        }
+
+        if ( ret < 0 ) {
+            free(val1);
+            free(val2);
+            return -EOPERAND;
+        }
+        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+        if ( ret < 0 ) {
+            free(val1);
+            free(val2);
+            return -EOPERAND;
+        }
+        instr->prefix1 = 0xf2;
+        instr->opcode1 = opcode1;
+        instr->opcode2 = opcode2;
+        instr->opcode3 = opcode3;
+
+        free(val1);
+        free(val2);
+
+        return 0;
+    } else {
+        return -EOPERAND;
+    }
+}
+
+/*
  * JMP (Vol. 2A 3-424)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -4336,6 +4504,9 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else if ( 0 == strcasecmp("cpuid", stmt->u.instr->opcode) ) {
                 /* CPUID */
                 ret = _cpuid(target, stmt->u.instr->operands, &instr);
+            } else if ( 0 == strcasecmp("crc32", stmt->u.instr->opcode) ) {
+                /* CRC32 */
+                ret = _crc32(target, stmt->u.instr->operands, &instr);
             } else if ( 0 == strcasecmp("jmp", stmt->u.instr->opcode) ) {
                 /* JMP */
                 ret = _jmp(target, stmt->u.instr->operands, &instr);
