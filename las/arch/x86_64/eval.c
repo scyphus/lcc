@@ -37,12 +37,12 @@ _eval_expr_var(expr_t *expr)
         /* Symbol: To be implemented */
         val->type = X86_64_VAL_IMM;
         val->u.imm = 0;
-        val->opsize = 0;
+        val->sopsize = 0;
     } else {
         /* Register */
         val->type = X86_64_VAL_REG;
         val->u.reg = reg;
-        val->opsize = 0;
+        val->sopsize = 0;
     }
 
     return val;
@@ -62,7 +62,7 @@ _eval_expr_int(expr_t *expr)
     }
     val->type = X86_64_VAL_IMM;
     val->u.imm = expr->u.i;
-    val->opsize = 0;
+    val->sopsize = 0;
 
     return val;
 }
@@ -83,7 +83,7 @@ _eval_expr_op(expr_t *expr)
     if ( NULL == val ) {
         return NULL;
     }
-    val->opsize = 0;
+    val->sopsize = 0;
 
     /* Refactoring is required... */
     if ( FIX_PREFIX == expr->u.op.fix_type ) {
@@ -130,7 +130,7 @@ _eval_expr_op(expr_t *expr)
                  && X86_64_VAL_IMM == rval->type ) {
                 val->type = X86_64_VAL_IMM;
                 val->u.imm = lval->u.imm + rval->u.imm;
-                val->opsize = 0;
+                val->sopsize = 0;
             } else if ( X86_64_VAL_REG == lval->type
                         && X86_64_VAL_IMM == rval->type ) {
                 /* Base register + Displacement */
@@ -138,8 +138,8 @@ _eval_expr_op(expr_t *expr)
                 val->u.addr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
                 val->u.addr.base = lval->u.reg;
                 val->u.addr.disp = rval->u.imm;
-                val->u.addr.addrsize = 0;
-                val->opsize = 0;
+                val->u.addr.saddrsize = 0;
+                val->sopsize = 0;
             } else if ( X86_64_VAL_IMM == lval->type
                         && X86_64_VAL_REG == rval->type ) {
                 /* Base register + Displacement */
@@ -147,8 +147,8 @@ _eval_expr_op(expr_t *expr)
                 val->u.addr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
                 val->u.addr.base = rval->u.reg;
                 val->u.addr.disp = lval->u.imm;
-                val->u.addr.addrsize = 0;
-                val->opsize = 0;
+                val->u.addr.saddrsize = 0;
+                val->sopsize = 0;
             } else if ( X86_64_VAL_ADDR == lval->type ) {
                 if ( X86_64_VAL_REG == rval->type ) {
                     /* Base register */
@@ -162,8 +162,8 @@ _eval_expr_op(expr_t *expr)
                     val->type = X86_64_VAL_ADDR;
                     val->u.addr.flags = X86_64_ADDR_BASE | lval->u.addr.flags;
                     val->u.addr.base = rval->u.reg;
-                    val->u.addr.addrsize = 0;
-                    val->opsize = 0;
+                    val->u.addr.saddrsize = 0;
+                    val->sopsize = 0;
                 } else if ( X86_64_VAL_IMM == rval->type ) {
                     /* Displacement */
                     if ( X86_64_ADDR_DISP & lval->u.addr.flags ) {
@@ -176,8 +176,8 @@ _eval_expr_op(expr_t *expr)
                     val->type = X86_64_VAL_ADDR;
                     val->u.addr.flags = X86_64_ADDR_DISP | lval->u.addr.flags;
                     val->u.addr.disp = rval->u.imm;
-                    val->u.addr.addrsize = 0;
-                    val->opsize = 0;
+                    val->u.addr.saddrsize = 0;
+                    val->sopsize = 0;
                 }
             } else if ( X86_64_VAL_ADDR == rval->type ) {
                 if ( X86_64_VAL_REG == lval->type ) {
@@ -192,8 +192,8 @@ _eval_expr_op(expr_t *expr)
                     val->type = X86_64_VAL_ADDR;
                     val->u.addr.flags = X86_64_ADDR_BASE | rval->u.addr.flags;
                     val->u.addr.base = lval->u.reg;
-                    val->u.addr.addrsize = 0;
-                    val->opsize = 0;
+                    val->u.addr.saddrsize = 0;
+                    val->sopsize = 0;
                 } else if ( X86_64_VAL_IMM == lval->type ) {
                     /* Displacement */
                     if ( X86_64_ADDR_DISP & rval->u.addr.flags ) {
@@ -206,8 +206,8 @@ _eval_expr_op(expr_t *expr)
                     val->type = X86_64_VAL_ADDR;
                     val->u.addr.flags = X86_64_ADDR_DISP | rval->u.addr.flags;
                     val->u.addr.disp = lval->u.imm;
-                    val->u.addr.addrsize = 0;
-                    val->opsize = 0;
+                    val->u.addr.saddrsize = 0;
+                    val->sopsize = 0;
                 }
             } else {
                 /* Invalid */
@@ -222,7 +222,7 @@ _eval_expr_op(expr_t *expr)
                  && X86_64_VAL_IMM == rval->type ) {
                 val->type = X86_64_VAL_IMM;
                 val->u.imm = lval->u.imm - rval->u.imm;
-                val->opsize = 0;
+                val->sopsize = 0;
             } else {
                 /* Invalid */
                 free(val);
@@ -236,23 +236,23 @@ _eval_expr_op(expr_t *expr)
                  && X86_64_VAL_IMM == rval->type ) {
                 val->type = X86_64_VAL_IMM;
                 val->u.imm = lval->u.imm * rval->u.imm;
-                val->opsize = 0;
+                val->sopsize = 0;
             } else if ( X86_64_VAL_IMM == lval->type
                         && X86_64_VAL_REG == rval->type ) {
                 val->type = X86_64_VAL_ADDR;
                 val->u.addr.flags = X86_64_ADDR_OFFSET | X86_64_ADDR_SCALE;
                 val->u.addr.offset = rval->u.reg;
                 val->u.addr.scale = lval->u.imm;
-                val->u.addr.addrsize = 0;
-                val->opsize = 0;
+                val->u.addr.saddrsize = 0;
+                val->sopsize = 0;
             } else if ( X86_64_VAL_REG == lval->type
                         && X86_64_VAL_IMM == rval->type ) {
                 val->type = X86_64_VAL_ADDR;
                 val->u.addr.flags = X86_64_ADDR_OFFSET | X86_64_ADDR_SCALE;
                 val->u.addr.offset = lval->u.reg;
                 val->u.addr.scale = rval->u.imm;
-                val->u.addr.addrsize = 0;
-                val->opsize = 0;
+                val->u.addr.saddrsize = 0;
+                val->sopsize = 0;
             } else {
                 /* Invalid */
                 free(val);
@@ -266,7 +266,7 @@ _eval_expr_op(expr_t *expr)
                  && X86_64_VAL_IMM == rval->type ) {
                 val->type = X86_64_VAL_IMM;
                 val->u.imm = lval->u.imm / rval->u.imm;
-                val->opsize = 0;
+                val->sopsize = 0;
             } else {
                 /* Invalid */
                 free(val);
@@ -351,30 +351,30 @@ _eval_expr_addr(pexpr_t *pexpr)
         val->type = X86_64_VAL_ADDR;
         val->u.addr.flags = X86_64_ADDR_BASE;
         val->u.addr.base = reg;
-        val->u.addr.addrsize = val->opsize;
-        val->opsize = 0;
+        val->u.addr.saddrsize = val->sopsize;
+        val->sopsize = 0;
     } else if ( X86_64_VAL_IMM == val->type ) {
         imm = val->u.imm;
         val->type = X86_64_VAL_ADDR;
         val->u.addr.flags = X86_64_ADDR_DISP;
         val->u.addr.disp = imm;
-        val->u.addr.addrsize = val->opsize;
-        val->opsize = 0;
+        val->u.addr.saddrsize = val->sopsize;
+        val->sopsize = 0;
     }
 
     /* Check the operand prefix */
     switch ( pexpr->prefix ) {
     case SIZE_PREFIX_BYTE:
-        val->opsize = SIZE8;
+        val->sopsize = SIZE8;
         break;
     case SIZE_PREFIX_WORD:
-        val->opsize = SIZE16;
+        val->sopsize = SIZE16;
         break;
     case SIZE_PREFIX_DWORD:
-        val->opsize = SIZE32;
+        val->sopsize = SIZE32;
         break;
     case SIZE_PREFIX_QWORD:
-        val->opsize = SIZE64;
+        val->sopsize = SIZE64;
         break;
     case SIZE_PREFIX_NONE:
     default:
@@ -414,16 +414,16 @@ x86_64_eval_operand(operand_t *op)
     /* Check the operand prefix */
     switch ( op->prefix ) {
     case SIZE_PREFIX_BYTE:
-        val->opsize = SIZE8;
+        val->sopsize = SIZE8;
         break;
     case SIZE_PREFIX_WORD:
-        val->opsize = SIZE16;
+        val->sopsize = SIZE16;
         break;
     case SIZE_PREFIX_DWORD:
-        val->opsize = SIZE32;
+        val->sopsize = SIZE32;
         break;
     case SIZE_PREFIX_QWORD:
-        val->opsize = SIZE64;
+        val->sopsize = SIZE64;
         break;
     case SIZE_PREFIX_NONE:
     default:
@@ -437,31 +437,31 @@ x86_64_eval_operand(operand_t *op)
         break;
     case X86_64_VAL_REG:
         sz = regsize(val->u.reg);
-        if ( 0 != val->opsize && sz != val->opsize ) {
+        if ( 0 != val->sopsize && sz != val->sopsize ) {
             /* Invalid operand size */
             free(val);
             return NULL;
         }
-        val->opsize = sz;
+        val->sopsize = sz;
         break;
     case X86_64_VAL_ADDR:
         if ( X86_64_ADDR_BASE & val->u.addr.flags ) {
             sz = regsize(val->u.addr.base);
-            if ( 0 != val->u.addr.addrsize && sz != val->u.addr.addrsize ) {
+            if ( 0 != val->u.addr.saddrsize && sz != val->u.addr.saddrsize ) {
                 /* Invalid operand size */
                 free(val);
                 return NULL;
             }
-            val->u.addr.addrsize = sz;
+            val->u.addr.saddrsize = sz;
         }
         if ( X86_64_ADDR_OFFSET & val->u.addr.flags ) {
             sz = regsize(val->u.addr.offset);
-            if ( 0 != val->u.addr.addrsize && sz != val->u.addr.addrsize ) {
+            if ( 0 != val->u.addr.saddrsize && sz != val->u.addr.saddrsize ) {
                 /* Invalid operand size */
                 free(val);
                 return NULL;
             }
-            val->u.addr.addrsize = sz;
+            val->u.addr.saddrsize = sz;
         }
         break;
     }

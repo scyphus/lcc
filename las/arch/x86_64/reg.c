@@ -283,6 +283,7 @@ regsize(x86_64_reg_t r)
     case REG_R14D:
     case REG_R15D:
     case REG_EFLAGS:
+    case REG_EIP:
         sz = SIZE32;
         break;
     case REG_RAX:
@@ -302,6 +303,7 @@ regsize(x86_64_reg_t r)
     case REG_R14:
     case REG_R15:
     case REG_RFLAGS:
+    case REG_RIP:
         sz = SIZE64;
         break;
     default:

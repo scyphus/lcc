@@ -31,8 +31,8 @@ typedef int x86_64_addr_flag_t;
 typedef struct _x86_64_addr {
     /* Flags for each field */
     x86_64_addr_flag_t flags;
-    /* Address size */
-    size_t addrsize;
+    /* Specified address size */
+    size_t saddrsize;
     /* Base register */
     x86_64_reg_t base;
     /* Displacement */
@@ -48,8 +48,8 @@ typedef struct _x86_64_addr {
  */
 typedef struct _x86_64_val {
     x86_64_val_type_t type;
-    /* Operand size */
-    size_t opsize;
+    /* Specified operand size */
+    size_t sopsize;
     union {
         /* Immediate value */
         int64_t imm;
@@ -64,11 +64,8 @@ typedef struct _x86_64_val {
  * Encoded operand
  */
 typedef struct _x86_64_encoded_operand {
-    //size_t opsz;
-    //size_t addrsz;
     int opreg;
     struct {
-        int w;
         int r;
         int x;
         int b;
@@ -84,6 +81,47 @@ typedef struct _x86_64_encoded_operand {
         int64_t val;
     } imm;
 } x86_64_enop_t;
+
+/*
+ * Encoded instruction
+ */
+typedef struct _x86_64_encoded_instruction {
+    int prefix1;
+    int prefix2;
+    int prefix3;
+    int prefix4;
+    int rex;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+    int modrm;
+    int sib;
+    struct {
+        size_t sz;
+        int64_t val;
+    } disp;
+    struct {
+        size_t sz;
+        int64_t val;
+    } imm;
+} x86_64_instr_t;
+
+
+/*
+ * Target
+ */
+typedef enum _x86_64_target {
+    X86_64_O16,
+    X86_64_O32,
+    X86_64_O64,
+} x86_64_target_t;
+
+/*
+ * Assembler option
+ */
+typedef struct _x86_64_asm_opt {
+    x86_64_target_t target;
+} x86_64_asm_opt_t;
 
 #ifdef __cplusplus
 extern "C" {
