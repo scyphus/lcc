@@ -1204,7 +1204,7 @@ static int
 _encode_mr(const x86_64_val_t *val1, const x86_64_val_t *val2,
            x86_64_enop_t *enop)
 {
-    return _encode_rm(val1, val2, enop);
+    return _encode_rm(val2, val1, enop);
 }
 #if 0
 static int
