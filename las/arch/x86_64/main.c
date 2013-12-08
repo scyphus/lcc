@@ -2949,12 +2949,41 @@ _cdqe(x86_64_target_t target, const operand_vector_t *operands,
  *      NP      NA              NA              NA              NA
  */
 int
-_clc(operand_vector_t *operands)
+_clc(x86_64_target_t target, const operand_vector_t *operands,
+     x86_64_instr_t *instr)
 {
+    int ret;
+    x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+
     if ( 0 != mvector_size(operands) ) {
-        return -1;
+        return -EOPERAND;
     }
-    printf("CLC F8\n");
+
+    enop.opreg = -1;
+    enop.rex.r = REX_NONE;
+    enop.rex.x = REX_NONE;
+    enop.rex.b = REX_NONE;
+    enop.modrm = -1;
+    enop.sib = -1;
+    enop.disp.sz = 0;
+    enop.disp.val = 0;
+    enop.imm.sz = 0;
+    enop.imm.val = 0;
+    opsize = 0;
+    addrsize = 0;
+    opcode1 = 0xf8;
+    opcode2 = -1;
+    opcode3 = -1;
+
+    ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+    if ( ret < 0 ) {
+        return -EOPERAND;
+    }
 
     return 0;
 }
@@ -2970,12 +2999,41 @@ _clc(operand_vector_t *operands)
  *      NP      NA              NA              NA              NA
  */
 int
-_cld(operand_vector_t *operands)
+_cld(x86_64_target_t target, const operand_vector_t *operands,
+     x86_64_instr_t *instr)
 {
+    int ret;
+    x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+
     if ( 0 != mvector_size(operands) ) {
-        return -1;
+        return -EOPERAND;
     }
-    printf("CLD FC\n");
+
+    enop.opreg = -1;
+    enop.rex.r = REX_NONE;
+    enop.rex.x = REX_NONE;
+    enop.rex.b = REX_NONE;
+    enop.modrm = -1;
+    enop.sib = -1;
+    enop.disp.sz = 0;
+    enop.disp.val = 0;
+    enop.imm.sz = 0;
+    enop.imm.val = 0;
+    opsize = 0;
+    addrsize = 0;
+    opcode1 = 0xfc;
+    opcode2 = -1;
+    opcode3 = -1;
+
+    ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+    if ( ret < 0 ) {
+        return -EOPERAND;
+    }
 
     return 0;
 }
@@ -3686,10 +3744,24 @@ arch_assemble_x86_64(stmt_vector_t *vec)
                 }
             } else if ( 0 == strcasecmp("clc", stmt->u.instr->opcode) ) {
                 /* CLC */
-                ret = _clc(stmt->u.instr->operands);
+                ret = _clc(target, stmt->u.instr->operands, &instr);
+                if ( ret >= 0 ) {
+                    _print_instruction(&instr);
+                    printf("\n");
+                } else {
+                    /* Error */
+                    printf("Error\n");
+                }
             } else if ( 0 == strcasecmp("cld", stmt->u.instr->opcode) ) {
                 /* CLD */
-                ret = _cld(stmt->u.instr->operands);
+                ret = _cld(target, stmt->u.instr->operands, &instr);
+                if ( ret >= 0 ) {
+                    _print_instruction(&instr);
+                    printf("\n");
+                } else {
+                    /* Error */
+                    printf("Error\n");
+                }
             } else if ( 0 == strcasecmp("clflush", stmt->u.instr->opcode) ) {
                 /* CLFLUSH */
                 ret = _clflush(stmt->u.instr->operands);
