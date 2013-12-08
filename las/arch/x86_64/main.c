@@ -3783,6 +3783,145 @@ _crc32(x86_64_target_t target, const operand_vector_t *operands,
 }
 
 /*
+ * CWD/CDQ/CQO (Vol. 2A 3-100)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      99              CWD                     NP      Valid   Valid
+ *      99              CDQ                     NP      Valid   Valid
+ *      REX.W + 99      CQO                     NP      Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+int
+_cwd(x86_64_target_t target, const operand_vector_t *operands,
+     x86_64_instr_t *instr)
+{
+    int ret;
+    x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+
+    if ( 0 != mvector_size(operands) ) {
+        return -EOPERAND;
+    }
+
+    enop.opreg = -1;
+    enop.rex.r = REX_NONE;
+    enop.rex.x = REX_NONE;
+    enop.rex.b = REX_NONE;
+    enop.modrm = -1;
+    enop.sib = -1;
+    enop.disp.sz = 0;
+    enop.disp.val = 0;
+    enop.imm.sz = 0;
+    enop.imm.val = 0;
+    opsize = SIZE16;
+    addrsize = 0;
+    opcode1 = 0x99;
+    opcode2 = -1;
+    opcode3 = -1;
+
+    ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+    if ( ret < 0 ) {
+        return -EOPERAND;
+    }
+    instr->opcode1 = opcode1;
+    instr->opcode2 = opcode2;
+    instr->opcode3 = opcode3;
+
+    return 0;
+}
+int
+_cdq(x86_64_target_t target, const operand_vector_t *operands,
+     x86_64_instr_t *instr)
+{
+    int ret;
+    x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+
+    if ( 0 != mvector_size(operands) ) {
+        return -EOPERAND;
+    }
+
+    enop.opreg = -1;
+    enop.rex.r = REX_NONE;
+    enop.rex.x = REX_NONE;
+    enop.rex.b = REX_NONE;
+    enop.modrm = -1;
+    enop.sib = -1;
+    enop.disp.sz = 0;
+    enop.disp.val = 0;
+    enop.imm.sz = 0;
+    enop.imm.val = 0;
+    opsize = SIZE32;
+    addrsize = 0;
+    opcode1 = 0x99;
+    opcode2 = -1;
+    opcode3 = -1;
+
+    ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+    if ( ret < 0 ) {
+        return -EOPERAND;
+    }
+    instr->opcode1 = opcode1;
+    instr->opcode2 = opcode2;
+    instr->opcode3 = opcode3;
+
+    return 0;
+}
+int
+_cqo(x86_64_target_t target, const operand_vector_t *operands,
+     x86_64_instr_t *instr)
+{
+    int ret;
+    x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+
+    if ( 0 != mvector_size(operands) ) {
+        return -EOPERAND;
+    }
+
+    enop.opreg = -1;
+    enop.rex.r = REX_NONE;
+    enop.rex.x = REX_NONE;
+    enop.rex.b = REX_NONE;
+    enop.modrm = -1;
+    enop.sib = -1;
+    enop.disp.sz = 0;
+    enop.disp.val = 0;
+    enop.imm.sz = 0;
+    enop.imm.val = 0;
+    opsize = SIZE64;
+    addrsize = 0;
+    opcode1 = 0x99;
+    opcode2 = -1;
+    opcode3 = -1;
+
+    ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+    if ( ret < 0 ) {
+        return -EOPERAND;
+    }
+    instr->opcode1 = opcode1;
+    instr->opcode2 = opcode2;
+    instr->opcode3 = opcode3;
+
+    return 0;
+}
+
+/*
  * JMP (Vol. 2A 3-424)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -4507,6 +4646,15 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else if ( 0 == strcasecmp("crc32", stmt->u.instr->opcode) ) {
                 /* CRC32 */
                 ret = _crc32(target, stmt->u.instr->operands, &instr);
+            } else if ( 0 == strcasecmp("cwd", stmt->u.instr->opcode) ) {
+                /* CWD */
+                ret = _cwd(target, stmt->u.instr->operands, &instr);
+            } else if ( 0 == strcasecmp("cdq", stmt->u.instr->opcode) ) {
+                /* CDQ */
+                ret = _cdq(target, stmt->u.instr->operands, &instr);
+            } else if ( 0 == strcasecmp("cqo", stmt->u.instr->opcode) ) {
+                /* CQO */
+                ret = _cqo(target, stmt->u.instr->operands, &instr);
             } else if ( 0 == strcasecmp("jmp", stmt->u.instr->opcode) ) {
                 /* JMP */
                 ret = _jmp(target, stmt->u.instr->operands, &instr);

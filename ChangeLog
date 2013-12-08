@@ -10,6 +10,8 @@
 
     * las/arch/x86_64/main.c: Added the CRC32 instruction
 
+    * las/arch/x86_64/main.c: Added the CWD/CDQ/CQO instruction
+
 
 2013-12-07  Hirochika Asai  <asai@scyphus.co.jp>
 
