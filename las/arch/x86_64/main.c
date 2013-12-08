@@ -2091,8 +2091,9 @@ _and(x86_64_target_t target, const operand_vector_t *operands,
  *      Op/En   Operand1        Operand2        Operand3        Operand4
  *      RM      ModRM:reg(w)    ModRM:r/m(r)    NA              NA
  */
-int
-_bsf(operand_vector_t *operands)
+static int
+_bsf(x86_64_target_t target, const operand_vector_t *operands,
+     x86_64_instr_t *instr)
 {
     operand_t *op1;
     operand_t *op2;
@@ -2100,6 +2101,11 @@ _bsf(operand_vector_t *operands)
     x86_64_val_t *val2;
     int ret;
     x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
 
     if ( 2 == mvector_size(operands) ) {
         op1 = mvector_at(operands, 0);
@@ -2119,36 +2125,51 @@ _bsf(operand_vector_t *operands)
 
         if ( _is_rm16_r16(val1, val2) ) {
             ret = _encode_rm(val1, val2, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("BSF 66 0F BC %.2X\n", enop.modrm);
-            }
+            opsize = SIZE16;
+            addrsize = 0;
+            opcode1 = 0x0f;
+            opcode2 = 0xbc;
+            opcode3 = -1;
         } else if ( _is_rm32_r32(val1, val2) ) {
             ret = _encode_rm(val1, val2, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("BSF 0F BC %.2X\n", enop.modrm);
-            }
+            opsize = SIZE32;
+            addrsize = 0;
+            opcode1 = 0x0f;
+            opcode2 = 0xbc;
+            opcode3 = -1;
         } else if ( _is_rm64_r64(val1, val2) ) {
             ret = _encode_rm(val1, val2, &enop);
-            if ( ret < 0 ) {
-                printf("Invalid operands\n");
-            } else {
-                printf("BSF REX.W + 0F BC %.2X\n", enop.modrm);
-            }
+            opsize = SIZE64;
+            addrsize = 0;
+            opcode1 = 0x0f;
+            opcode2 = 0xbc;
+            opcode3 = -1;
         } else {
-            printf("Invalid operands\n");
+            ret = -1;
         }
+
+        if ( ret < 0 ) {
+            free(val1);
+            free(val2);
+            return -EOPERAND;
+        }
+        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+        if ( ret < 0 ) {
+            free(val1);
+            free(val2);
+            return -EOPERAND;
+        }
+        instr->opcode1 = opcode1;
+        instr->opcode2 = opcode2;
+        instr->opcode3 = opcode3;
+
         free(val1);
         free(val2);
-    } else {
-        printf("Invalid operands\n");
-        return -1;
-    }
 
-    return 0;
+        return 0;
+    } else {
+        return -EOPERAND;
+    }
 }
 
 /*
@@ -3379,7 +3400,14 @@ arch_assemble_x86_64(stmt_vector_t *vec)
                 }
             } else if ( 0 == strcasecmp("bsf", stmt->u.instr->opcode) ) {
                 /* BSF */
-                ret = _bsf(stmt->u.instr->operands);
+                ret = _bsf(target, stmt->u.instr->operands, &instr);
+                if ( ret >= 0 ) {
+                    _print_instruction(&instr);
+                    printf("\n");
+                } else {
+                    /* Error */
+                    printf("Error\n");
+                }
             } else if ( 0 == strcasecmp("bsr", stmt->u.instr->opcode) ) {
                 /* BSR */
                 ret = _bsr(stmt->u.instr->operands);
