@@ -3475,7 +3475,7 @@ _cmp(x86_64_target_t target, const operand_vector_t *operands,
  */
 static int
 _cmpxchg(x86_64_target_t target, const operand_vector_t *operands,
-     x86_64_instr_t *instr)
+         x86_64_instr_t *instr)
 {
     operand_t *op1;
     operand_t *op2;
@@ -3559,6 +3559,59 @@ _cmpxchg(x86_64_target_t target, const operand_vector_t *operands,
     } else {
         return -EOPERAND;
     }
+}
+
+/*
+ * CPUID (Vol. 2A 3-148)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F A2           CPUID                   NP      Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+int
+_cpuid(x86_64_target_t target, const operand_vector_t *operands,
+       x86_64_instr_t *instr)
+{
+    int ret;
+    x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+
+    if ( 0 != mvector_size(operands) ) {
+        return -EOPERAND;
+    }
+
+    enop.opreg = -1;
+    enop.rex.r = REX_NONE;
+    enop.rex.x = REX_NONE;
+    enop.rex.b = REX_NONE;
+    enop.modrm = -1;
+    enop.sib = -1;
+    enop.disp.sz = 0;
+    enop.disp.val = 0;
+    enop.imm.sz = 0;
+    enop.imm.val = 0;
+    opsize = 0;
+    addrsize = 0;
+    opcode1 = 0x0f;
+    opcode2 = 0xa2;
+    opcode3 = -1;
+
+    ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+    if ( ret < 0 ) {
+        return -EOPERAND;
+    }
+    instr->opcode1 = opcode1;
+    instr->opcode2 = opcode2;
+    instr->opcode3 = opcode3;
+
+    return 0;
 }
 
 /*
@@ -4280,6 +4333,9 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else if ( 0 == strcasecmp("cmpxchg", stmt->u.instr->opcode) ) {
                 /* CMPXCHG */
                 ret = _cmpxchg(target, stmt->u.instr->operands, &instr);
+            } else if ( 0 == strcasecmp("cpuid", stmt->u.instr->opcode) ) {
+                /* CPUID */
+                ret = _cpuid(target, stmt->u.instr->operands, &instr);
             } else if ( 0 == strcasecmp("jmp", stmt->u.instr->opcode) ) {
                 /* JMP */
                 ret = _jmp(target, stmt->u.instr->operands, &instr);
