@@ -15,19 +15,10 @@
 #include <assert.h>
 
 
-
-
-
-
-
 /* Errors */
 #define EUNKNOWN        1
 #define EOPERAND        2
 #define ESIZE           3
-
-
-
-
 
 
 #define REX_NE          -2      /* Not encodable */
@@ -43,41 +34,6 @@
 #define REX_B           (1)
 
 
-
-
-
-#define REXW_NONE       0
-#define REXW_YES        1
-
-#define REXR_NONE       0
-#define REXR_YES        1
-
-#define REXX_NONE       0
-#define REXX_YES        1
-
-#define REXB_NE         0
-#define REXB_NONE       0       /* Not encodable */
-#define REXB_YES        1
-
-
-/*
- * Pseudo instruction
- */
-struct xxx {
-    /* Instruction */
-    instr_t *instr;
-    /* Offset */
-    off_t off;
-    /* Estimated size */
-    size_t sz;
-    /* Max size */
-    size_t maxsz;
-};
-
-struct y {
-    char *label;
-    struct xxx *ptr;
-};
 
 
 
