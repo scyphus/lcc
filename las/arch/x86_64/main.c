@@ -1927,6 +1927,7 @@ typedef enum _x86_64_enc {
     ENC_NP_DX_AL,
     ENC_NP_DX_AX,
     ENC_NP_DX_EAX,
+    ENC_I_IMM16,
     ENC_I_AL_IMM8,
     ENC_I_AX_IMM8,
     ENC_I_AX_IMM16,
@@ -2468,6 +2469,13 @@ binstr(x86_64_instr_t *instr, x86_64_target_t target, int opsize, int opc1,
         /* Check the number of operands and format */
         if ( 2 == nr && _eq_reg(val[0], REG_DX) && _eq_reg(val[1], REG_EAX) ) {
             stat = _binstr_np(instr, target, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_I_IMM16:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_imm16(val[0]) ) {
+            stat = _binstr_i(instr, target, opc1, opc2, opc3, opsize, val[0],
+                             SIZE16);
         }
         break;
     case ENC_I_AL_IMM8:
@@ -3708,7 +3716,6 @@ _iretq(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
     return -EOPERAND;
 }
 
-
 /*
  * JMP (Vol. 2A 3-424)
  *
@@ -3892,6 +3899,35 @@ _popcnt(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
                  ENC_RM_R32_RM32));
     PASS0(binstr(instr, tgt, SIZE64, 0xf3, 0x0f, 0xb8, -1, ops,
                  ENC_RM_R64_RM64));
+
+    return -EOPERAND;
+}
+
+/*
+ * RET (Vol. 2B 4-369)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      C3              RET                     NP      Valid   Valid
+ *      CB              RET                     NP      Valid   Valid
+ *      C2 iw           RET imm16               I       Valid   Valid
+ *      CA iw           RET imm16               I       Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ *      I       imm16           NA              NA              NA
+ */
+static int
+_ret(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+{
+    PASS0(binstr(instr, tgt, 0, 0xc3, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, tgt, 0, 0xc2, -1, -1, -1, ops, ENC_I_IMM16));
+
+#if 0
+    /* FIXME: Support "far return" */
+    PASS0(binstr(instr, tgt, 0, 0xcb, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, tgt, 0, 0xca, -1, -1, -1, ops, ENC_I_IMM16));
+#endif
 
     return -EOPERAND;
 }
@@ -4102,6 +4138,9 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else if ( 0 == strcasecmp("popcnt", stmt->u.instr->opcode) ) {
                 /* POPCNT */
                 ret = _popcnt(target, stmt->u.instr->operands, &instr);
+            } else if ( 0 == strcasecmp("ret", stmt->u.instr->opcode) ) {
+                /* RET */
+                ret = _ret(target, stmt->u.instr->operands, &instr);
             } else if ( 0 == strcasecmp("xor", stmt->u.instr->opcode) ) {
                 /* XOR */
                 ret = _xor(target, stmt->u.instr->operands, &instr);

@@ -18,6 +18,8 @@
 
     * las/arch/x86_64/main.c: Added the IRET/IRETD/IRETQ instructions
 
+    * las/arch/x86_64/main.c: Added the RET instruction (near return)
+
 
 2013-12-08  Hirochika Asai  <asai@scyphus.co.jp>
 
