@@ -20,6 +20,12 @@
 
     * las/arch/x86_64/main.c: Added the RET instruction (near return)
 
+    * las/arch/x86_64/binstr.c: Added, a set of functions related to
+                                instruction building is moved from
+                                las/arch/x86_64/main.c
+    * las/arch/x86_64/binstr.h: Added
+    * las/arch/x86_64/main.c: Moved some functions to las/arch/x86_64/binstr.c
+
 
 2013-12-08  Hirochika Asai  <asai@scyphus.co.jp>
 

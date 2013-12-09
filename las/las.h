@@ -22,6 +22,10 @@
 #define SIZE32  4
 #define SIZE64  8
 
+/* Errors */
+#define EUNKNOWN        1
+#define EOPERAND        2
+#define ESIZE           3
 
 /*
  * String (can be binary)
