@@ -4956,6 +4956,102 @@ _in(x86_64_target_t target, const operand_vector_t *operands,
 }
 
 /*
+ * INC (Vol. 2A 3-384)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      FE /0           INC r/m8                M       Valid   Valid
+ *      REX + FE /0     INC r/m8*               M       Valid   N.E.
+ *      FF /0           INC r/m16               M       Valid   Valid
+ *      FF /0           INC r/m32               M       Valid   Valid
+ *      REX.W + FF /0   INC r/m64               M       Valid   N.E.
+ *      40 +rw          INC r16                 O       N.E.    Valid
+ *      40 +rd          INC r32                 O       N.E.    Valid
+ *
+ *      * In 64-bit mode, AH, BH, CH, DH cannot be accessed if a REX prefix is
+ *        used
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      M       ModR/M:r/m(r,w) NA              NA              NA
+ *      O       opcode+rd(r,w)  NA              NA              NA
+ */
+static int
+_inc(x86_64_target_t target, const operand_vector_t *operands,
+     x86_64_instr_t *instr)
+{
+    operand_t *op;
+    x86_64_val_t *val;
+    int ret;
+    x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+
+    if ( 1 == mvector_size(operands) ) {
+        op = mvector_at(operands, 0);
+
+        val = x86_64_eval_operand(op);
+        if ( NULL == val ) {
+            /* Error */
+            return -1;
+        }
+
+        if ( _is_reg_addr8(val) ) {
+            ret = _encode_m(val, 0, &enop);
+            opsize = SIZE8;
+            addrsize = _resolve_address_size1(val);
+            opcode1 = 0xfe;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _is_reg_addr16(val) ) {
+            ret = _encode_m(val, 0, &enop);
+            opsize = SIZE16;
+            addrsize = _resolve_address_size1(val);
+            opcode1 = 0xff;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _is_reg_addr32(val) ) {
+            ret = _encode_m(val, 0, &enop);
+            opsize = SIZE32;
+            addrsize = _resolve_address_size1(val);
+            opcode1 = 0xff;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _is_reg_addr64(val) ) {
+            ret = _encode_m(val, 0, &enop);
+            opsize = SIZE64;
+            addrsize = _resolve_address_size1(val);
+            opcode1 = 0xff;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else {
+            ret = -1;
+        }
+
+        if ( ret < 0 ) {
+            free(val);
+            return -EOPERAND;
+        }
+        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+        if ( ret < 0 ) {
+            free(val);
+            return -EOPERAND;
+        }
+        instr->opcode1 = opcode1;
+        instr->opcode2 = opcode2;
+        instr->opcode3 = opcode3;
+
+        free(val);
+
+        return 0;
+    } else {
+        return -EOPERAND;
+    }
+}
+
+/*
  * JMP (Vol. 2A 3-424)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -5713,6 +5809,9 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else if ( 0 == strcasecmp("in", stmt->u.instr->opcode) ) {
                 /* IN */
                 ret = _in(target, stmt->u.instr->operands, &instr);
+            } else if ( 0 == strcasecmp("inc", stmt->u.instr->opcode) ) {
+                /* INC */
+                ret = _inc(target, stmt->u.instr->operands, &instr);
             } else if ( 0 == strcasecmp("jmp", stmt->u.instr->opcode) ) {
                 /* JMP */
                 ret = _jmp(target, stmt->u.instr->operands, &instr);
