@@ -5389,7 +5389,7 @@ _mov(x86_64_target_t target, const operand_vector_t *operands,
  *      NP      NA              NA              NA              NA
  */
 static int
-_in(x86_64_target_t target, const operand_vector_t *operands,
+_out(x86_64_target_t target, const operand_vector_t *operands,
     x86_64_instr_t *instr)
 {
     operand_t *op1;
@@ -5939,6 +5939,9 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else if ( 0 == strcasecmp("mov", stmt->u.instr->opcode) ) {
                 /* MOV */
                 ret = _mov(target, stmt->u.instr->operands, &instr);
+            } else if ( 0 == strcasecmp("out", stmt->u.instr->opcode) ) {
+                /* OUT */
+                ret = _out(target, stmt->u.instr->operands, &instr);
             } else if ( 0 == strcasecmp("popcnt", stmt->u.instr->opcode) ) {
                 /* POPCNT */
                 ret = _popcnt(target, stmt->u.instr->operands, &instr);
