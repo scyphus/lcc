@@ -16,6 +16,8 @@
 
     * las/arch/x86_64/main.c: Added the OUT instruction
 
+    * las/arch/x86_64/main.c: Added the IRET/IRETD/IRETQ instructions
+
 
 2013-12-08  Hirochika Asai  <asai@scyphus.co.jp>
 

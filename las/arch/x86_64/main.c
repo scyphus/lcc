@@ -3675,6 +3675,41 @@ _inc(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
 }
 
 /*
+ * IRET (Vol. 2A 3-411)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      CF              IRET                    NP      Valid   Valid
+ *      CF              IRETD                   NP      Valid   Valid
+ *      REX.W + CF      IRETQ                   NP      Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_iret(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+{
+    PASS0(binstr(instr, tgt, SIZE16, 0xcf, -1, -1, -1, ops, ENC_NP));
+
+    return -EOPERAND;
+}
+static int
+_iretd(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+{
+    PASS0(binstr(instr, tgt, SIZE32, 0xcf, -1, -1, -1, ops, ENC_NP));
+
+    return -EOPERAND;
+}
+static int
+_iretq(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+{
+    PASS0(binstr(instr, tgt, SIZE64, 0xcf, -1, -1, -1, ops, ENC_NP));
+
+    return -EOPERAND;
+}
+
+
+/*
  * JMP (Vol. 2A 3-424)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -4043,6 +4078,15 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else if ( 0 == strcasecmp("inc", stmt->u.instr->opcode) ) {
                 /* INC */
                 ret = _inc(target, stmt->u.instr->operands, &instr);
+            } else if ( 0 == strcasecmp("iret", stmt->u.instr->opcode) ) {
+                /* IRET */
+                ret = _iret(target, stmt->u.instr->operands, &instr);
+            } else if ( 0 == strcasecmp("iretd", stmt->u.instr->opcode) ) {
+                /* IRETD */
+                ret = _iretd(target, stmt->u.instr->operands, &instr);
+            } else if ( 0 == strcasecmp("iretq", stmt->u.instr->opcode) ) {
+                /* IRETQ */
+                ret = _iretq(target, stmt->u.instr->operands, &instr);
             } else if ( 0 == strcasecmp("jmp", stmt->u.instr->opcode) ) {
                 /* JMP */
                 ret = _jmp(target, stmt->u.instr->operands, &instr);
