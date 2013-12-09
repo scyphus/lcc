@@ -1939,6 +1939,8 @@ typedef enum _x86_64_enc {
     ENC_RM_R16_RM16,
     ENC_RM_R32_RM32,
     ENC_RM_R64_RM64,
+    ENC_O_R32,
+    ENC_O_R64,
 } x86_64_enc_t;
 
 
@@ -2105,6 +2107,7 @@ _binstr_mi(x86_64_instr_t *instr, x86_64_target_t target, int opc1, int opc2,
     /* Success */
     return 1;
 }
+
 static int
 _binstr_mr(x86_64_instr_t *instr, x86_64_target_t target, int opc1, int opc2,
            int opc3, size_t opsize, const x86_64_val_t *valm,
@@ -2145,6 +2148,42 @@ _binstr_rm(x86_64_instr_t *instr, x86_64_target_t target, int opc1, int opc2,
            const x86_64_val_t *valm)
 {
     return _binstr_rm(instr, target, opc1, opc2, opc3, opsize, valm, valr);
+}
+
+static int
+_binstr_o(x86_64_instr_t *instr, x86_64_target_t target, int opc1, int opc2,
+          int opc3, size_t opsize, const x86_64_val_t *valr)
+{
+    int ret;
+    x86_64_enop_t enop;
+
+    /* Encode and free the values */
+    ret = _encode_o(valr, &enop);
+    if ( ret < 0 ) {
+        /* Invalid operand size */
+        return -ESIZE;
+    }
+    /* Build instruction */
+    ret = _build_instruction(target, &enop, opsize, 0, instr);
+    if ( ret < 0 ) {
+        /* Invalid operands */
+        return -EOPERAND;
+    }
+    instr->opcode1 = opc1;
+    instr->opcode2 = opc2;
+    instr->opcode3 = opc3;
+
+    /* +rw/+rd */
+    if ( instr->opcode3 >= 0 ) {
+        instr->opcode3 += enop.opreg;
+    } else if ( instr->opcode2 >= 0 ) {
+        instr->opcode2 += enop.opreg;
+    } else {
+        instr->opcode1 += enop.opreg;
+    }
+
+    /* Success */
+    return 1;
 }
 
 /*
@@ -2321,6 +2360,12 @@ binstr(x86_64_instr_t *instr, x86_64_target_t target, int opc1, int opc2,
         if ( 2 == nr && _is_r64_rm64(val[0], val[1]) ) {
             stat = _binstr_rm(instr, target, opc1, opc2, opc3, SIZE64, val[0],
                               val[1]);
+        }
+        break;
+    case ENC_O_R32:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_reg32(val[0]) ) {
+            stat = _binstr_o(instr, target, opc1, opc2, opc3, SIZE32, val[0]);
         }
         break;
     default:
@@ -2525,81 +2570,11 @@ static int
 _bsr(x86_64_target_t target, const operand_vector_t *operands,
      x86_64_instr_t *instr)
 {
-    operand_t *op1;
-    operand_t *op2;
-    x86_64_val_t *val1;
-    x86_64_val_t *val2;
-    int ret;
-    x86_64_enop_t enop;
-    size_t opsize;
-    size_t addrsize;
-    int opcode1;
-    int opcode2;
-    int opcode3;
+    PASS0(binstr(instr, target, 0x0f, 0xbd, -1, -1, operands, ENC_RM_R16_RM16));
+    PASS0(binstr(instr, target, 0x0f, 0xbd, -1, -1, operands, ENC_RM_R32_RM32));
+    PASS0(binstr(instr, target, 0x0f, 0xbd, -1, -1, operands, ENC_RM_R64_RM64));
 
-    if ( 2 == mvector_size(operands) ) {
-        op1 = mvector_at(operands, 0);
-        op2 = mvector_at(operands, 1);
-
-        val1 = x86_64_eval_operand(op1);
-        if ( NULL == val1 ) {
-            /* Error */
-            return -1;
-        }
-        val2 = x86_64_eval_operand(op2);
-        if ( NULL == val2 ) {
-            /* Error */
-            free(val1);
-            return -1;
-        }
-
-        if ( _is_rm16_r16(val1, val2) ) {
-            ret = _encode_rm(val1, val2, &enop);
-            opsize = SIZE16;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xbd;
-            opcode3 = -1;
-        } else if ( _is_rm32_r32(val1, val2) ) {
-            ret = _encode_rm(val1, val2, &enop);
-            opsize = SIZE32;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xbd;
-            opcode3 = -1;
-        } else if ( _is_rm64_r64(val1, val2) ) {
-            ret = _encode_rm(val1, val2, &enop);
-            opsize = SIZE64;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xbd;
-            opcode3 = -1;
-        } else {
-            ret = -1;
-        }
-
-        if ( ret < 0 ) {
-            free(val1);
-            free(val2);
-            return -EOPERAND;
-        }
-        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
-        if ( ret < 0 ) {
-            free(val1);
-            free(val2);
-            return -EOPERAND;
-        }
-        instr->opcode1 = opcode1;
-        instr->opcode2 = opcode2;
-        instr->opcode3 = opcode3;
-
-        free(val1);
-        free(val2);
-
-        return 0;
-    } else {
-        return -EOPERAND;
-    }
+    return -EOPERAND;
 }
 
 /*
@@ -2608,7 +2583,7 @@ _bsr(x86_64_target_t target, const operand_vector_t *operands,
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
  *      0F C8+rd        BSWAP r32               O       Valid   Valid
  *      REX.W + 0F C8+rd
- *                      BSWAP r64               O      Valid   N.E.
+ *                      BSWAP r64               O       Valid   N.E.
  *
  *
  *      Op/En   Operand1        Operand2        Operand3        Operand4
@@ -2618,62 +2593,10 @@ static int
 _bswap(x86_64_target_t target, const operand_vector_t *operands,
        x86_64_instr_t *instr)
 {
-    operand_t *op;
-    x86_64_val_t *val;
-    int ret;
-    x86_64_enop_t enop;
-    size_t opsize;
-    size_t addrsize;
-    int opcode1;
-    int opcode2;
-    int opcode3;
+    PASS0(binstr(instr, target, 0x0f, 0xc8, -1, -1, operands, ENC_O_R32));
+    PASS0(binstr(instr, target, 0x0f, 0xc8, -1, -1, operands, ENC_O_R64));
 
-    if ( 1 == mvector_size(operands) ) {
-        op = mvector_at(operands, 0);
-
-        val = x86_64_eval_operand(op);
-        if ( NULL == val ) {
-            /* Error */
-            return -1;
-        }
-
-        if ( _is_reg32(val) ) {
-            ret = _encode_o(val, &enop);
-            opsize = SIZE32;
-            addrsize = 0;
-            opcode1 = 0x0f;
-            opcode2 = -1;
-            opcode3 = -1;
-        } else if ( _is_reg64(val) ) {
-            ret = _encode_o(val, &enop);
-            opsize = SIZE64;
-            addrsize = 0;
-            opcode1 = 0x0f;
-            opcode2 = -1;
-            opcode3 = -1;
-        } else {
-            ret = -1;
-        }
-
-        if ( ret < 0 ) {
-            free(val);
-            return -EOPERAND;
-        }
-        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
-        if ( ret < 0 ) {
-            free(val);
-            return -EOPERAND;
-        }
-        instr->opcode1 = opcode1;
-        instr->opcode2 = opcode2;
-        instr->opcode3 = opcode3;
-
-        free(val);
-
-        return 0;
-    } else {
-        return -EOPERAND;
-    }
+    return -EOPERAND;
 }
 
 /*
@@ -2698,102 +2621,14 @@ static int
 _bt(x86_64_target_t target, const operand_vector_t *operands,
     x86_64_instr_t *instr)
 {
-    operand_t *op1;
-    operand_t *op2;
-    x86_64_val_t *val1;
-    x86_64_val_t *val2;
-    int ret;
-    x86_64_enop_t enop;
-    size_t opsize;
-    size_t addrsize;
-    int opcode1;
-    int opcode2;
-    int opcode3;
+    PASS0(binstr(instr, target, 0x0f, 0xa3, -1, -1, operands, ENC_MR_RM16_R16));
+    PASS0(binstr(instr, target, 0x0f, 0xa3, -1, -1, operands, ENC_MR_RM32_R32));
+    PASS0(binstr(instr, target, 0x0f, 0xa3, -1, -1, operands, ENC_MR_RM64_R64));
+    PASS0(binstr(instr, target, 0x0f, 0xba, -1, 4, operands, ENC_MI_RM16_IMM8));
+    PASS0(binstr(instr, target, 0x0f, 0xba, -1, 4, operands, ENC_MI_RM32_IMM8));
+    PASS0(binstr(instr, target, 0x0f, 0xba, -1, 4, operands, ENC_MI_RM64_IMM8));
 
-    if ( 2 == mvector_size(operands) ) {
-        op1 = mvector_at(operands, 0);
-        op2 = mvector_at(operands, 1);
-
-        val1 = x86_64_eval_operand(op1);
-        if ( NULL == val1 ) {
-            /* Error */
-            return -1;
-        }
-        val2 = x86_64_eval_operand(op2);
-        if ( NULL == val2 ) {
-            /* Error */
-            free(val1);
-            return -1;
-        }
-
-        if ( _is_rm16_r16(val1, val2) ) {
-            ret = _encode_mr(val1, val2, &enop);
-            opsize = SIZE16;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xa3;
-            opcode3 = -1;
-        } else if ( _is_rm32_r32(val1, val2) ) {
-            ret = _encode_mr(val1, val2, &enop);
-            opsize = SIZE32;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xa3;
-            opcode3 = -1;
-        } else if ( _is_rm64_r64(val1, val2) ) {
-            ret = _encode_mr(val1, val2, &enop);
-            opsize = SIZE64;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xa3;
-            opcode3 = -1;
-        } else if ( _is_reg_addr16(val1) && _is_imm8(val2) ) {
-            ret = _encode_mi(val1, val2, 4, SIZE8, &enop);
-            opsize = SIZE16;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xba;
-            opcode3 = -1;
-        } else if ( _is_reg_addr32(val1) && _is_imm8(val2) ) {
-            ret = _encode_mi(val1, val2, 4, SIZE8, &enop);
-            opsize = SIZE32;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xba;
-            opcode3 = -1;
-        } else if ( _is_reg_addr64(val1) && _is_imm8(val2) ) {
-            ret = _encode_mi(val1, val2, 4, SIZE8, &enop);
-            opsize = SIZE64;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xba;
-            opcode3 = -1;
-        } else {
-            ret = -1;
-        }
-
-        if ( ret < 0 ) {
-            free(val1);
-            free(val2);
-            return -EOPERAND;
-        }
-        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
-        if ( ret < 0 ) {
-            free(val1);
-            free(val2);
-            return -EOPERAND;
-        }
-        instr->opcode1 = opcode1;
-        instr->opcode2 = opcode2;
-        instr->opcode3 = opcode3;
-
-        free(val1);
-        free(val2);
-
-        return 0;
-    } else {
-        return -EOPERAND;
-    }
+    return -EOPERAND;
 }
 
 
@@ -2819,102 +2654,14 @@ int
 _btc(x86_64_target_t target, const operand_vector_t *operands,
      x86_64_instr_t *instr)
 {
-    operand_t *op1;
-    operand_t *op2;
-    x86_64_val_t *val1;
-    x86_64_val_t *val2;
-    int ret;
-    x86_64_enop_t enop;
-    size_t opsize;
-    size_t addrsize;
-    int opcode1;
-    int opcode2;
-    int opcode3;
+    PASS0(binstr(instr, target, 0x0f, 0xbb, -1, -1, operands, ENC_MR_RM16_R16));
+    PASS0(binstr(instr, target, 0x0f, 0xbb, -1, -1, operands, ENC_MR_RM32_R32));
+    PASS0(binstr(instr, target, 0x0f, 0xbb, -1, -1, operands, ENC_MR_RM64_R64));
+    PASS0(binstr(instr, target, 0x0f, 0xba, -1, 7, operands, ENC_MI_RM16_IMM8));
+    PASS0(binstr(instr, target, 0x0f, 0xba, -1, 7, operands, ENC_MI_RM32_IMM8));
+    PASS0(binstr(instr, target, 0x0f, 0xba, -1, 7, operands, ENC_MI_RM64_IMM8));
 
-    if ( 2 == mvector_size(operands) ) {
-        op1 = mvector_at(operands, 0);
-        op2 = mvector_at(operands, 1);
-
-        val1 = x86_64_eval_operand(op1);
-        if ( NULL == val1 ) {
-            /* Error */
-            return -1;
-        }
-        val2 = x86_64_eval_operand(op2);
-        if ( NULL == val2 ) {
-            /* Error */
-            free(val1);
-            return -1;
-        }
-
-        if ( _is_rm16_r16(val1, val2) ) {
-            ret = _encode_mr(val1, val2, &enop);
-            opsize = SIZE16;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xbb;
-            opcode3 = -1;
-        } else if ( _is_rm32_r32(val1, val2) ) {
-            ret = _encode_mr(val1, val2, &enop);
-            opsize = SIZE32;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xbb;
-            opcode3 = -1;
-        } else if ( _is_rm64_r64(val1, val2) ) {
-            ret = _encode_mr(val1, val2, &enop);
-            opsize = SIZE64;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xbb;
-            opcode3 = -1;
-        } else if ( _is_reg_addr16(val1) && _is_imm8(val2) ) {
-            ret = _encode_mi(val1, val2, 7, SIZE8, &enop);
-            opsize = SIZE16;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xba;
-            opcode3 = -1;
-        } else if ( _is_reg_addr32(val1) && _is_imm8(val2) ) {
-            ret = _encode_mi(val1, val2, 7, SIZE8, &enop);
-            opsize = SIZE32;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xba;
-            opcode3 = -1;
-        } else if ( _is_reg_addr64(val1) && _is_imm8(val2) ) {
-            ret = _encode_mi(val1, val2, 7, SIZE8, &enop);
-            opsize = SIZE64;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xba;
-            opcode3 = -1;
-        } else {
-            ret = -1;
-        }
-
-        if ( ret < 0 ) {
-            free(val1);
-            free(val2);
-            return -EOPERAND;
-        }
-        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
-        if ( ret < 0 ) {
-            free(val1);
-            free(val2);
-            return -EOPERAND;
-        }
-        instr->opcode1 = opcode1;
-        instr->opcode2 = opcode2;
-        instr->opcode3 = opcode3;
-
-        free(val1);
-        free(val2);
-
-        return 0;
-    } else {
-        return -EOPERAND;
-    }
+    return -EOPERAND;
 }
 
 /*
@@ -2939,102 +2686,14 @@ int
 _btr(x86_64_target_t target, const operand_vector_t *operands,
      x86_64_instr_t *instr)
 {
-    operand_t *op1;
-    operand_t *op2;
-    x86_64_val_t *val1;
-    x86_64_val_t *val2;
-    int ret;
-    x86_64_enop_t enop;
-    size_t opsize;
-    size_t addrsize;
-    int opcode1;
-    int opcode2;
-    int opcode3;
+    PASS0(binstr(instr, target, 0x0f, 0xb3, -1, -1, operands, ENC_MR_RM16_R16));
+    PASS0(binstr(instr, target, 0x0f, 0xb3, -1, -1, operands, ENC_MR_RM32_R32));
+    PASS0(binstr(instr, target, 0x0f, 0xb3, -1, -1, operands, ENC_MR_RM64_R64));
+    PASS0(binstr(instr, target, 0x0f, 0xba, -1, 6, operands, ENC_MI_RM16_IMM8));
+    PASS0(binstr(instr, target, 0x0f, 0xba, -1, 6, operands, ENC_MI_RM32_IMM8));
+    PASS0(binstr(instr, target, 0x0f, 0xba, -1, 6, operands, ENC_MI_RM64_IMM8));
 
-    if ( 2 == mvector_size(operands) ) {
-        op1 = mvector_at(operands, 0);
-        op2 = mvector_at(operands, 1);
-
-        val1 = x86_64_eval_operand(op1);
-        if ( NULL == val1 ) {
-            /* Error */
-            return -1;
-        }
-        val2 = x86_64_eval_operand(op2);
-        if ( NULL == val2 ) {
-            /* Error */
-            free(val1);
-            return -1;
-        }
-
-        if ( _is_rm16_r16(val1, val2) ) {
-            ret = _encode_mr(val1, val2, &enop);
-            opsize = SIZE16;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xb3;
-            opcode3 = -1;
-        } else if ( _is_rm32_r32(val1, val2) ) {
-            ret = _encode_mr(val1, val2, &enop);
-            opsize = SIZE32;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xb3;
-            opcode3 = -1;
-        } else if ( _is_rm64_r64(val1, val2) ) {
-            ret = _encode_mr(val1, val2, &enop);
-            opsize = SIZE64;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xb3;
-            opcode3 = -1;
-        } else if ( _is_reg_addr16(val1) && _is_imm8(val2) ) {
-            ret = _encode_mi(val1, val2, 6, SIZE8, &enop);
-            opsize = SIZE16;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xba;
-            opcode3 = -1;
-        } else if ( _is_reg_addr32(val1) && _is_imm8(val2) ) {
-            ret = _encode_mi(val1, val2, 6, SIZE8, &enop);
-            opsize = SIZE32;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xba;
-            opcode3 = -1;
-        } else if ( _is_reg_addr64(val1) && _is_imm8(val2) ) {
-            ret = _encode_mi(val1, val2, 6, SIZE8, &enop);
-            opsize = SIZE64;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xba;
-            opcode3 = -1;
-        } else {
-            ret = -1;
-        }
-
-        if ( ret < 0 ) {
-            free(val1);
-            free(val2);
-            return -EOPERAND;
-        }
-        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
-        if ( ret < 0 ) {
-            free(val1);
-            free(val2);
-            return -EOPERAND;
-        }
-        instr->opcode1 = opcode1;
-        instr->opcode2 = opcode2;
-        instr->opcode3 = opcode3;
-
-        free(val1);
-        free(val2);
-
-        return 0;
-    } else {
-        return -EOPERAND;
-    }
+    return -EOPERAND;
 }
 
 /*
@@ -3059,102 +2718,14 @@ int
 _bts(x86_64_target_t target, const operand_vector_t *operands,
      x86_64_instr_t *instr)
 {
-    operand_t *op1;
-    operand_t *op2;
-    x86_64_val_t *val1;
-    x86_64_val_t *val2;
-    int ret;
-    x86_64_enop_t enop;
-    size_t opsize;
-    size_t addrsize;
-    int opcode1;
-    int opcode2;
-    int opcode3;
+    PASS0(binstr(instr, target, 0x0f, 0xab, -1, -1, operands, ENC_MR_RM16_R16));
+    PASS0(binstr(instr, target, 0x0f, 0xab, -1, -1, operands, ENC_MR_RM32_R32));
+    PASS0(binstr(instr, target, 0x0f, 0xab, -1, -1, operands, ENC_MR_RM64_R64));
+    PASS0(binstr(instr, target, 0x0f, 0xba, -1, 5, operands, ENC_MI_RM16_IMM8));
+    PASS0(binstr(instr, target, 0x0f, 0xba, -1, 5, operands, ENC_MI_RM32_IMM8));
+    PASS0(binstr(instr, target, 0x0f, 0xba, -1, 5, operands, ENC_MI_RM64_IMM8));
 
-    if ( 2 == mvector_size(operands) ) {
-        op1 = mvector_at(operands, 0);
-        op2 = mvector_at(operands, 1);
-
-        val1 = x86_64_eval_operand(op1);
-        if ( NULL == val1 ) {
-            /* Error */
-            return -1;
-        }
-        val2 = x86_64_eval_operand(op2);
-        if ( NULL == val2 ) {
-            /* Error */
-            free(val1);
-            return -1;
-        }
-
-        if ( _is_rm16_r16(val1, val2) ) {
-            ret = _encode_mr(val1, val2, &enop);
-            opsize = SIZE16;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xab;
-            opcode3 = -1;
-        } else if ( _is_rm32_r32(val1, val2) ) {
-            ret = _encode_mr(val1, val2, &enop);
-            opsize = SIZE32;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xab;
-            opcode3 = -1;
-        } else if ( _is_rm64_r64(val1, val2) ) {
-            ret = _encode_mr(val1, val2, &enop);
-            opsize = SIZE64;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xab;
-            opcode3 = -1;
-        } else if ( _is_reg_addr16(val1) && _is_imm8(val2) ) {
-            ret = _encode_mi(val1, val2, 5, SIZE8, &enop);
-            opsize = SIZE16;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xba;
-            opcode3 = -1;
-        } else if ( _is_reg_addr32(val1) && _is_imm8(val2) ) {
-            ret = _encode_mi(val1, val2, 5, SIZE8, &enop);
-            opsize = SIZE32;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xba;
-            opcode3 = -1;
-        } else if ( _is_reg_addr64(val1) && _is_imm8(val2) ) {
-            ret = _encode_mi(val1, val2, 5, SIZE8, &enop);
-            opsize = SIZE64;
-            addrsize = _resolve_address_size1(val1);
-            opcode1 = 0x0f;
-            opcode2 = 0xba;
-            opcode3 = -1;
-        } else {
-            ret = -1;
-        }
-
-        if ( ret < 0 ) {
-            free(val1);
-            free(val2);
-            return -EOPERAND;
-        }
-        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
-        if ( ret < 0 ) {
-            free(val1);
-            free(val2);
-            return -EOPERAND;
-        }
-        instr->opcode1 = opcode1;
-        instr->opcode2 = opcode2;
-        instr->opcode3 = opcode3;
-
-        free(val1);
-        free(val2);
-
-        return 0;
-    } else {
-        return -EOPERAND;
-    }
+    return -EOPERAND;
 }
 
 /*
