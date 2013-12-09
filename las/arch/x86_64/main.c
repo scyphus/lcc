@@ -4906,21 +4906,21 @@ _in(x86_64_target_t target, const operand_vector_t *operands,
             opcode1 = 0xe5;
             opcode2 = -1;
             opcode3 = -1;
-        } else if ( _eq_reg(val1, REG_AL) && _eq_reg(val1, REG_DX) ) {
+        } else if ( _eq_reg(val1, REG_AL) && _eq_reg(val2, REG_DX) ) {
             ret = 0;
             opsize = SIZE8;
             addrsize = 0;
             opcode1 = 0xec;
             opcode2 = -1;
             opcode3 = -1;
-        } else if ( _eq_reg(val1, REG_AX) && _eq_reg(val1, REG_DX) ) {
+        } else if ( _eq_reg(val1, REG_AX) && _eq_reg(val2, REG_DX) ) {
             ret = 0;
             opsize = SIZE16;
             addrsize = 0;
             opcode1 = 0xed;
             opcode2 = -1;
             opcode3 = -1;
-        } else if ( _eq_reg(val1, REG_EAX) && _eq_reg(val1, REG_DX) ) {
+        } else if ( _eq_reg(val1, REG_EAX) && _eq_reg(val2, REG_DX) ) {
             ret = 0;
             opsize = SIZE32;
             addrsize = 0;
@@ -5342,6 +5342,124 @@ _mov(x86_64_target_t target, const operand_vector_t *operands,
             opsize = SIZE64;
             addrsize = _resolve_address_size1(val1);
             opcode1 = 0xc7;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else {
+            ret = -1;
+        }
+
+        if ( ret < 0 ) {
+            free(val1);
+            free(val2);
+            return -EOPERAND;
+        }
+        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+        if ( ret < 0 ) {
+            free(val1);
+            free(val2);
+            return -EOPERAND;
+        }
+        instr->opcode1 = opcode1;
+        instr->opcode2 = opcode2;
+        instr->opcode3 = opcode3;
+
+        free(val1);
+        free(val2);
+
+        return 0;
+    } else {
+        return -EOPERAND;
+    }
+}
+
+/*
+ * OUT (Vol. 2B 4-131)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      E6 ib           OUT imm8,AL             I       Valid   Valid
+ *      E7 ib           OUT imm8,AX             I       Valid   Valid
+ *      E7 ib           OUT imm8,EAX            I       Valid   Valid
+ *      EE              OUT DX,AL               NP      Valid   Valid
+ *      EF              OUT DX,AX               NP      Valid   Valid
+ *      EF              OUT DX,EAX              NP      Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      I       imm8            NA              NA              NA
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_in(x86_64_target_t target, const operand_vector_t *operands,
+    x86_64_instr_t *instr)
+{
+    operand_t *op1;
+    operand_t *op2;
+    x86_64_val_t *val1;
+    x86_64_val_t *val2;
+    int ret;
+    x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+
+    if ( 2 == mvector_size(operands) ) {
+        op1 = mvector_at(operands, 0);
+        op2 = mvector_at(operands, 1);
+
+        val1 = x86_64_eval_operand(op1);
+        if ( NULL == val1 ) {
+            /* Error */
+            return -1;
+        }
+        val2 = x86_64_eval_operand(op2);
+        if ( NULL == val2 ) {
+            /* Error */
+            free(val1);
+            return -1;
+        }
+
+        if ( _eq_reg(val2, REG_AL) && _is_imm8(val1) ) {
+            ret = _encode_i(val1, SIZE8, &enop);
+            opsize = SIZE8;
+            addrsize = 0;
+            opcode1 = 0xe6;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _eq_reg(val2, REG_AX) && _is_imm8(val1) ) {
+            ret = _encode_i(val1, SIZE8, &enop);
+            opsize = SIZE8;
+            addrsize = 0;
+            opcode1 = 0xe7;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _eq_reg(val2, REG_EAX) && _is_imm8(val1) ) {
+            ret = _encode_i(val1, SIZE8, &enop);
+            opsize = SIZE8;
+            addrsize = 0;
+            opcode1 = 0xe7;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _eq_reg(val2, REG_AL) && _eq_reg(val1, REG_DX) ) {
+            ret = 0;
+            opsize = SIZE8;
+            addrsize = 0;
+            opcode1 = 0xee;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _eq_reg(val2, REG_AX) && _eq_reg(val1, REG_DX) ) {
+            ret = 0;
+            opsize = SIZE16;
+            addrsize = 0;
+            opcode1 = 0xef;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _eq_reg(val2, REG_EAX) && _eq_reg(val1, REG_DX) ) {
+            ret = 0;
+            opsize = SIZE32;
+            addrsize = 0;
+            opcode1 = 0xef;
             opcode2 = -1;
             opcode3 = -1;
         } else {
