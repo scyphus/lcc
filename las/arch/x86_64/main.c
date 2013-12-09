@@ -570,6 +570,169 @@ _is_rm64_imm64(const x86_64_val_t *val1, const x86_64_val_t *val2)
 
     return 0;
 }
+/* RMI */
+static __inline__ int
+_is_r16_rm16_imm8(const x86_64_val_t *val1, const x86_64_val_t *val2,
+                  const x86_64_val_t *val3)
+{
+    /* Check the type of all operands */
+    if ( X86_64_VAL_REG == val1->type
+         && (X86_64_VAL_REG == val2->type || X86_64_VAL_ADDR == val2->type)
+         && X86_64_VAL_IMM == val3->type ) {
+        if ( SIZE16 != val1->sopsize ) {
+            return 0;
+        }
+        if ( 0 != val2->sopsize && SIZE16 != val2->sopsize ) {
+            return 0;
+        }
+        if ( 0 == val3->sopsize ) {
+            if ( val3->u.imm >= -128 && val3->u.imm <= 127 ) {
+                return 1;
+            }
+        } else if ( SIZE8 == val2->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_r32_rm32_imm8(const x86_64_val_t *val1, const x86_64_val_t *val2,
+                  const x86_64_val_t *val3)
+{
+    /* Check the type of all operands */
+    if ( X86_64_VAL_REG == val1->type
+         && (X86_64_VAL_REG == val2->type || X86_64_VAL_ADDR == val2->type)
+         && X86_64_VAL_IMM == val3->type ) {
+        if ( SIZE32 != val1->sopsize ) {
+            return 0;
+        }
+        if ( 0 != val2->sopsize && SIZE32 != val2->sopsize ) {
+            return 0;
+        }
+        if ( 0 == val3->sopsize ) {
+            if ( val3->u.imm >= -128 && val3->u.imm <= 127 ) {
+                return 1;
+            }
+        } else if ( SIZE8 == val2->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_r64_rm64_imm8(const x86_64_val_t *val1, const x86_64_val_t *val2,
+                  const x86_64_val_t *val3)
+{
+    /* Check the type of all operands */
+    if ( X86_64_VAL_REG == val1->type
+         && (X86_64_VAL_REG == val2->type || X86_64_VAL_ADDR == val2->type)
+         && X86_64_VAL_IMM == val3->type ) {
+        if ( SIZE64 != val1->sopsize ) {
+            return 0;
+        }
+        if ( 0 != val2->sopsize && SIZE64 != val2->sopsize ) {
+            return 0;
+        }
+        if ( 0 == val3->sopsize ) {
+            if ( val3->u.imm >= -128 && val3->u.imm <= 127 ) {
+                return 1;
+            }
+        } else if ( SIZE8 == val2->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_r16_rm16_imm16(const x86_64_val_t *val1, const x86_64_val_t *val2,
+                  const x86_64_val_t *val3)
+{
+    /* Check the type of all operands */
+    if ( X86_64_VAL_REG == val1->type
+         && (X86_64_VAL_REG == val2->type || X86_64_VAL_ADDR == val2->type)
+         && X86_64_VAL_IMM == val3->type ) {
+        if ( SIZE16 != val1->sopsize ) {
+            return 0;
+        }
+        if ( 0 != val2->sopsize && SIZE16 != val2->sopsize ) {
+            return 0;
+        }
+        if ( 0 == val3->sopsize ) {
+            if ( val3->u.imm >= -32768 && val3->u.imm <= 32767 ) {
+                return 1;
+            }
+        } else if ( SIZE16 == val2->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_r32_rm32_imm32(const x86_64_val_t *val1, const x86_64_val_t *val2,
+                  const x86_64_val_t *val3)
+{
+    /* Check the type of all operands */
+    if ( X86_64_VAL_REG == val1->type
+         && (X86_64_VAL_REG == val2->type || X86_64_VAL_ADDR == val2->type)
+         && X86_64_VAL_IMM == val3->type ) {
+        if ( SIZE32 != val1->sopsize ) {
+            return 0;
+        }
+        if ( 0 != val2->sopsize && SIZE32 != val2->sopsize ) {
+            return 0;
+        }
+        if ( 0 == val3->sopsize ) {
+            if ( val3->u.imm >= -2147483648 && val3->u.imm <= 2147483647 ) {
+                return 1;
+            }
+        } else if ( SIZE8 == val2->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_r64_rm64_imm32(const x86_64_val_t *val1, const x86_64_val_t *val2,
+                  const x86_64_val_t *val3)
+{
+    /* Check the type of all operands */
+    if ( X86_64_VAL_REG == val1->type
+         && (X86_64_VAL_REG == val2->type || X86_64_VAL_ADDR == val2->type)
+         && X86_64_VAL_IMM == val3->type ) {
+        if ( SIZE64 != val1->sopsize ) {
+            return 0;
+        }
+        if ( 0 != val2->sopsize && SIZE64 != val2->sopsize ) {
+            return 0;
+        }
+        if ( 0 == val3->sopsize ) {
+            if ( val3->u.imm >= -2147483648 && val3->u.imm <= 2147483647 ) {
+                return 1;
+            }
+        } else if ( SIZE8 == val2->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    return 0;
+}
 
 
 
@@ -1534,6 +1697,56 @@ _encode_mr(const x86_64_val_t *val1, const x86_64_val_t *val2,
 {
     return _encode_rm(val2, val1, enop);
 }
+
+static int
+_encode_rmi(const x86_64_val_t *val1, const x86_64_val_t *val2,
+            const x86_64_val_t *val3, size_t immsz, x86_64_enop_t *enop)
+{
+    int ret;
+    int reg;
+    int rexr;
+
+    /* Check the first operand */
+    if ( X86_64_VAL_REG != val1->type ) {
+        return -1;
+    }
+
+    /* Resolve the register code of the first operand */
+    ret = _reg_code(val1->u.reg, &reg, &rexr);
+    if ( ret < 0 ) {
+        /* Cannot resolve the register code */
+        return -1;
+    }
+
+    /* Check the second operand */
+    if ( X86_64_VAL_REG == val2->type ) {
+        ret = _encode_rm_second_reg(reg, rexr, val2, enop);
+        if ( ret < 0 ) {
+            return -1;
+        }
+
+        return 0;
+    } else if ( X86_64_VAL_ADDR == val2->type ) {
+        /* Encode the second operand with the addr type */
+        ret = _encode_rm_second_addr(reg, rexr, val2, enop);
+        if ( ret < 0 ) {
+            return -1;
+        }
+    } else {
+        return -1;
+    }
+
+    /* Check the third operand */
+    if ( X86_64_VAL_IMM != val2->type ) {
+        return -1;
+    }
+    /* Update immediate value */
+    enop->imm.sz = immsz;
+    enop->imm.val = val3->u.imm;
+
+    return 0;
+}
+
 #if 0
 static int
 _encode_fd(const x86_64_val_t *val1, const x86_64_val_t *val2,
@@ -4288,7 +4501,7 @@ _hlt(x86_64_target_t target, const operand_vector_t *operands,
  */
 static int
 _idiv(x86_64_target_t target, const operand_vector_t *operands,
-     x86_64_instr_t *instr)
+      x86_64_instr_t *instr)
 {
     operand_t *op;
     x86_64_val_t *val;
@@ -4355,6 +4568,268 @@ _idiv(x86_64_target_t target, const operand_vector_t *operands,
         instr->opcode3 = opcode3;
 
         free(val);
+
+        return 0;
+    } else {
+        return -EOPERAND;
+    }
+}
+
+/*
+ * IMUL (Vol. 2A 3-378)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      F6 /5           IMUL r/m8*              M       Valid   Valid
+ *      F7 /5           IMUL r/m16              M       Valid   Valid
+ *      F7 /5           IMUL r/m32              M       Valid   Valid
+ *      REX.W + F7 /5   IMUL r/m64              M       Valid   N.E.
+ *      0F AF /r        IMUL r16,r/m16          RM      Valid   Valid
+ *      0F AF /r        IMUL r32,r/m32          RM      Valid   Valid
+ *      REX.W + 0F AF /r
+ *                      IMUL r64,r/m64          RM      Valid   N.E.
+ *      6B /r ib        IMUL r16,r/m16,imm8     RMI     Valid   Valid
+ *      6B /r ib        IMUL r32,r/m32,imm8     RMI     Valid   Valid
+ *      REX.W + 6B /r ib
+ *                      IMUL r64,r/m64,imm8     RMI     Valid   N.E.
+ *      69 /r iw        IMUL r16,r/m16,imm16    RMI     Valid   Valid
+ *      69 /r id        IMUL r32,r/m32,imm32    RMI     Valid   Valid
+ *      REX.W + 69 /r id
+ *                      IMUL r64,r/m64,imm32    RMI     Valid   N.E.
+ *
+ *      * In 64-bit mode, AH, BH, CH, DH cannot be accessed if a REX prefix is
+ *        used
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      M       ModR/M:r/m(r,w) NA              NA              NA
+ *      RM      ModRM:reg(r,w)  ModRM:r/m(r)    NA              NA
+ *      RMI     ModRM:reg(r,w)  ModRM:r/m(r)    imm8/16/32      NA
+ */
+static int
+_imul(x86_64_target_t target, const operand_vector_t *operands,
+      x86_64_instr_t *instr)
+{
+    operand_t *op1;
+    operand_t *op2;
+    operand_t *op3;
+    x86_64_val_t *val1;
+    x86_64_val_t *val2;
+    x86_64_val_t *val3;
+    int ret;
+    x86_64_enop_t enop;
+    size_t opsize;
+    size_t addrsize;
+    int opcode1;
+    int opcode2;
+    int opcode3;
+
+    if ( 1 == mvector_size(operands) ) {
+        op1 = mvector_at(operands, 0);
+
+        val1 = x86_64_eval_operand(op1);
+        if ( NULL == val1 ) {
+            /* Error */
+            return -1;
+        }
+
+        if ( _is_reg_addr8(val1) ) {
+            ret = _encode_m(val1, 5, &enop);
+            opsize = SIZE8;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0xf6;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _is_reg_addr16(val1) ) {
+            ret = _encode_m(val1, 5, &enop);
+            opsize = SIZE16;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0xf7;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _is_reg_addr32(val1) ) {
+            ret = _encode_m(val1, 5, &enop);
+            opsize = SIZE32;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0xf7;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _is_reg_addr64(val1) ) {
+            ret = _encode_m(val1, 5, &enop);
+            opsize = SIZE64;
+            addrsize = _resolve_address_size1(val1);
+            opcode1 = 0xf7;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else {
+            ret = -1;
+        }
+
+        if ( ret < 0 ) {
+            free(val1);
+            return -EOPERAND;
+        }
+        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+        if ( ret < 0 ) {
+            free(val1);
+            return -EOPERAND;
+        }
+        instr->opcode1 = opcode1;
+        instr->opcode2 = opcode2;
+        instr->opcode3 = opcode3;
+
+        free(val1);
+
+        return 0;
+    } else if ( 2 == mvector_size(operands) ) {
+        op1 = mvector_at(operands, 0);
+        op2 = mvector_at(operands, 1);
+
+        val1 = x86_64_eval_operand(op1);
+        if ( NULL == val1 ) {
+            /* Error */
+            return -1;
+        }
+        val2 = x86_64_eval_operand(op2);
+        if ( NULL == val2 ) {
+            /* Error */
+            free(val1);
+            return -1;
+        }
+
+        if ( _is_r16_rm16(val1, val2) ) {
+            ret = _encode_rm(val1, val2, &enop);
+            opsize = SIZE16;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x0f;
+            opcode2 = 0xaf;
+            opcode3 = -1;
+        } else if ( _is_r32_rm32(val1, val2) ) {
+            ret = _encode_rm(val1, val2, &enop);
+            opsize = SIZE32;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x0f;
+            opcode2 = 0xaf;
+            opcode3 = -1;
+        } else if ( _is_r64_rm64(val1, val2) ) {
+            ret = _encode_rm(val1, val2, &enop);
+            opsize = SIZE64;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x0f;
+            opcode2 = 0xaf;
+            opcode3 = -1;
+        } else {
+            ret = -1;
+        }
+
+        if ( ret < 0 ) {
+            free(val1);
+            free(val2);
+            return -EOPERAND;
+        }
+        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+        if ( ret < 0 ) {
+            free(val1);
+            free(val2);
+            return -EOPERAND;
+        }
+        instr->opcode1 = opcode1;
+        instr->opcode2 = opcode2;
+        instr->opcode3 = opcode3;
+
+        free(val1);
+        free(val2);
+
+        return 0;
+    } else if ( 3 == mvector_size(operands) ) {
+        op1 = mvector_at(operands, 0);
+        op2 = mvector_at(operands, 1);
+        op3 = mvector_at(operands, 2);
+
+        val1 = x86_64_eval_operand(op1);
+        if ( NULL == val1 ) {
+            /* Error */
+            return -1;
+        }
+        val2 = x86_64_eval_operand(op2);
+        if ( NULL == val2 ) {
+            /* Error */
+            free(val1);
+            return -1;
+        }
+        val3 = x86_64_eval_operand(op3);
+        if ( NULL == val3 ) {
+            /* Error */
+            free(val1);
+            free(val2);
+            return -1;
+        }
+
+        if ( _is_r16_rm16_imm8(val1, val2, val3) ) {
+            ret = _encode_rmi(val1, val2, val3, SIZE8, &enop);
+            opsize = SIZE16;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x6b;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _is_r32_rm32_imm8(val1, val2, val3) ) {
+            ret = _encode_rmi(val1, val2, val3, SIZE8, &enop);
+            opsize = SIZE32;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x6b;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _is_r64_rm64_imm8(val1, val2, val3) ) {
+            ret = _encode_rmi(val1, val2, val3, SIZE8, &enop);
+            opsize = SIZE64;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x6b;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _is_r16_rm16_imm16(val1, val2, val3) ) {
+            ret = _encode_rmi(val1, val2, val3, SIZE16, &enop);
+            opsize = SIZE16;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x69;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _is_r32_rm32_imm32(val1, val2, val3) ) {
+            ret = _encode_rmi(val1, val2, val3, SIZE32, &enop);
+            opsize = SIZE32;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x69;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else if ( _is_r64_rm64_imm32(val1, val2, val3) ) {
+            ret = _encode_rmi(val1, val2, val3, SIZE32, &enop);
+            opsize = SIZE64;
+            addrsize = _resolve_address_size1(val2);
+            opcode1 = 0x69;
+            opcode2 = -1;
+            opcode3 = -1;
+        } else {
+            ret = -1;
+        }
+
+        if ( ret < 0 ) {
+            free(val1);
+            free(val2);
+            free(val3);
+            return -EOPERAND;
+        }
+        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
+        if ( ret < 0 ) {
+            free(val1);
+            free(val2);
+            free(val3);
+            return -EOPERAND;
+        }
+        instr->opcode1 = opcode1;
+        instr->opcode2 = opcode2;
+        instr->opcode3 = opcode3;
+
+        free(val1);
+        free(val2);
+        free(val3);
 
         return 0;
     } else {
@@ -5114,6 +5589,9 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             } else if ( 0 == strcasecmp("idiv", stmt->u.instr->opcode) ) {
                 /* IDIV */
                 ret = _idiv(target, stmt->u.instr->operands, &instr);
+            } else if ( 0 == strcasecmp("imul", stmt->u.instr->opcode) ) {
+                /* IMUL */
+                ret = _imul(target, stmt->u.instr->operands, &instr);
             } else if ( 0 == strcasecmp("jmp", stmt->u.instr->opcode) ) {
                 /* JMP */
                 ret = _jmp(target, stmt->u.instr->operands, &instr);
