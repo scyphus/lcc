@@ -10,6 +10,8 @@
 
     * las/arch/x86_64/main.c: Added the IMUL instruction
 
+    * las/arch/x86_64/main.c: Added the IN instruction
+
 
 2013-12-08  Hirochika Asai  <asai@scyphus.co.jp>
 
