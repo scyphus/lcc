@@ -1938,13 +1938,15 @@ typedef enum _x86_64_enc {
     ENC_MR_RM64_R64,
     ENC_RM_R8_RM8,
     ENC_RM_R16_RM16,
+    ENC_RM_R32_RM8,
+    ENC_RM_R32_RM16,
     ENC_RM_R32_RM32,
+    ENC_RM_R64_RM8,
     ENC_RM_R64_RM64,
     ENC_O_R32,
     ENC_O_R64,
     ENC_M_M8,
 } x86_64_enc_t;
-
 
 #define PASS0(ret) do {                         \
     if ( 0 < ret ) { return ret; }              \
@@ -2426,10 +2428,31 @@ binstr(x86_64_instr_t *instr, x86_64_target_t target, int opsize, int opc1,
                               val[1]);
         }
         break;
+    case ENC_RM_R32_RM8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r32_rm8(val[0], val[1]) ) {
+            stat = _binstr_rm(instr, target, opc1, opc2, opc3, opsize, val[0],
+                              val[1]);
+        }
+        break;
+    case ENC_RM_R32_RM16:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r32_rm16(val[0], val[1]) ) {
+            stat = _binstr_rm(instr, target, opc1, opc2, opc3, opsize, val[0],
+                              val[1]);
+        }
+        break;
     case ENC_RM_R32_RM32:
         /* Check the number of operands and format */
         if ( 2 == nr && _is_r32_rm32(val[0], val[1]) ) {
             stat = _binstr_rm(instr, target, opc1, opc2, opc3, SIZE32, val[0],
+                              val[1]);
+        }
+        break;
+    case ENC_RM_R64_RM8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r64_rm8(val[0], val[1]) ) {
+            stat = _binstr_rm(instr, target, opc1, opc2, opc3, opsize, val[0],
                               val[1]);
         }
         break;
@@ -3017,46 +3040,11 @@ _cmpxchg(x86_64_target_t tgt, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 int
-_cpuid(x86_64_target_t target, const operand_vector_t *operands,
-       x86_64_instr_t *instr)
+_cpuid(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
 {
-    int ret;
-    x86_64_enop_t enop;
-    size_t opsize;
-    size_t addrsize;
-    int opcode1;
-    int opcode2;
-    int opcode3;
+    PASS0(binstr(instr, tgt, -1, 0x0f, 0xa2, -1, -1, ops, ENC_NP));
 
-    if ( 0 != mvector_size(operands) ) {
-        return -EOPERAND;
-    }
-
-    enop.opreg = -1;
-    enop.rex.r = REX_NONE;
-    enop.rex.x = REX_NONE;
-    enop.rex.b = REX_NONE;
-    enop.modrm = -1;
-    enop.sib = -1;
-    enop.disp.sz = 0;
-    enop.disp.val = 0;
-    enop.imm.sz = 0;
-    enop.imm.val = 0;
-    opsize = 0;
-    addrsize = 0;
-    opcode1 = 0x0f;
-    opcode2 = 0xa2;
-    opcode3 = -1;
-
-    ret = _build_instruction(target, &enop, opsize, addrsize, instr);
-    if ( ret < 0 ) {
-        return -EOPERAND;
-    }
-    instr->opcode1 = opcode1;
-    instr->opcode2 = opcode2;
-    instr->opcode3 = opcode3;
-
-    return 0;
+    return -EOPERAND;
 }
 
 /*
@@ -3081,99 +3069,23 @@ _cpuid(x86_64_target_t target, const operand_vector_t *operands,
  *      RM      ModRM:reg(r,w)  ModRM:r/m(r)    NA              NA
  */
 static int
-_crc32(x86_64_target_t target, const operand_vector_t *operands,
-       x86_64_instr_t *instr)
+_crc32(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
 {
-    operand_t *op1;
-    operand_t *op2;
-    x86_64_val_t *val1;
-    x86_64_val_t *val2;
-    int ret;
-    x86_64_enop_t enop;
-    size_t opsize;
-    size_t addrsize;
-    int opcode1;
-    int opcode2;
-    int opcode3;
+    /* FIXME */
+    instr->prefix1 = 0xf2;
 
-    if ( 2 == mvector_size(operands) ) {
-        op1 = mvector_at(operands, 0);
-        op2 = mvector_at(operands, 1);
+    PASS0(binstr(instr, tgt, SIZE8, 0x0f, 0x38, 0xf0, -1, ops, ENC_RM_R32_RM8));
+    PASS0(binstr(instr, tgt, SIZE16, 0x0f, 0x38, 0xf1, -1, ops,
+                 ENC_RM_R32_RM16));
+    PASS0(binstr(instr, tgt, SIZE32, 0x0f, 0x38, 0xf1, -1, ops,
+                 ENC_RM_R32_RM32));
+    PASS0(binstr(instr, tgt, SIZE64, 0x0f, 0x38, 0xf0, -1, ops,
+                 ENC_RM_R64_RM8));
+    PASS0(binstr(instr, tgt, SIZE64, 0x0f, 0x38, 0xf1, -1, ops,
+                 ENC_RM_R64_RM64));
 
-        val1 = x86_64_eval_operand(op1);
-        if ( NULL == val1 ) {
-            /* Error */
-            return -1;
-        }
-        val2 = x86_64_eval_operand(op2);
-        if ( NULL == val2 ) {
-            /* Error */
-            free(val1);
-            return -1;
-        }
+    return -EOPERAND;
 
-        if ( _is_r32_rm8(val1, val2) ) {
-            ret = _encode_rm(val1, val2, &enop);
-            opsize = SIZE32;
-            addrsize = _resolve_address_size1(val2);
-            opcode1 = 0x0f;
-            opcode2 = 0x38;
-            opcode3 = 0xf0;
-        } else if ( _is_r32_rm16(val1, val2) ) {
-            ret = _encode_rm(val1, val2, &enop);
-            opsize = SIZE16;
-            addrsize = _resolve_address_size1(val2);
-            opcode1 = 0x0f;
-            opcode2 = 0x38;
-            opcode3 = 0xf1;
-        } else if ( _is_r32_rm32(val1, val2) ) {
-            ret = _encode_rm(val1, val2, &enop);
-            opsize = SIZE32;
-            addrsize = _resolve_address_size1(val2);
-            opcode1 = 0x0f;
-            opcode2 = 0x38;
-            opcode3 = 0xf1;
-        } else if ( _is_r64_rm8(val1, val2) ) {
-            ret = _encode_rm(val1, val2, &enop);
-            opsize = SIZE64;
-            addrsize = _resolve_address_size1(val2);
-            opcode1 = 0x0f;
-            opcode2 = 0x38;
-            opcode3 = 0xf0;
-        } else if ( _is_r64_rm64(val1, val2) ) {
-            ret = _encode_rm(val1, val2, &enop);
-            opsize = SIZE64;
-            addrsize = _resolve_address_size1(val2);
-            opcode1 = 0x0f;
-            opcode2 = 0x38;
-            opcode3 = 0xf1;
-        } else {
-            ret = -1;
-        }
-
-        if ( ret < 0 ) {
-            free(val1);
-            free(val2);
-            return -EOPERAND;
-        }
-        ret = _build_instruction(target, &enop, opsize, addrsize, instr);
-        if ( ret < 0 ) {
-            free(val1);
-            free(val2);
-            return -EOPERAND;
-        }
-        instr->prefix1 = 0xf2;
-        instr->opcode1 = opcode1;
-        instr->opcode2 = opcode2;
-        instr->opcode3 = opcode3;
-
-        free(val1);
-        free(val2);
-
-        return 0;
-    } else {
-        return -EOPERAND;
-    }
 }
 
 /*
