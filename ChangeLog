@@ -1,3 +1,9 @@
+2013-12-10  Hirochika Asai  <asai@scyphus.co.jp>
+
+    * las/token.h: Added opcode prefix/suffix keywords
+    * las/tokenizer.c: Added opcode prefix/suffix keywords
+
+
 2013-12-09  Hirochika Asai  <asai@scyphus.co.jp>
 
     * las/arch/x86_64/main.c: Added the DEC instruction

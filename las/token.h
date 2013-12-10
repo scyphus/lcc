@@ -35,6 +35,13 @@ typedef enum _token_type {
     TOK_KW_WORD,
     TOK_KW_DWORD,
     TOK_KW_QWORD,
+    TOK_KW_LOCK,
+    TOK_KW_REP,
+    TOK_KW_REPE,
+    TOK_KW_REPZ,
+    TOK_KW_REPNE,
+    TOK_KW_REPNZ,
+    TOK_KW_FAR,
 
     /* Integer */
     TOK_BININT,
