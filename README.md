@@ -56,15 +56,6 @@ portable one.  Its output format has not yet been fixed at the current time.
     operands ::=
                  operand ( "," operand )*
 
-    opcode_prefix ::=
-                 "lock" | "rep" | "repe" | "repz" | "repne" | "repnz"
-
-    opcode_suffix ::=
-                 "far"
-
-    opcode ::=
-                 ( opcode_prefix )* OPCODE_STRING ( opcode_suffix )?
-
     instruction ::=
                  opcode ( operands )?
     

@@ -810,23 +810,50 @@ parse_instr(pcode_t *pcode, const char *sym)
     stmt_t *stmt;
     instr_t *instr;
     token_t *tok;
-    char *opcode;
+    char *opcodestr;
+    opcode_vector_t *opcode;
     operand_t *op;
     operand_vector_t *vec;
 
+    /* Allocate opcode and operand vectors  */
+    opcode = mvector_new();
+    if ( NULL == opcode ) {
+        return NULL;
+    }
     vec = mvector_new();
+    if ( NULL == vec ) {
+        opcode_vector_delete(opcode);
+        return NULL;
+    }
+
+    /* Push the first opcode */
+    opcodestr = strdup(sym);
+    if ( NULL == opcode ) {
+        opcode_vector_delete(opcode);
+        operands_delete(vec);
+        return NULL;
+    }
+    if ( NULL == mvector_push_back(opcode, opcodestr) ) {
+        free(opcodestr);
+        opcode_vector_delete(opcode);
+        operands_delete(vec);
+        return NULL;
+    }
+
     /* Read until the end of line */
     tok = token_queue_cur(pcode->token_queue);
     while ( NULL != tok && TOK_EOL != tok->type ) {
         op = parse_operand(pcode);
         if ( NULL == op ) {
-            /* Free operands */
+            /* Free opcode and operands */
+            opcode_vector_delete(opcode);
             operands_delete(vec);
             return NULL;
         }
         if ( NULL == mvector_push_back(vec, op) ) {
             operand_free(op);
-            /* Free operands */
+            /* Free opcode and operands */
+            opcode_vector_delete(opcode);
             operands_delete(vec);
             return NULL;
         }
@@ -839,23 +866,17 @@ parse_instr(pcode_t *pcode, const char *sym)
         } else {
             /* Syntax error */
             (void)token_queue_next(pcode->token_queue);
-            /* Free operands */
+            /* Free opcode and operands */
+            opcode_vector_delete(opcode);
             operands_delete(vec);
             return NULL;
         }
     }
 
-    /* Opcode */
-    opcode = strdup(sym);
-    if ( NULL == opcode ) {
-        operands_delete(vec);
-        return NULL;
-    }
-
     /* Instruction */
     instr = instr_new(opcode, vec);
     if ( NULL == instr ) {
-        free(opcode);
+        opcode_vector_delete(opcode);
         operands_delete(vec);
         return NULL;
     }
@@ -962,6 +983,9 @@ parse(pcode_t *pcode)
 
     /* Create a new statement vector */
     vec = mvector_new();
+    if ( NULL == vec ) {
+        return NULL;
+    }
 
     token_queue_rewind(pcode->token_queue);
     while ( NULL != (tok = token_queue_cur(pcode->token_queue)) ) {

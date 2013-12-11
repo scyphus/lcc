@@ -489,20 +489,6 @@ _scan_symbol(tokenizer_t *tokenizer, token_queue_t *tq)
         ret = _append_typed_token(tokenizer, tq, TOK_KW_DWORD);
     } else if ( 0 == memcmp(sp, "qword", 5) ) {
         ret = _append_typed_token(tokenizer, tq, TOK_KW_QWORD);
-    } else if ( 0 == memcmp(sp, "lock", 4) ) {
-        ret = _append_typed_token(tokenizer, tq, TOK_KW_LOCK);
-    } else if ( 0 == memcmp(sp, "rep", 3) ) {
-        ret = _append_typed_token(tokenizer, tq, TOK_KW_REP);
-    } else if ( 0 == memcmp(sp, "repe", 4) ) {
-        ret = _append_typed_token(tokenizer, tq, TOK_KW_REPE);
-    } else if ( 0 == memcmp(sp, "repz", 4) ) {
-        ret = _append_typed_token(tokenizer, tq, TOK_KW_REPZ);
-    } else if ( 0 == memcmp(sp, "repne", 5) ) {
-        ret = _append_typed_token(tokenizer, tq, TOK_KW_REPNE);
-    } else if ( 0 == memcmp(sp, "repnz", 5) ) {
-        ret = _append_typed_token(tokenizer, tq, TOK_KW_REPNZ);
-    } else if ( 0 == memcmp(sp, "far", 3) ) {
-        ret = _append_typed_token(tokenizer, tq, TOK_KW_FAR);
     } else {
         /* Copy the value */
         val = malloc(sizeof(char) * (tp - sp + 1));

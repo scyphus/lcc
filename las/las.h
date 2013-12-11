@@ -169,16 +169,13 @@ typedef struct operand {
 } operand_t;
 typedef struct mvector operand_vector_t;
 
-typedef struct mvector oprefix_vector_t;
-typedef struct mvector osuffix_vector_t;
+typedef struct mvector opcode_vector_t;
 
 /*
  * Instruction
  */
 typedef struct _instruction {
-    char *opcode;
-    oprefix_vector_t *oprefix;
-    osuffix_vector_t *osuffix;
+    opcode_vector_t *opcode;
     operand_vector_t *operands;
 } instr_t;
 

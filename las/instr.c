@@ -48,12 +48,25 @@ operands_delete(operand_vector_t *vec)
     mvector_delete(vec);
 }
 
+/*
+ * Delete the opcode vector
+ */
+void
+opcode_vector_delete(opcode_vector_t *vec)
+{
+    size_t i;
+
+    for ( i = 0; i < mvector_size(vec); i++ ) {
+        free(mvector_at(vec, i));
+    }
+    mvector_delete(vec);
+}
 
 /*
  * Create a new instruction
  */
 instr_t *
-instr_new(char *opcode, operand_vector_t *operands)
+instr_new(opcode_vector_t *opcode, operand_vector_t *operands)
 {
     instr_t *instr;
 
@@ -73,7 +86,7 @@ instr_new(char *opcode, operand_vector_t *operands)
 void
 instr_delete(instr_t *instr)
 {
-    free(instr->opcode);
+    opcode_vector_delete(instr->opcode);
     operands_delete(instr->operands);
     free(instr);
 }

@@ -16,6 +16,15 @@
 #include <assert.h>
 
 
+#define OPCODE_PREFIX_LOCK              (1)
+#define OPCODE_PREFIX_REP               (1<<1)
+#define OPCODE_PREFIX_REPE              (1<<2)
+#define OPCODE_PREFIX_REPZ              (1<<3)
+#define OPCODE_PREFIX_REPNE             (1<<4)
+#define OPCODE_PREFIX_REPNZ             (1<<5)
+#define OPCODE_PREFIX_BRANCH_TAKEN      (1<<6)
+#define OPCODE_PREFIX_BRANCH_NOT_TAKEN  (1<<7)
+
 
 #define PASS0(ret) do {                         \
     if ( 0 < ret ) { return ret; }              \
@@ -165,7 +174,8 @@ _print_instruction_bin(const x86_64_instr_t *instr)
  *      I       AL/AX/EAX/RAX   imm8/16/32      NA              NA
  */
 static int
-_add(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_add(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, -1, 0x04, -1, -1, -1, ops, ENC_I_AL_IMM8));
     PASS0(binstr(instr, tgt, -1, 0x05, -1, -1, -1, ops, ENC_I_AX_IMM16));
@@ -230,7 +240,8 @@ _add(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      I       AL/AX/EAX/RAX   imm8/16/32      NA              NA
  */
 static int
-_and(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_and(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, -1, 0x24, -1, -1, -1, ops, ENC_I_AL_IMM8));
     PASS0(binstr(instr, tgt, -1, 0x25, -1, -1, -1, ops, ENC_I_AX_IMM16));
@@ -269,7 +280,8 @@ _and(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      RM      ModRM:reg(w)    ModRM:r/m(r)    NA              NA
  */
 static int
-_bsf(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_bsf(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, -1, 0x0f, 0xbc, -1, -1, ops, ENC_RM_R16_RM16));
     PASS0(binstr(instr, tgt, -1, 0x0f, 0xbc, -1, -1, ops, ENC_RM_R32_RM32));
@@ -292,7 +304,8 @@ _bsf(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      RM      ModRM:reg(w)    ModRM:r/m(r)    NA              NA
  */
 static int
-_bsr(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_bsr(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, -1, 0x0f, 0xbd, -1, -1, ops, ENC_RM_R16_RM16));
     PASS0(binstr(instr, tgt, -1, 0x0f, 0xbd, -1, -1, ops, ENC_RM_R32_RM32));
@@ -314,7 +327,8 @@ _bsr(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      O       opcode+rd(r,w)  NA              NA              NA
  */
 static int
-_bswap(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_bswap(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+       x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE32, 0x0f, 0xc8, -1, -1, ops, ENC_O_R32));
     PASS0(binstr(instr, tgt, SIZE64, 0x0f, 0xc8, -1, -1, ops, ENC_O_R64));
@@ -341,7 +355,8 @@ _bswap(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      MI      ModRM:r/m(r)    imm8            NA              NA
  */
 static int
-_bt(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_bt(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+    x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, -1, 0x0f, 0xa3, -1, -1, ops, ENC_MR_RM16_R16));
     PASS0(binstr(instr, tgt, -1, 0x0f, 0xa3, -1, -1, ops, ENC_MR_RM32_R32));
@@ -373,7 +388,8 @@ _bt(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      MI      ModRM:r/m(r)    imm8            NA              NA
  */
 int
-_btc(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_btc(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, -1, 0x0f, 0xbb, -1, -1, ops, ENC_MR_RM16_R16));
     PASS0(binstr(instr, tgt, -1, 0x0f, 0xbb, -1, -1, ops, ENC_MR_RM32_R32));
@@ -404,7 +420,8 @@ _btc(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      MI      ModRM:r/m(r)    imm8            NA              NA
  */
 int
-_btr(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_btr(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, -1, 0x0f, 0xb3, -1, -1, ops, ENC_MR_RM16_R16));
     PASS0(binstr(instr, tgt, -1, 0x0f, 0xb3, -1, -1, ops, ENC_MR_RM32_R32));
@@ -435,7 +452,8 @@ _btr(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      MI      ModRM:r/m(r)    imm8            NA              NA
  */
 int
-_bts(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_bts(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, -1, 0x0f, 0xab, -1, -1, ops, ENC_MR_RM16_R16));
     PASS0(binstr(instr, tgt, -1, 0x0f, 0xab, -1, -1, ops, ENC_MR_RM32_R32));
@@ -460,21 +478,24 @@ _bts(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      NP      NA              NA              NA              NA
  */
 int
-_cbw(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_cbw(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE16, 0x98, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 int
-_cwde(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_cwde(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+      x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE32, 0x98, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 int
-_cdqe(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_cdqe(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+      x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE64, 0x98, -1, -1, -1, ops, ENC_NP));
 
@@ -492,7 +513,8 @@ _cdqe(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      NP      NA              NA              NA              NA
  */
 int
-_clc(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_clc(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, 0, 0xf8, -1, -1, -1, ops, ENC_NP));
 
@@ -510,7 +532,8 @@ _clc(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      NP      NA              NA              NA              NA
  */
 int
-_cld(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_cld(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, 0, 0xfc, -1, -1, -1, ops, ENC_NP));
     return -EOPERAND;
@@ -527,7 +550,8 @@ _cld(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      M       ModR/M(w)       NA              NA              NA
  */
 int
-_clflush(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_clflush(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+         x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE8, 0x0f, 0xae, -1, 7, ops, ENC_M_M8));
 
@@ -545,7 +569,8 @@ _clflush(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr
  *      NP      NA              NA              NA              NA
  */
 int
-_cli(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_cli(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, 0, 0xfa, -1, -1, -1, ops, ENC_NP));
 
@@ -592,7 +617,8 @@ _cli(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      I       AL/AX/EAX/RAX   imm8/16/32      NA              NA
  */
 static int
-_cmp(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_cmp(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, -1, 0x3c, -1, -1, -1, ops, ENC_I_AL_IMM8));
     PASS0(binstr(instr, tgt, -1, 0x3d, -1, -1, -1, ops, ENC_I_AX_IMM16));
@@ -637,7 +663,7 @@ _cmp(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      MR      ModRM:r/m(r,w)  ModRM:reg(r)    NA              NA
  */
 static int
-_cmpxchg(x86_64_target_t tgt, const operand_vector_t *ops,
+_cmpxchg(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
          x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, -1, 0x0f, 0xb0, -1, -1, ops, ENC_MR_RM8_R8));
@@ -659,7 +685,8 @@ _cmpxchg(x86_64_target_t tgt, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 int
-_cpuid(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_cpuid(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+       x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, 0, 0x0f, 0xa2, -1, -1, ops, ENC_NP));
 
@@ -688,7 +715,8 @@ _cpuid(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      RM      ModRM:reg(r,w)  ModRM:r/m(r)    NA              NA
  */
 static int
-_crc32(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_crc32(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+       x86_64_instr_t *instr)
 {
     /* FIXME */
     instr->prefix1 = 0xf2;
@@ -720,21 +748,24 @@ _crc32(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      NP      NA              NA              NA              NA
  */
 int
-_cwd(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_cwd(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE16, 0x99, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 int
-_cdq(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_cdq(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE32, 0x99, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 int
-_cqo(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_cqo(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE64, 0x99, -1, -1, -1, ops, ENC_NP));
 
@@ -752,7 +783,8 @@ _cqo(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      NP      NA              NA              NA              NA
  */
 int
-_daa(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_daa(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, 0, 0x27, -1, -1, -1, ops, ENC_NP));
 
@@ -770,7 +802,8 @@ _daa(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      NP      NA              NA              NA              NA
  */
 int
-_das(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_das(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, 0, 0x2f, -1, -1, -1, ops, ENC_NP));
 
@@ -798,7 +831,8 @@ _das(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      O       opcode+rd(r,w)  NA              NA              NA
  */
 static int
-_dec(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_dec(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE8, 0xfe, -1, -1, 1, ops, ENC_M_RM8));
     PASS0(binstr(instr, tgt, SIZE16, 0xff, -1, -1, 1, ops, ENC_M_RM16));
@@ -826,7 +860,8 @@ _dec(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      M       ModR/M:r/m(r,w) NA              NA              NA
  */
 static int
-_div(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_div(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE8, 0xf6, -1, -1, 6, ops, ENC_M_RM8));
     PASS0(binstr(instr, tgt, SIZE16, 0xf7, -1, -1, 6, ops, ENC_M_RM16));
@@ -847,7 +882,8 @@ _div(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      NP      NA              NA              NA              NA
  */
 int
-_hlt(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_hlt(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, 0, 0xf4, -1, -1, -1, ops, ENC_NP));
 
@@ -872,7 +908,8 @@ _hlt(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      M       ModR/M:r/m(r,w) NA              NA              NA
  */
 static int
-_idiv(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_idiv(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+      x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE8, 0xf6, -1, -1, 7, ops, ENC_M_RM8));
     PASS0(binstr(instr, tgt, SIZE16, 0xf7, -1, -1, 7, ops, ENC_M_RM16));
@@ -913,7 +950,8 @@ _idiv(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      RMI     ModRM:reg(r,w)  ModRM:r/m(r)    imm8/16/32      NA
  */
 static int
-_imul(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_imul(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+      x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE8, 0xf6, -1, -1, 5, ops, ENC_M_RM8));
     PASS0(binstr(instr, tgt, SIZE16, 0xf7, -1, -1, 5, ops, ENC_M_RM16));
@@ -945,7 +983,8 @@ _imul(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      NP      NA              NA              NA              NA
  */
 static int
-_in(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_in(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+    x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE8, 0xe4, -1, -1, -1, ops, ENC_I_AL_IMM8));
     PASS0(binstr(instr, tgt, SIZE16, 0xe5, -1, -1, -1, ops, ENC_I_AX_IMM8));
@@ -978,7 +1017,8 @@ _in(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      O       opcode+rd(r,w)  NA              NA              NA
  */
 static int
-_inc(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_inc(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE8, 0xfe, -1, -1, 0, ops, ENC_M_RM8));
     PASS0(binstr(instr, tgt, SIZE16, 0xff, -1, -1, 0, ops, ENC_M_RM16));
@@ -1001,21 +1041,24 @@ _inc(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      NP      NA              NA              NA              NA
  */
 static int
-_iret(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_iret(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+      x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE16, 0xcf, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 static int
-_iretd(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_iretd(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+       x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE32, 0xcf, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 static int
-_iretq(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_iretq(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+       x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE64, 0xcf, -1, -1, -1, ops, ENC_NP));
 
@@ -1044,7 +1087,8 @@ _iretq(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      M       ModR/M(r)       NA              NA              NA
  */
 int
-_jmp(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_jmp(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     /* To be implemented */
     return -EUNKNOWN;
@@ -1061,7 +1105,7 @@ _jmp(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      NP      NA              NA              NA              NA
  */
 int
-_monitor(x86_64_target_t tgt, const operand_vector_t *ops,
+_monitor(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
          x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, 0, 0x0f, 0x01, 0xc8, -1, ops, ENC_NP));
@@ -1129,7 +1173,8 @@ _monitor(x86_64_target_t tgt, const operand_vector_t *ops,
  *      MI      ModRM:r/m(w)    imm8/16/32/64   NA              NA
  */
 int
-_mov(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_mov(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE8, 0x88, -1, -1, -1, ops, ENC_MR_RM8_R8));
     PASS0(binstr(instr, tgt, SIZE16, 0x89, -1, -1, -1, ops, ENC_MR_RM16_R16));
@@ -1171,7 +1216,8 @@ _mov(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      NP      NA              NA              NA              NA
  */
 static int
-_out(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_out(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE8, 0xe6, -1, -1, -1, ops, ENC_I_IMM8_AL));
     PASS0(binstr(instr, tgt, SIZE16, 0xe7, -1, -1, -1, ops, ENC_I_IMM8_AX));
@@ -1197,7 +1243,8 @@ _out(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      RM      ModRM:reg(w)    ModRM:r/m(r)
  */
 int
-_popcnt(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_popcnt(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+        x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE16, 0xf3, 0x0f, 0xb8, -1, ops,
                  ENC_RM_R16_RM16));
@@ -1224,16 +1271,20 @@ _popcnt(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      I       imm16           NA              NA              NA
  */
 static int
-_ret(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_ret(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, 0, 0xc3, -1, -1, -1, ops, ENC_NP));
     PASS0(binstr(instr, tgt, 0, 0xc2, -1, -1, -1, ops, ENC_I_IMM16));
 
-#if 0
-    /* FIXME: Support "far return" */
+    return -EOPERAND;
+}
+static int
+_retfar(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+        x86_64_instr_t *instr)
+{
     PASS0(binstr(instr, tgt, 0, 0xcb, -1, -1, -1, ops, ENC_NP));
     PASS0(binstr(instr, tgt, 0, 0xca, -1, -1, -1, ops, ENC_I_IMM16));
-#endif
 
     return -EOPERAND;
 }
@@ -1277,7 +1328,8 @@ _ret(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
  *      RM      ModRM:reg(r,w)  ModRM:r/m(r)    NA              NA
  */
 int
-_xor(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
+_xor(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+     x86_64_instr_t *instr)
 {
     PASS0(binstr(instr, tgt, SIZE8, 0x34, -1, -1, -1, ops, ENC_I_AL_IMM8));
     PASS0(binstr(instr, tgt, SIZE16, 0x35, -1, -1, -1, ops, ENC_I_AX_IMM16));
@@ -1306,6 +1358,114 @@ _xor(x86_64_target_t tgt, const operand_vector_t *ops, x86_64_instr_t *instr)
 }
 
 
+#define REGISTER_INSTR(f, str, x) do {          \
+        if ( 0 == strcasecmp(#x, (str)) ) {     \
+            (f) = _##x;                         \
+        }                                       \
+    } while ( 0 )
+
+typedef int (*instr_f)(x86_64_target_t, int, const operand_vector_t *,
+                       x86_64_instr_t *);
+
+
+instr_f
+_get_instr(const opcode_vector_t *opcode, int *prefix)
+{
+    instr_f ifunc;
+    char *str;
+    int i;
+    int tmpprefix;
+
+    ifunc = NULL;
+
+    if ( mvector_size(opcode) < 1 ) {
+        /* No opcode found */
+        return NULL;
+    }
+
+    /* Parse prefixes */
+    tmpprefix = 0;
+    for ( i = 0; i < mvector_size(opcode); i++ ) {
+        str = mvector_at(opcode, i);
+        if ( 0 == strcasecmp(str, "lock") ) {
+            tmpprefix |= OPCODE_PREFIX_LOCK;
+        } else if ( 0 == strcasecmp(str, "rep") ) {
+            tmpprefix |= OPCODE_PREFIX_REP;
+        } else if ( 0 == strcasecmp(str, "repe") ) {
+            tmpprefix |= OPCODE_PREFIX_REPE;
+        } else if ( 0 == strcasecmp(str, "repz") ) {
+            tmpprefix |= OPCODE_PREFIX_REPZ;
+        } else if ( 0 == strcasecmp(str, "repne") ) {
+            tmpprefix |= OPCODE_PREFIX_REPNE;
+        } else if ( 0 == strcasecmp(str, "repnz") ) {
+            tmpprefix |= OPCODE_PREFIX_REPNZ;
+        } else if ( 0 == strcasecmp(str, "brt") ) {
+            tmpprefix |= OPCODE_PREFIX_BRANCH_TAKEN;
+        } else if ( 0 == strcasecmp(str, "brn") ) {
+            tmpprefix |= OPCODE_PREFIX_BRANCH_NOT_TAKEN;
+        } else {
+            break;
+        }
+    }
+
+   /* Opcode */
+   if ( i < mvector_size(opcode) ) {
+       str = mvector_at(opcode, i);
+       REGISTER_INSTR(ifunc, str, add);
+       REGISTER_INSTR(ifunc, str, and);
+       REGISTER_INSTR(ifunc, str, bsf);
+       REGISTER_INSTR(ifunc, str, bsr);
+       REGISTER_INSTR(ifunc, str, bswap);
+       REGISTER_INSTR(ifunc, str, bt);
+       REGISTER_INSTR(ifunc, str, btc);
+       REGISTER_INSTR(ifunc, str, btr);
+       REGISTER_INSTR(ifunc, str, bts);
+       REGISTER_INSTR(ifunc, str, cbw);
+       REGISTER_INSTR(ifunc, str, cwde);
+       REGISTER_INSTR(ifunc, str, cdqe);
+       REGISTER_INSTR(ifunc, str, clc);
+       REGISTER_INSTR(ifunc, str, cld);
+       REGISTER_INSTR(ifunc, str, clflush);
+       REGISTER_INSTR(ifunc, str, cli);
+       REGISTER_INSTR(ifunc, str, cmp);
+       REGISTER_INSTR(ifunc, str, cmpxchg);
+       REGISTER_INSTR(ifunc, str, cpuid);
+       REGISTER_INSTR(ifunc, str, crc32);
+       REGISTER_INSTR(ifunc, str, cwd);
+       REGISTER_INSTR(ifunc, str, cdq);
+       REGISTER_INSTR(ifunc, str, cqo);
+       REGISTER_INSTR(ifunc, str, daa);
+       REGISTER_INSTR(ifunc, str, das);
+       REGISTER_INSTR(ifunc, str, dec);
+       REGISTER_INSTR(ifunc, str, div);
+       REGISTER_INSTR(ifunc, str, hlt);
+       REGISTER_INSTR(ifunc, str, idiv);
+       REGISTER_INSTR(ifunc, str, imul);
+       REGISTER_INSTR(ifunc, str, in);
+       REGISTER_INSTR(ifunc, str, inc);
+       REGISTER_INSTR(ifunc, str, iret);
+       REGISTER_INSTR(ifunc, str, iretd);
+       REGISTER_INSTR(ifunc, str, iretq);
+       REGISTER_INSTR(ifunc, str, jmp);
+       REGISTER_INSTR(ifunc, str, monitor);
+       REGISTER_INSTR(ifunc, str, mov);
+       REGISTER_INSTR(ifunc, str, out);
+       REGISTER_INSTR(ifunc, str, popcnt);
+       REGISTER_INSTR(ifunc, str, ret);
+       REGISTER_INSTR(ifunc, str, retfar);
+       REGISTER_INSTR(ifunc, str, xor);
+   } else {
+       return NULL;
+   }
+   i++;
+
+    if ( i != mvector_size(opcode) ) {
+        return NULL;
+    }
+
+    return ifunc;
+}
+
 /*
  * Assemble x86-64 code
  */
@@ -1315,8 +1475,11 @@ arch_assemble_x86_64(stmt_vector_t *vec)
     size_t i;
     stmt_t *stmt;
     int ret;
+    int prefix;
     x86_64_target_t target;
     x86_64_instr_t instr;
+    instr_f ifunc;
+    int j;
 
     /* 64 bit option */
     target = X86_64_O64;
@@ -1324,154 +1487,39 @@ arch_assemble_x86_64(stmt_vector_t *vec)
     for ( i = 0; i < mvector_size(vec); i++ ){
         stmt = mvector_at(vec, i);
         if ( STMT_INSTR == stmt->type ) {
-            if ( 0 == strcasecmp("add", stmt->u.instr->opcode) ) {
-                /* ADD */
-                ret = _add(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("and", stmt->u.instr->opcode) ) {
-                /* AND */
-                ret = _and(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("bsf", stmt->u.instr->opcode) ) {
-                /* BSF */
-                ret = _bsf(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("bsr", stmt->u.instr->opcode) ) {
-                /* BSR */
-                ret = _bsr(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("bswap", stmt->u.instr->opcode) ) {
-                /* BSWAP */
-                ret = _bswap(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("bt", stmt->u.instr->opcode) ) {
-                /* BT */
-                ret = _bt(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("btc", stmt->u.instr->opcode) ) {
-                /* BTC */
-                ret = _btc(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("btr", stmt->u.instr->opcode) ) {
-                /* BTR */
-                ret = _btr(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("bts", stmt->u.instr->opcode) ) {
-                /* BTS */
-                ret = _bts(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("cbw", stmt->u.instr->opcode) ) {
-                /* CBW */
-                ret = _cbw(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("cwde", stmt->u.instr->opcode) ) {
-                /* CWDE */
-                ret = _cwde(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("cdqe", stmt->u.instr->opcode) ) {
-                /* CDQE */
-                ret = _cdqe(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("clc", stmt->u.instr->opcode) ) {
-                /* CLC */
-                ret = _clc(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("cld", stmt->u.instr->opcode) ) {
-                /* CLD */
-                ret = _cld(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("clflush", stmt->u.instr->opcode) ) {
-                /* CLFLUSH */
-                ret = _clflush(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("cli", stmt->u.instr->opcode) ) {
-                /* CLI */
-                ret = _cli(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("cmp", stmt->u.instr->opcode) ) {
-                /* CMP */
-                ret = _cmp(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("cmpxchg", stmt->u.instr->opcode) ) {
-                /* CMPXCHG */
-                ret = _cmpxchg(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("cpuid", stmt->u.instr->opcode) ) {
-                /* CPUID */
-                ret = _cpuid(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("crc32", stmt->u.instr->opcode) ) {
-                /* CRC32 */
-                ret = _crc32(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("cwd", stmt->u.instr->opcode) ) {
-                /* CWD */
-                ret = _cwd(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("cdq", stmt->u.instr->opcode) ) {
-                /* CDQ */
-                ret = _cdq(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("cqo", stmt->u.instr->opcode) ) {
-                /* CQO */
-                ret = _cqo(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("daa", stmt->u.instr->opcode) ) {
-                /* DAA */
-                ret = _daa(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("das", stmt->u.instr->opcode) ) {
-                /* DAS */
-                ret = _das(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("dec", stmt->u.instr->opcode) ) {
-                /* DEC */
-                ret = _dec(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("div", stmt->u.instr->opcode) ) {
-                /* DIV */
-                ret = _div(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("hlt", stmt->u.instr->opcode) ) {
-                /* HLT */
-                ret = _hlt(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("idiv", stmt->u.instr->opcode) ) {
-                /* IDIV */
-                ret = _idiv(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("imul", stmt->u.instr->opcode) ) {
-                /* IMUL */
-                ret = _imul(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("in", stmt->u.instr->opcode) ) {
-                /* IN */
-                ret = _in(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("inc", stmt->u.instr->opcode) ) {
-                /* INC */
-                ret = _inc(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("iret", stmt->u.instr->opcode) ) {
-                /* IRET */
-                ret = _iret(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("iretd", stmt->u.instr->opcode) ) {
-                /* IRETD */
-                ret = _iretd(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("iretq", stmt->u.instr->opcode) ) {
-                /* IRETQ */
-                ret = _iretq(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("jmp", stmt->u.instr->opcode) ) {
-                /* JMP */
-                ret = _jmp(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("monitor", stmt->u.instr->opcode) ) {
-                /* MONITOR */
-                ret = _monitor(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("mov", stmt->u.instr->opcode) ) {
-                /* MOV */
-                ret = _mov(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("out", stmt->u.instr->opcode) ) {
-                /* OUT */
-                ret = _out(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("popcnt", stmt->u.instr->opcode) ) {
-                /* POPCNT */
-                ret = _popcnt(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("ret", stmt->u.instr->opcode) ) {
-                /* RET */
-                ret = _ret(target, stmt->u.instr->operands, &instr);
-            } else if ( 0 == strcasecmp("xor", stmt->u.instr->opcode) ) {
-                /* XOR */
-                ret = _xor(target, stmt->u.instr->operands, &instr);
+            ifunc = _get_instr(stmt->u.instr->opcode, &prefix);
+            if ( NULL != ifunc ) {
+                ret = ifunc(target, prefix, stmt->u.instr->operands, &instr);
+                if ( ret >= 0 ) {
+                    _print_instruction_bin(&instr);
+#if 0
+                    _print_instruction(&instr);
+#endif
+                    printf("\n");
+                } else {
+                    /* Error */
+                    fprintf(stderr, "Error:");
+                    for ( j = 0; j < mvector_size(stmt->u.instr->opcode);
+                          j++ ) {
+                        fprintf(stderr, " %s",
+                                mvector_at(stmt->u.instr->opcode, j));
+                    }
+                    fprintf(stderr, "\n");
+                }
             } else {
                 /* Unknown */
-                fprintf(stderr, "Unknown instruction: %s\n",
-                        stmt->u.instr->opcode);
-                ret = -1;
-            }
-            if ( ret >= 0 ) {
-                _print_instruction_bin(&instr);
-#if 0
-                _print_instruction(&instr);
-#endif
-                printf("\n");
-            } else {
-                /* Error */
-                fprintf(stderr, "Error: %s\n", stmt->u.instr->opcode);
+                fprintf(stderr, "Unknown instruction:");
+                for ( j = 0; j < mvector_size(stmt->u.instr->opcode); j++ ) {
+                    fprintf(stderr, " %s",
+                            mvector_at(stmt->u.instr->opcode, j));
+                }
+                fprintf(stderr, "\n");
             }
         }
     }
 
-    return ret;
+    return 0;
 }
-
 
 
 /*

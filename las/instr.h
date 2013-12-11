@@ -17,7 +17,9 @@ extern "C" {
     void operand_free(operand_t *);
     void operands_delete(operand_vector_t *);
 
-    instr_t * instr_new(char *, operand_vector_t *);
+    void opcode_vector_delete(opcode_vector_t *);
+
+    instr_t * instr_new(opcode_vector_t *, operand_vector_t *);
     void instr_delete(instr_t *);
     void stmt_free(stmt_t *);
 
