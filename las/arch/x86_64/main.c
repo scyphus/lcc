@@ -8,6 +8,8 @@
 /* $Id$ */
 
 #include "../../las.h"
+#include "../../token.h"
+#include "../../parser.h"
 #include "binstr.h"
 #include "reg.h"
 #include "eval.h"
@@ -24,13 +26,66 @@
 #define OPCODE_PREFIX_REPNZ             (1<<5)
 #define OPCODE_PREFIX_BRANCH_TAKEN      (1<<6)
 #define OPCODE_PREFIX_BRANCH_NOT_TAKEN  (1<<7)
+#define OPCODE_SUFFIX_FAR               (1)
 
 
-#define PASS0(ret) do {                         \
-    if ( 0 < ret ) { return ret; }              \
-    else if ( 0 > ret ) { return 0; }           \
+#define PASS0(ret) do {                                                 \
+        /* FIXME!!!! */                                                 \
+        if ( OPCODE_PREFIX_LOCK & opt->prefix ) {                       \
+            if ( instr->prefix1 >= 0 ) {                                \
+                return -EPREFIX;                                        \
+            }                                                           \
+            instr->prefix1 = 0xf0;                                      \
+        }                                                               \
+        if ( OPCODE_PREFIX_REPNE & opt->prefix ) {                      \
+            if ( instr->prefix1 >= 0 ) {                                \
+                return -EPREFIX;                                        \
+            }                                                           \
+            instr->prefix1 = 0xf2;                                      \
+        }                                                               \
+        if ( OPCODE_PREFIX_REPNZ & opt->prefix ) {                      \
+            if ( instr->prefix1 >= 0 ) {                                \
+                return -EPREFIX;                                        \
+            }                                                           \
+            instr->prefix1 = 0xf2;                                      \
+        }                                                               \
+        if ( OPCODE_PREFIX_REP & opt->prefix ) {                        \
+            if ( instr->prefix1 >= 0 ) {                                \
+                return -EPREFIX;                                        \
+            }                                                           \
+            instr->prefix1 = 0xf3;                                      \
+        }                                                               \
+        if ( OPCODE_PREFIX_REPE & opt->prefix ) {                       \
+            if ( instr->prefix1 >= 0 ) {                                \
+                return -EPREFIX;                                        \
+            }                                                           \
+            instr->prefix1 = 0xf3;                                      \
+        }                                                               \
+        if ( OPCODE_PREFIX_REPZ & opt->prefix ) {                       \
+            if ( instr->prefix1 >= 0 ) {                                \
+                return -EPREFIX;                                        \
+            }                                                           \
+            instr->prefix1 = 0xf3;                                      \
+        }                                                               \
+        if ( OPCODE_PREFIX_BRANCH_NOT_TAKEN & opt->prefix ) {           \
+            if ( instr->prefix3 >= 0 ) {                                \
+                return -EPREFIX;                                        \
+            }                                                           \
+            instr->prefix3 = 0x2e;                                      \
+        }                                                               \
+        if ( OPCODE_PREFIX_BRANCH_TAKEN & opt->prefix ) {               \
+            if ( instr->prefix3 >= 0 ) {                                \
+                return -EPREFIX;                                        \
+            }                                                           \
+            instr->prefix3 = 0x3e;                                      \
+        }                                                               \
+        if ( 0 < ret ) { return ret; }                                  \
+        else if ( 0 > ret ) { return 0; }                               \
     } while ( 0 )
 
+/*
+ * Print assembled code
+ */
 int
 _print_instruction(const x86_64_instr_t *instr)
 {
@@ -174,28 +229,28 @@ _print_instruction_bin(const x86_64_instr_t *instr)
  *      I       AL/AX/EAX/RAX   imm8/16/32      NA              NA
  */
 static int
-_add(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_add(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, -1, 0x04, -1, -1, -1, ops, ENC_I_AL_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x05, -1, -1, -1, ops, ENC_I_AX_IMM16));
-    PASS0(binstr(instr, tgt, -1, 0x05, -1, -1, -1, ops, ENC_I_EAX_IMM32));
-    PASS0(binstr(instr, tgt, -1, 0x05, -1, -1, -1, ops, ENC_I_RAX_IMM32));
-    PASS0(binstr(instr, tgt, -1, 0x80, -1, -1, 0, ops, ENC_MI_RM8_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x83, -1, -1, 0, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x81, -1, -1, 0, ops, ENC_MI_RM16_IMM16));
-    PASS0(binstr(instr, tgt, -1, 0x83, -1, -1, 0, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x81, -1, -1, 0, ops, ENC_MI_RM32_IMM32));
-    PASS0(binstr(instr, tgt, -1, 0x83, -1, -1, 0, ops, ENC_MI_RM64_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x81, -1, -1, 0, ops, ENC_MI_RM64_IMM32));
-    PASS0(binstr(instr, tgt, -1, 0x00, -1, -1, -1, ops, ENC_MR_RM8_R8));
-    PASS0(binstr(instr, tgt, -1, 0x01, -1, -1, -1, ops, ENC_MR_RM16_R16));
-    PASS0(binstr(instr, tgt, -1, 0x01, -1, -1, -1, ops, ENC_MR_RM32_R32));
-    PASS0(binstr(instr, tgt, -1, 0x01, -1, -1, -1, ops, ENC_MR_RM64_R64));
-    PASS0(binstr(instr, tgt, -1, 0x02, -1, -1, -1, ops, ENC_RM_R8_RM8));
-    PASS0(binstr(instr, tgt, -1, 0x03, -1, -1, -1, ops, ENC_RM_R16_RM16));
-    PASS0(binstr(instr, tgt, -1, 0x03, -1, -1, -1, ops, ENC_RM_R32_RM32));
-    PASS0(binstr(instr, tgt, -1, 0x03, -1, -1, -1, ops, ENC_RM_R64_RM64));
+    PASS0(binstr(instr, opt->tgt, -1, 0x04, -1, -1, -1, ops, ENC_I_AL_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x05, -1, -1, -1, ops, ENC_I_AX_IMM16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x05, -1, -1, -1, ops, ENC_I_EAX_IMM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x05, -1, -1, -1, ops, ENC_I_RAX_IMM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x80, -1, -1, 0, ops, ENC_MI_RM8_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x83, -1, -1, 0, ops, ENC_MI_RM16_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x81, -1, -1, 0, ops, ENC_MI_RM16_IMM16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x83, -1, -1, 0, ops, ENC_MI_RM32_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x81, -1, -1, 0, ops, ENC_MI_RM32_IMM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x83, -1, -1, 0, ops, ENC_MI_RM64_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x81, -1, -1, 0, ops, ENC_MI_RM64_IMM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x00, -1, -1, -1, ops, ENC_MR_RM8_R8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x01, -1, -1, -1, ops, ENC_MR_RM16_R16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x01, -1, -1, -1, ops, ENC_MR_RM32_R32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x01, -1, -1, -1, ops, ENC_MR_RM64_R64));
+    PASS0(binstr(instr, opt->tgt, -1, 0x02, -1, -1, -1, ops, ENC_RM_R8_RM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x03, -1, -1, -1, ops, ENC_RM_R16_RM16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x03, -1, -1, -1, ops, ENC_RM_R32_RM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x03, -1, -1, -1, ops, ENC_RM_R64_RM64));
 
     return -EOPERAND;
 }
@@ -240,28 +295,28 @@ _add(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      I       AL/AX/EAX/RAX   imm8/16/32      NA              NA
  */
 static int
-_and(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_and(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, -1, 0x24, -1, -1, -1, ops, ENC_I_AL_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x25, -1, -1, -1, ops, ENC_I_AX_IMM16));
-    PASS0(binstr(instr, tgt, -1, 0x25, -1, -1, -1, ops, ENC_I_EAX_IMM32));
-    PASS0(binstr(instr, tgt, -1, 0x25, -1, -1, -1, ops, ENC_I_RAX_IMM32));
-    PASS0(binstr(instr, tgt, -1, 0x80, -1, -1, 4, ops, ENC_MI_RM8_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x83, -1, -1, 4, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x81, -1, -1, 4, ops, ENC_MI_RM16_IMM16));
-    PASS0(binstr(instr, tgt, -1, 0x83, -1, -1, 4, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x81, -1, -1, 4, ops, ENC_MI_RM32_IMM32));
-    PASS0(binstr(instr, tgt, -1, 0x83, -1, -1, 4, ops, ENC_MI_RM64_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x81, -1, -1, 4, ops, ENC_MI_RM64_IMM32));
-    PASS0(binstr(instr, tgt, -1, 0x20, -1, -1, -1, ops, ENC_MR_RM8_R8));
-    PASS0(binstr(instr, tgt, -1, 0x21, -1, -1, -1, ops, ENC_MR_RM16_R16));
-    PASS0(binstr(instr, tgt, -1, 0x21, -1, -1, -1, ops, ENC_MR_RM32_R32));
-    PASS0(binstr(instr, tgt, -1, 0x21, -1, -1, -1, ops, ENC_MR_RM64_R64));
-    PASS0(binstr(instr, tgt, -1, 0x22, -1, -1, -1, ops, ENC_RM_R8_RM8));
-    PASS0(binstr(instr, tgt, -1, 0x23, -1, -1, -1, ops, ENC_RM_R16_RM16));
-    PASS0(binstr(instr, tgt, -1, 0x23, -1, -1, -1, ops, ENC_RM_R32_RM32));
-    PASS0(binstr(instr, tgt, -1, 0x23, -1, -1, -1, ops, ENC_RM_R64_RM64));
+    PASS0(binstr(instr, opt->tgt, -1, 0x24, -1, -1, -1, ops, ENC_I_AL_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x25, -1, -1, -1, ops, ENC_I_AX_IMM16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x25, -1, -1, -1, ops, ENC_I_EAX_IMM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x25, -1, -1, -1, ops, ENC_I_RAX_IMM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x80, -1, -1, 4, ops, ENC_MI_RM8_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x83, -1, -1, 4, ops, ENC_MI_RM16_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x81, -1, -1, 4, ops, ENC_MI_RM16_IMM16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x83, -1, -1, 4, ops, ENC_MI_RM32_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x81, -1, -1, 4, ops, ENC_MI_RM32_IMM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x83, -1, -1, 4, ops, ENC_MI_RM64_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x81, -1, -1, 4, ops, ENC_MI_RM64_IMM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x20, -1, -1, -1, ops, ENC_MR_RM8_R8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x21, -1, -1, -1, ops, ENC_MR_RM16_R16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x21, -1, -1, -1, ops, ENC_MR_RM32_R32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x21, -1, -1, -1, ops, ENC_MR_RM64_R64));
+    PASS0(binstr(instr, opt->tgt, -1, 0x22, -1, -1, -1, ops, ENC_RM_R8_RM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x23, -1, -1, -1, ops, ENC_RM_R16_RM16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x23, -1, -1, -1, ops, ENC_RM_R32_RM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x23, -1, -1, -1, ops, ENC_RM_R64_RM64));
 
     return -EOPERAND;
 }
@@ -280,12 +335,15 @@ _and(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      RM      ModRM:reg(w)    ModRM:r/m(r)    NA              NA
  */
 static int
-_bsf(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_bsf(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xbc, -1, -1, ops, ENC_RM_R16_RM16));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xbc, -1, -1, ops, ENC_RM_R32_RM32));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xbc, -1, -1, ops, ENC_RM_R64_RM64));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xbc, -1, -1, ops,
+                 ENC_RM_R16_RM16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xbc, -1, -1, ops,
+                 ENC_RM_R32_RM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xbc, -1, -1, ops,
+                 ENC_RM_R64_RM64));
 
     return -EOPERAND;
 }
@@ -304,12 +362,15 @@ _bsf(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      RM      ModRM:reg(w)    ModRM:r/m(r)    NA              NA
  */
 static int
-_bsr(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_bsr(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xbd, -1, -1, ops, ENC_RM_R16_RM16));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xbd, -1, -1, ops, ENC_RM_R32_RM32));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xbd, -1, -1, ops, ENC_RM_R64_RM64));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xbd, -1, -1, ops,
+                 ENC_RM_R16_RM16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xbd, -1, -1, ops,
+                 ENC_RM_R32_RM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xbd, -1, -1, ops,
+                 ENC_RM_R64_RM64));
 
     return -EOPERAND;
 }
@@ -327,11 +388,11 @@ _bsr(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      O       opcode+rd(r,w)  NA              NA              NA
  */
 static int
-_bswap(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_bswap(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
        x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE32, 0x0f, 0xc8, -1, -1, ops, ENC_O_R32));
-    PASS0(binstr(instr, tgt, SIZE64, 0x0f, 0xc8, -1, -1, ops, ENC_O_R64));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0x0f, 0xc8, -1, -1, ops, ENC_O_R32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0x0f, 0xc8, -1, -1, ops, ENC_O_R64));
 
     return -EOPERAND;
 }
@@ -355,15 +416,21 @@ _bswap(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      MI      ModRM:r/m(r)    imm8            NA              NA
  */
 static int
-_bt(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_bt(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
     x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xa3, -1, -1, ops, ENC_MR_RM16_R16));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xa3, -1, -1, ops, ENC_MR_RM32_R32));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xa3, -1, -1, ops, ENC_MR_RM64_R64));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xba, -1, 4, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xba, -1, 4, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xba, -1, 4, ops, ENC_MI_RM64_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xa3, -1, -1, ops,
+                 ENC_MR_RM16_R16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xa3, -1, -1, ops,
+                 ENC_MR_RM32_R32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xa3, -1, -1, ops,
+                 ENC_MR_RM64_R64));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xba, -1, 4, ops,
+                 ENC_MI_RM16_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xba, -1, 4, ops,
+                 ENC_MI_RM32_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xba, -1, 4, ops,
+                 ENC_MI_RM64_IMM8));
 
     return -EOPERAND;
 }
@@ -388,15 +455,21 @@ _bt(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      MI      ModRM:r/m(r)    imm8            NA              NA
  */
 int
-_btc(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_btc(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xbb, -1, -1, ops, ENC_MR_RM16_R16));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xbb, -1, -1, ops, ENC_MR_RM32_R32));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xbb, -1, -1, ops, ENC_MR_RM64_R64));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xba, -1, 7, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xba, -1, 7, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xba, -1, 7, ops, ENC_MI_RM64_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xbb, -1, -1, ops,
+                 ENC_MR_RM16_R16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xbb, -1, -1, ops,
+                 ENC_MR_RM32_R32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xbb, -1, -1, ops,
+                 ENC_MR_RM64_R64));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xba, -1, 7, ops,
+                 ENC_MI_RM16_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xba, -1, 7, ops,
+                 ENC_MI_RM32_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xba, -1, 7, ops,
+                 ENC_MI_RM64_IMM8));
 
     return -EOPERAND;
 }
@@ -420,15 +493,21 @@ _btc(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      MI      ModRM:r/m(r)    imm8            NA              NA
  */
 int
-_btr(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_btr(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xb3, -1, -1, ops, ENC_MR_RM16_R16));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xb3, -1, -1, ops, ENC_MR_RM32_R32));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xb3, -1, -1, ops, ENC_MR_RM64_R64));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xba, -1, 6, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xba, -1, 6, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xba, -1, 6, ops, ENC_MI_RM64_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xb3, -1, -1, ops,
+                 ENC_MR_RM16_R16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xb3, -1, -1, ops,
+                 ENC_MR_RM32_R32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xb3, -1, -1, ops,
+                 ENC_MR_RM64_R64));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xba, -1, 6, ops,
+                 ENC_MI_RM16_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xba, -1, 6, ops,
+                 ENC_MI_RM32_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xba, -1, 6, ops,
+                 ENC_MI_RM64_IMM8));
 
     return -EOPERAND;
 }
@@ -452,15 +531,21 @@ _btr(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      MI      ModRM:r/m(r)    imm8            NA              NA
  */
 int
-_bts(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_bts(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xab, -1, -1, ops, ENC_MR_RM16_R16));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xab, -1, -1, ops, ENC_MR_RM32_R32));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xab, -1, -1, ops, ENC_MR_RM64_R64));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xba, -1, 5, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xba, -1, 5, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xba, -1, 5, ops, ENC_MI_RM64_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xab, -1, -1, ops,
+                 ENC_MR_RM16_R16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xab, -1, -1, ops,
+                 ENC_MR_RM32_R32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xab, -1, -1, ops,
+                 ENC_MR_RM64_R64));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xba, -1, 5, ops,
+                 ENC_MI_RM16_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xba, -1, 5, ops,
+                 ENC_MI_RM32_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xba, -1, 5, ops,
+                 ENC_MI_RM64_IMM8));
 
     return -EOPERAND;
 }
@@ -478,26 +563,26 @@ _bts(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 int
-_cbw(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_cbw(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE16, 0x98, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0x98, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 int
-_cwde(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_cwde(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
       x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE32, 0x98, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0x98, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 int
-_cdqe(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_cdqe(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
       x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE64, 0x98, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0x98, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
@@ -513,10 +598,10 @@ _cdqe(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 int
-_clc(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_clc(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, 0, 0xf8, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, 0, 0xf8, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
@@ -532,10 +617,11 @@ _clc(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 int
-_cld(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_cld(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, 0, 0xfc, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, 0, 0xfc, -1, -1, -1, ops, ENC_NP));
+
     return -EOPERAND;
 }
 
@@ -550,10 +636,10 @@ _cld(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      M       ModR/M(w)       NA              NA              NA
  */
 int
-_clflush(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_clflush(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
          x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE8, 0x0f, 0xae, -1, 7, ops, ENC_M_M8));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0x0f, 0xae, -1, 7, ops, ENC_M_M8));
 
     return -EOPERAND;
 }
@@ -569,10 +655,10 @@ _clflush(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 int
-_cli(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_cli(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, 0, 0xfa, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, 0, 0xfa, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
@@ -617,28 +703,28 @@ _cli(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      I       AL/AX/EAX/RAX   imm8/16/32      NA              NA
  */
 static int
-_cmp(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_cmp(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, -1, 0x3c, -1, -1, -1, ops, ENC_I_AL_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x3d, -1, -1, -1, ops, ENC_I_AX_IMM16));
-    PASS0(binstr(instr, tgt, -1, 0x3d, -1, -1, -1, ops, ENC_I_EAX_IMM32));
-    PASS0(binstr(instr, tgt, -1, 0x3d, -1, -1, -1, ops, ENC_I_RAX_IMM32));
-    PASS0(binstr(instr, tgt, -1, 0x80, -1, -1, 7, ops, ENC_MI_RM8_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x83, -1, -1, 7, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x81, -1, -1, 7, ops, ENC_MI_RM16_IMM16));
-    PASS0(binstr(instr, tgt, -1, 0x83, -1, -1, 7, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x81, -1, -1, 7, ops, ENC_MI_RM32_IMM32));
-    PASS0(binstr(instr, tgt, -1, 0x83, -1, -1, 7, ops, ENC_MI_RM64_IMM8));
-    PASS0(binstr(instr, tgt, -1, 0x81, -1, -1, 7, ops, ENC_MI_RM64_IMM32));
-    PASS0(binstr(instr, tgt, -1, 0x38, -1, -1, -1, ops, ENC_MR_RM8_R8));
-    PASS0(binstr(instr, tgt, -1, 0x39, -1, -1, -1, ops, ENC_MR_RM16_R16));
-    PASS0(binstr(instr, tgt, -1, 0x39, -1, -1, -1, ops, ENC_MR_RM32_R32));
-    PASS0(binstr(instr, tgt, -1, 0x39, -1, -1, -1, ops, ENC_MR_RM64_R64));
-    PASS0(binstr(instr, tgt, -1, 0x3a, -1, -1, -1, ops, ENC_RM_R8_RM8));
-    PASS0(binstr(instr, tgt, -1, 0x3b, -1, -1, -1, ops, ENC_RM_R16_RM16));
-    PASS0(binstr(instr, tgt, -1, 0x3b, -1, -1, -1, ops, ENC_RM_R32_RM32));
-    PASS0(binstr(instr, tgt, -1, 0x3b, -1, -1, -1, ops, ENC_RM_R64_RM64));
+    PASS0(binstr(instr, opt->tgt, -1, 0x3c, -1, -1, -1, ops, ENC_I_AL_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x3d, -1, -1, -1, ops, ENC_I_AX_IMM16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x3d, -1, -1, -1, ops, ENC_I_EAX_IMM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x3d, -1, -1, -1, ops, ENC_I_RAX_IMM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x80, -1, -1, 7, ops, ENC_MI_RM8_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x83, -1, -1, 7, ops, ENC_MI_RM16_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x81, -1, -1, 7, ops, ENC_MI_RM16_IMM16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x83, -1, -1, 7, ops, ENC_MI_RM32_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x81, -1, -1, 7, ops, ENC_MI_RM32_IMM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x83, -1, -1, 7, ops, ENC_MI_RM64_IMM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x81, -1, -1, 7, ops, ENC_MI_RM64_IMM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x38, -1, -1, -1, ops, ENC_MR_RM8_R8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x39, -1, -1, -1, ops, ENC_MR_RM16_R16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x39, -1, -1, -1, ops, ENC_MR_RM32_R32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x39, -1, -1, -1, ops, ENC_MR_RM64_R64));
+    PASS0(binstr(instr, opt->tgt, -1, 0x3a, -1, -1, -1, ops, ENC_RM_R8_RM8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x3b, -1, -1, -1, ops, ENC_RM_R16_RM16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x3b, -1, -1, -1, ops, ENC_RM_R32_RM32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x3b, -1, -1, -1, ops, ENC_RM_R64_RM64));
 
     return -EOPERAND;
 }
@@ -663,13 +749,16 @@ _cmp(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      MR      ModRM:r/m(r,w)  ModRM:reg(r)    NA              NA
  */
 static int
-_cmpxchg(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_cmpxchg(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
          x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xb0, -1, -1, ops, ENC_MR_RM8_R8));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xb1, -1, -1, ops, ENC_MR_RM16_R16));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xb1, -1, -1, ops, ENC_MR_RM32_R32));
-    PASS0(binstr(instr, tgt, -1, 0x0f, 0xb1, -1, -1, ops, ENC_MR_RM64_R64));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xb0, -1, -1, ops, ENC_MR_RM8_R8));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xb1, -1, -1, ops,
+                 ENC_MR_RM16_R16));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xb1, -1, -1, ops,
+                 ENC_MR_RM32_R32));
+    PASS0(binstr(instr, opt->tgt, -1, 0x0f, 0xb1, -1, -1, ops,
+                 ENC_MR_RM64_R64));
 
     return -EOPERAND;
 }
@@ -685,10 +774,10 @@ _cmpxchg(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 int
-_cpuid(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_cpuid(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
        x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, 0, 0x0f, 0xa2, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, 0, 0x0f, 0xa2, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
@@ -715,20 +804,21 @@ _cpuid(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      RM      ModRM:reg(r,w)  ModRM:r/m(r)    NA              NA
  */
 static int
-_crc32(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_crc32(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
        x86_64_instr_t *instr)
 {
     /* FIXME */
     instr->prefix1 = 0xf2;
 
-    PASS0(binstr(instr, tgt, SIZE8, 0x0f, 0x38, 0xf0, -1, ops, ENC_RM_R32_RM8));
-    PASS0(binstr(instr, tgt, SIZE16, 0x0f, 0x38, 0xf1, -1, ops,
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0x0f, 0x38, 0xf0, -1, ops,
+                 ENC_RM_R32_RM8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0x0f, 0x38, 0xf1, -1, ops,
                  ENC_RM_R32_RM16));
-    PASS0(binstr(instr, tgt, SIZE32, 0x0f, 0x38, 0xf1, -1, ops,
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0x0f, 0x38, 0xf1, -1, ops,
                  ENC_RM_R32_RM32));
-    PASS0(binstr(instr, tgt, SIZE64, 0x0f, 0x38, 0xf0, -1, ops,
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0x0f, 0x38, 0xf0, -1, ops,
                  ENC_RM_R64_RM8));
-    PASS0(binstr(instr, tgt, SIZE64, 0x0f, 0x38, 0xf1, -1, ops,
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0x0f, 0x38, 0xf1, -1, ops,
                  ENC_RM_R64_RM64));
 
     return -EOPERAND;
@@ -748,26 +838,26 @@ _crc32(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 int
-_cwd(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_cwd(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE16, 0x99, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0x99, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 int
-_cdq(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_cdq(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE32, 0x99, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0x99, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 int
-_cqo(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_cqo(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE64, 0x99, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0x99, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
@@ -783,10 +873,10 @@ _cqo(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 int
-_daa(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_daa(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, 0, 0x27, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, 0, 0x27, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
@@ -802,10 +892,10 @@ _daa(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 int
-_das(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_das(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, 0, 0x2f, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, 0, 0x2f, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
@@ -831,13 +921,13 @@ _das(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      O       opcode+rd(r,w)  NA              NA              NA
  */
 static int
-_dec(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_dec(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE8, 0xfe, -1, -1, 1, ops, ENC_M_RM8));
-    PASS0(binstr(instr, tgt, SIZE16, 0xff, -1, -1, 1, ops, ENC_M_RM16));
-    PASS0(binstr(instr, tgt, SIZE32, 0xff, -1, -1, 1, ops, ENC_M_RM32));
-    PASS0(binstr(instr, tgt, SIZE64, 0xff, -1, -1, 1, ops, ENC_M_RM64));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0xfe, -1, -1, 1, ops, ENC_M_RM8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0xff, -1, -1, 1, ops, ENC_M_RM16));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0xff, -1, -1, 1, ops, ENC_M_RM32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0xff, -1, -1, 1, ops, ENC_M_RM64));
 
     return -EOPERAND;
 }
@@ -860,13 +950,13 @@ _dec(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      M       ModR/M:r/m(r,w) NA              NA              NA
  */
 static int
-_div(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_div(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE8, 0xf6, -1, -1, 6, ops, ENC_M_RM8));
-    PASS0(binstr(instr, tgt, SIZE16, 0xf7, -1, -1, 6, ops, ENC_M_RM16));
-    PASS0(binstr(instr, tgt, SIZE32, 0xf7, -1, -1, 6, ops, ENC_M_RM32));
-    PASS0(binstr(instr, tgt, SIZE64, 0xf7, -1, -1, 6, ops, ENC_M_RM64));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0xf6, -1, -1, 6, ops, ENC_M_RM8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0xf7, -1, -1, 6, ops, ENC_M_RM16));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0xf7, -1, -1, 6, ops, ENC_M_RM32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0xf7, -1, -1, 6, ops, ENC_M_RM64));
 
     return -EOPERAND;
 }
@@ -882,10 +972,10 @@ _div(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 int
-_hlt(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_hlt(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, 0, 0xf4, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, 0, 0xf4, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
@@ -908,13 +998,13 @@ _hlt(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      M       ModR/M:r/m(r,w) NA              NA              NA
  */
 static int
-_idiv(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_idiv(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
       x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE8, 0xf6, -1, -1, 7, ops, ENC_M_RM8));
-    PASS0(binstr(instr, tgt, SIZE16, 0xf7, -1, -1, 7, ops, ENC_M_RM16));
-    PASS0(binstr(instr, tgt, SIZE32, 0xf7, -1, -1, 7, ops, ENC_M_RM32));
-    PASS0(binstr(instr, tgt, SIZE64, 0xf7, -1, -1, 7, ops, ENC_M_RM64));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0xf6, -1, -1, 7, ops, ENC_M_RM8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0xf7, -1, -1, 7, ops, ENC_M_RM16));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0xf7, -1, -1, 7, ops, ENC_M_RM32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0xf7, -1, -1, 7, ops, ENC_M_RM64));
 
     return -EOPERAND;
 }
@@ -950,17 +1040,20 @@ _idiv(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      RMI     ModRM:reg(r,w)  ModRM:r/m(r)    imm8/16/32      NA
  */
 static int
-_imul(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_imul(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
       x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE8, 0xf6, -1, -1, 5, ops, ENC_M_RM8));
-    PASS0(binstr(instr, tgt, SIZE16, 0xf7, -1, -1, 5, ops, ENC_M_RM16));
-    PASS0(binstr(instr, tgt, SIZE32, 0xf7, -1, -1, 5, ops, ENC_M_RM32));
-    PASS0(binstr(instr, tgt, SIZE64, 0xf7, -1, -1, 5, ops, ENC_M_RM64));
-    PASS0(binstr(instr, tgt, SIZE16, 0x0f, 0xaf, -1, -1, ops, ENC_RM_R16_RM16));
-    PASS0(binstr(instr, tgt, SIZE32, 0x0f, 0xaf, -1, -1, ops, ENC_RM_R32_RM32));
-    PASS0(binstr(instr, tgt, SIZE64, 0x0f, 0xaf, -1, -1, ops, ENC_RM_R64_RM64));
-    PASS0(binstr(instr, tgt, SIZE16, 0x6b, -1, -1, -1, ops,
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0xf6, -1, -1, 5, ops, ENC_M_RM8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0xf7, -1, -1, 5, ops, ENC_M_RM16));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0xf7, -1, -1, 5, ops, ENC_M_RM32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0xf7, -1, -1, 5, ops, ENC_M_RM64));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0x0f, 0xaf, -1, -1, ops,
+                 ENC_RM_R16_RM16));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0x0f, 0xaf, -1, -1, ops,
+                 ENC_RM_R32_RM32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0x0f, 0xaf, -1, -1, ops,
+                 ENC_RM_R64_RM64));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0x6b, -1, -1, -1, ops,
                  ENC_RMI_R16_RM16_IMM8));
 
     return -EOPERAND;
@@ -983,15 +1076,18 @@ _imul(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 static int
-_in(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_in(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
     x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE8, 0xe4, -1, -1, -1, ops, ENC_I_AL_IMM8));
-    PASS0(binstr(instr, tgt, SIZE16, 0xe5, -1, -1, -1, ops, ENC_I_AX_IMM8));
-    PASS0(binstr(instr, tgt, SIZE32, 0xe5, -1, -1, -1, ops, ENC_I_EAX_IMM8));
-    PASS0(binstr(instr, tgt, SIZE8, 0xec, -1, -1, -1, ops, ENC_NP_AL_DX));
-    PASS0(binstr(instr, tgt, SIZE16, 0xed, -1, -1, -1, ops, ENC_NP_AX_DX));
-    PASS0(binstr(instr, tgt, SIZE32, 0xed, -1, -1, -1, ops, ENC_NP_EAX_DX));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0xe4, -1, -1, -1, ops, ENC_I_AL_IMM8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0xe5, -1, -1, -1, ops,
+                 ENC_I_AX_IMM8));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0xe5, -1, -1, -1, ops,
+                 ENC_I_EAX_IMM8));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0xec, -1, -1, -1, ops, ENC_NP_AL_DX));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0xed, -1, -1, -1, ops, ENC_NP_AX_DX));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0xed, -1, -1, -1, ops,
+                 ENC_NP_EAX_DX));
 
     return -EOPERAND;
 }
@@ -1017,13 +1113,13 @@ _in(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      O       opcode+rd(r,w)  NA              NA              NA
  */
 static int
-_inc(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_inc(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE8, 0xfe, -1, -1, 0, ops, ENC_M_RM8));
-    PASS0(binstr(instr, tgt, SIZE16, 0xff, -1, -1, 0, ops, ENC_M_RM16));
-    PASS0(binstr(instr, tgt, SIZE32, 0xff, -1, -1, 0, ops, ENC_M_RM32));
-    PASS0(binstr(instr, tgt, SIZE64, 0xff, -1, -1, 0, ops, ENC_M_RM64));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0xfe, -1, -1, 0, ops, ENC_M_RM8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0xff, -1, -1, 0, ops, ENC_M_RM16));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0xff, -1, -1, 0, ops, ENC_M_RM32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0xff, -1, -1, 0, ops, ENC_M_RM64));
 
     return -EOPERAND;
 }
@@ -1041,26 +1137,26 @@ _inc(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 static int
-_iret(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_iret(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
       x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE16, 0xcf, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0xcf, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 static int
-_iretd(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_iretd(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
        x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE32, 0xcf, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0xcf, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 static int
-_iretq(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_iretq(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
        x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE64, 0xcf, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0xcf, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
@@ -1087,8 +1183,15 @@ _iretq(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      M       ModR/M(r)       NA              NA              NA
  */
 int
-_jmp(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_jmp(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
+{
+    /* To be implemented */
+    return -EUNKNOWN;
+}
+int
+_jmpfar(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
+        x86_64_instr_t *instr)
 {
     /* To be implemented */
     return -EUNKNOWN;
@@ -1105,10 +1208,10 @@ _jmp(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 int
-_monitor(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_monitor(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
          x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, 0, 0x0f, 0x01, 0xc8, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, 0, 0x0f, 0x01, 0xc8, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
@@ -1173,28 +1276,43 @@ _monitor(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      MI      ModRM:r/m(w)    imm8/16/32/64   NA              NA
  */
 int
-_mov(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_mov(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE8, 0x88, -1, -1, -1, ops, ENC_MR_RM8_R8));
-    PASS0(binstr(instr, tgt, SIZE16, 0x89, -1, -1, -1, ops, ENC_MR_RM16_R16));
-    PASS0(binstr(instr, tgt, SIZE32, 0x89, -1, -1, -1, ops, ENC_MR_RM32_R32));
-    PASS0(binstr(instr, tgt, SIZE64, 0x89, -1, -1, -1, ops, ENC_MR_RM64_R64));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0x88, -1, -1, -1, ops, ENC_MR_RM8_R8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0x89, -1, -1, -1, ops,
+                 ENC_MR_RM16_R16));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0x89, -1, -1, -1, ops,
+                 ENC_MR_RM32_R32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0x89, -1, -1, -1, ops,
+                 ENC_MR_RM64_R64));
 
-    PASS0(binstr(instr, tgt, SIZE8, 0x8a, -1, -1, -1, ops, ENC_RM_R8_RM8));
-    PASS0(binstr(instr, tgt, SIZE16, 0x8b, -1, -1, -1, ops, ENC_RM_R16_RM16));
-    PASS0(binstr(instr, tgt, SIZE32, 0x8b, -1, -1, -1, ops, ENC_RM_R32_RM32));
-    PASS0(binstr(instr, tgt, SIZE64, 0x8b, -1, -1, -1, ops, ENC_RM_R64_RM64));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0x8a, -1, -1, -1, ops,
+                 ENC_RM_R8_RM8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0x8b, -1, -1, -1, ops,
+                 ENC_RM_R16_RM16));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0x8b, -1, -1, -1, ops,
+                 ENC_RM_R32_RM32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0x8b, -1, -1, -1, ops,
+                 ENC_RM_R64_RM64));
 
-    PASS0(binstr(instr, tgt, SIZE8, 0xb0, -1, -1, -1, ops, ENC_OI_R8_IMM8));
-    PASS0(binstr(instr, tgt, SIZE16, 0xb8, -1, -1, -1, ops, ENC_OI_R16_IMM16));
-    PASS0(binstr(instr, tgt, SIZE32, 0xb8, -1, -1, -1, ops, ENC_OI_R32_IMM32));
-    PASS0(binstr(instr, tgt, SIZE64, 0xb8, -1, -1, -1, ops, ENC_OI_R64_IMM64));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0xb0, -1, -1, -1, ops,
+                 ENC_OI_R8_IMM8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0xb8, -1, -1, -1, ops,
+                 ENC_OI_R16_IMM16));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0xb8, -1, -1, -1, ops,
+                 ENC_OI_R32_IMM32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0xb8, -1, -1, -1, ops,
+                 ENC_OI_R64_IMM64));
 
-    PASS0(binstr(instr, tgt, SIZE8, 0xc6, -1, -1, 0, ops, ENC_MI_RM8_IMM8));
-    PASS0(binstr(instr, tgt, SIZE16, 0xc7, -1, -1, 0, ops, ENC_MI_RM16_IMM16));
-    PASS0(binstr(instr, tgt, SIZE32, 0xc7, -1, -1, 0, ops, ENC_MI_RM32_IMM32));
-    PASS0(binstr(instr, tgt, SIZE64, 0xc7, -1, -1, 0, ops, ENC_MI_RM64_IMM64));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0xc6, -1, -1, 0, ops,
+                 ENC_MI_RM8_IMM8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0xc7, -1, -1, 0, ops,
+                 ENC_MI_RM16_IMM16));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0xc7, -1, -1, 0, ops,
+                 ENC_MI_RM32_IMM32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0xc7, -1, -1, 0, ops,
+                 ENC_MI_RM64_IMM64));
 
     return -EOPERAND;
 }
@@ -1216,15 +1334,19 @@ _mov(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 static int
-_out(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_out(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE8, 0xe6, -1, -1, -1, ops, ENC_I_IMM8_AL));
-    PASS0(binstr(instr, tgt, SIZE16, 0xe7, -1, -1, -1, ops, ENC_I_IMM8_AX));
-    PASS0(binstr(instr, tgt, SIZE32, 0xe7, -1, -1, -1, ops, ENC_I_IMM8_EAX));
-    PASS0(binstr(instr, tgt, SIZE8, 0xee, -1, -1, -1, ops, ENC_NP_DX_AL));
-    PASS0(binstr(instr, tgt, SIZE16, 0xef, -1, -1, -1, ops, ENC_NP_DX_AL));
-    PASS0(binstr(instr, tgt, SIZE32, 0xef, -1, -1, -1, ops, ENC_NP_DX_EAX));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0xe6, -1, -1, -1, ops, ENC_I_IMM8_AL));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0xe7, -1, -1, -1, ops,
+                 ENC_I_IMM8_AX));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0xe7, -1, -1, -1, ops,
+                 ENC_I_IMM8_EAX));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0xee, -1, -1, -1, ops, ENC_NP_DX_AL));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0xef, -1, -1, -1, ops,
+                 ENC_NP_DX_AL));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0xef, -1, -1, -1, ops,
+                 ENC_NP_DX_EAX));
 
     return -EOPERAND;
 }
@@ -1243,14 +1365,14 @@ _out(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      RM      ModRM:reg(w)    ModRM:r/m(r)
  */
 int
-_popcnt(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_popcnt(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
         x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE16, 0xf3, 0x0f, 0xb8, -1, ops,
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0xf3, 0x0f, 0xb8, -1, ops,
                  ENC_RM_R16_RM16));
-    PASS0(binstr(instr, tgt, SIZE32, 0xf3, 0x0f, 0xb8, -1, ops,
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0xf3, 0x0f, 0xb8, -1, ops,
                  ENC_RM_R32_RM32));
-    PASS0(binstr(instr, tgt, SIZE64, 0xf3, 0x0f, 0xb8, -1, ops,
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0xf3, 0x0f, 0xb8, -1, ops,
                  ENC_RM_R64_RM64));
 
     return -EOPERAND;
@@ -1271,20 +1393,20 @@ _popcnt(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      I       imm16           NA              NA              NA
  */
 static int
-_ret(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_ret(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, 0, 0xc3, -1, -1, -1, ops, ENC_NP));
-    PASS0(binstr(instr, tgt, 0, 0xc2, -1, -1, -1, ops, ENC_I_IMM16));
+    PASS0(binstr(instr, opt->tgt, 0, 0xc3, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, 0, 0xc2, -1, -1, -1, ops, ENC_I_IMM16));
 
     return -EOPERAND;
 }
 static int
-_retfar(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_retfar(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
         x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, 0, 0xcb, -1, -1, -1, ops, ENC_NP));
-    PASS0(binstr(instr, tgt, 0, 0xca, -1, -1, -1, ops, ENC_I_IMM16));
+    PASS0(binstr(instr, opt->tgt, 0, 0xcb, -1, -1, -1, ops, ENC_NP));
+    PASS0(binstr(instr, opt->tgt, 0, 0xca, -1, -1, -1, ops, ENC_I_IMM16));
 
     return -EOPERAND;
 }
@@ -1328,53 +1450,78 @@ _retfar(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
  *      RM      ModRM:reg(r,w)  ModRM:r/m(r)    NA              NA
  */
 int
-_xor(x86_64_target_t tgt, int prefix, const operand_vector_t *ops,
+_xor(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, tgt, SIZE8, 0x34, -1, -1, -1, ops, ENC_I_AL_IMM8));
-    PASS0(binstr(instr, tgt, SIZE16, 0x35, -1, -1, -1, ops, ENC_I_AX_IMM16));
-    PASS0(binstr(instr, tgt, SIZE32, 0x35, -1, -1, -1, ops, ENC_I_EAX_IMM32));
-    PASS0(binstr(instr, tgt, SIZE64, 0x35, -1, -1, -1, ops, ENC_I_RAX_IMM32));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0x34, -1, -1, -1, ops,
+                 ENC_I_AL_IMM8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0x35, -1, -1, -1, ops,
+                 ENC_I_AX_IMM16));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0x35, -1, -1, -1, ops,
+                 ENC_I_EAX_IMM32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0x35, -1, -1, -1, ops,
+                 ENC_I_RAX_IMM32));
 
-    PASS0(binstr(instr, tgt, SIZE8, 0x80, -1, -1, 6, ops, ENC_MI_RM8_IMM8));
-    PASS0(binstr(instr, tgt, SIZE16, 0x83, -1, -1, 6, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, tgt, SIZE16, 0x81, -1, -1, 6, ops, ENC_MI_RM16_IMM16));
-    PASS0(binstr(instr, tgt, SIZE32, 0x83, -1, -1, 6, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, tgt, SIZE32, 0x81, -1, -1, 6, ops, ENC_MI_RM32_IMM32));
-    PASS0(binstr(instr, tgt, SIZE64, 0x83, -1, -1, 6, ops, ENC_MI_RM64_IMM8));
-    PASS0(binstr(instr, tgt, SIZE64, 0x81, -1, -1, 6, ops, ENC_MI_RM64_IMM32));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0x80, -1, -1, 6, ops,
+                 ENC_MI_RM8_IMM8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0x83, -1, -1, 6, ops,
+                 ENC_MI_RM16_IMM8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0x81, -1, -1, 6, ops,
+                 ENC_MI_RM16_IMM16));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0x83, -1, -1, 6, ops,
+                 ENC_MI_RM32_IMM8));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0x81, -1, -1, 6, ops,
+                 ENC_MI_RM32_IMM32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0x83, -1, -1, 6, ops,
+                 ENC_MI_RM64_IMM8));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0x81, -1, -1, 6, ops,
+                 ENC_MI_RM64_IMM32));
 
-    PASS0(binstr(instr, tgt, SIZE8, 0x30, -1, -1, -1, ops, ENC_MR_RM8_R8));
-    PASS0(binstr(instr, tgt, SIZE16, 0x31, -1, -1, -1, ops, ENC_MR_RM16_R16));
-    PASS0(binstr(instr, tgt, SIZE32, 0x31, -1, -1, -1, ops, ENC_MR_RM32_R32));
-    PASS0(binstr(instr, tgt, SIZE64, 0x31, -1, -1, -1, ops, ENC_MR_RM64_R64));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0x30, -1, -1, -1, ops,
+                 ENC_MR_RM8_R8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0x31, -1, -1, -1, ops,
+                 ENC_MR_RM16_R16));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0x31, -1, -1, -1, ops,
+                 ENC_MR_RM32_R32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0x31, -1, -1, -1, ops,
+                 ENC_MR_RM64_R64));
 
-    PASS0(binstr(instr, tgt, SIZE8, 0x32, -1, -1, -1, ops, ENC_RM_R8_RM8));
-    PASS0(binstr(instr, tgt, SIZE16, 0x33, -1, -1, -1, ops, ENC_RM_R16_RM16));
-    PASS0(binstr(instr, tgt, SIZE32, 0x33, -1, -1, -1, ops, ENC_RM_R32_RM32));
-    PASS0(binstr(instr, tgt, SIZE64, 0x33, -1, -1, -1, ops, ENC_RM_R64_RM64));
+    PASS0(binstr(instr, opt->tgt, SIZE8, 0x32, -1, -1, -1, ops,
+                 ENC_RM_R8_RM8));
+    PASS0(binstr(instr, opt->tgt, SIZE16, 0x33, -1, -1, -1, ops,
+                 ENC_RM_R16_RM16));
+    PASS0(binstr(instr, opt->tgt, SIZE32, 0x33, -1, -1, -1, ops,
+                 ENC_RM_R32_RM32));
+    PASS0(binstr(instr, opt->tgt, SIZE64, 0x33, -1, -1, -1, ops,
+                 ENC_RM_R64_RM64));
 
     return -EOPERAND;
 }
 
 
+/*
+ * A macro to register an assembler function into this file
+ */
 #define REGISTER_INSTR(f, str, x) do {          \
         if ( 0 == strcasecmp(#x, (str)) ) {     \
             (f) = _##x;                         \
         }                                       \
     } while ( 0 )
 
-typedef int (*instr_f)(x86_64_target_t, int, const operand_vector_t *,
+typedef int (*instr_f)(const x86_64_asm_opt_t *, const operand_vector_t *,
                        x86_64_instr_t *);
 
-
+/*
+ * Get the function pointer w/ instruction prefixes corresponding to the opcode
+ */
 instr_f
-_get_instr(const opcode_vector_t *opcode, int *prefix)
+_get_instr(const opcode_vector_t *opcode, int *prefix, int *suffix)
 {
     instr_f ifunc;
     char *str;
     int i;
     int tmpprefix;
+    int tmpsuffix;
 
     ifunc = NULL;
 
@@ -1447,6 +1594,7 @@ _get_instr(const opcode_vector_t *opcode, int *prefix)
        REGISTER_INSTR(ifunc, str, iretd);
        REGISTER_INSTR(ifunc, str, iretq);
        REGISTER_INSTR(ifunc, str, jmp);
+       REGISTER_INSTR(ifunc, str, jmpfar);
        REGISTER_INSTR(ifunc, str, monitor);
        REGISTER_INSTR(ifunc, str, mov);
        REGISTER_INSTR(ifunc, str, out);
@@ -1459,37 +1607,62 @@ _get_instr(const opcode_vector_t *opcode, int *prefix)
    }
    i++;
 
+    /* Parse suffixes */
+    tmpsuffix = 0;
+    for ( ; i < mvector_size(opcode); i++ ) {
+        str = mvector_at(opcode, i);
+        if ( 0 == strcasecmp(str, "far") ) {
+            tmpprefix |= OPCODE_SUFFIX_FAR;
+        } else {
+            break;
+        }
+    }
+
     if ( i != mvector_size(opcode) ) {
         return NULL;
     }
 
+    /* Set the values */
+    *prefix = tmpprefix;
+    *suffix = tmpsuffix;
+
     return ifunc;
 }
+
+#if 0
+int
+arch_x86_64_assemble()
+{
+    x86_64_instr_t instr;
+    ifunc = _get_instr(stmt->u.instr->opcode, &prefix, &suffix);
+}
+#endif
+
 
 /*
  * Assemble x86-64 code
  */
-int
-arch_assemble_x86_64(stmt_vector_t *vec)
+static int
+_assemble(stmt_vector_t *vec)
 {
     size_t i;
     stmt_t *stmt;
     int ret;
-    int prefix;
-    x86_64_target_t target;
+    x86_64_asm_opt_t opt;
     x86_64_instr_t instr;
     instr_f ifunc;
     int j;
 
     /* 64 bit option */
-    target = X86_64_O64;
+    opt.tgt = X86_64_O64;
 
-    for ( i = 0; i < mvector_size(vec); i++ ){
+    for ( i = 0; i < mvector_size(vec); i++ ) {
         stmt = mvector_at(vec, i);
         if ( STMT_INSTR == stmt->type ) {
-            ifunc = _get_instr(stmt->u.instr->opcode, &prefix);
+            ifunc = _get_instr(stmt->u.instr->opcode, &(opt.prefix),
+                               &(opt.suffix));
             if ( NULL != ifunc ) {
-                ret = ifunc(target, prefix, stmt->u.instr->operands, &instr);
+                ret = ifunc(&opt, stmt->u.instr->operands, &instr);
                 if ( ret >= 0 ) {
                     _print_instruction_bin(&instr);
 #if 0
@@ -1517,6 +1690,80 @@ arch_assemble_x86_64(stmt_vector_t *vec)
             }
         }
     }
+
+    return 0;
+}
+
+
+
+/*
+ * Assembler code
+ */
+int
+arch_x86_64_assemble(const char *fname)
+{
+    pcode_t *pcode;
+    stmt_vector_t *vec;
+    preprocessor_t *pp;
+    int ret;
+
+    /* Create a preprocessor instance */
+    pp = pp_new();
+
+    /* Register *fixes */
+    ret = pp_register_fix(pp, "lock");
+    if ( ret < 0 ) {
+        pp_delete(pp);
+        return -1;
+    }
+    ret = pp_register_fix(pp, "rep");
+    if ( ret < 0 ) {
+        pp_delete(pp);
+        return -1;
+    }
+    ret = pp_register_fix(pp, "repe");
+    if ( ret < 0 ) {
+        pp_delete(pp);
+        return -1;
+    }
+    ret = pp_register_fix(pp, "repz");
+    if ( ret < 0 ) {
+        pp_delete(pp);
+        return -1;
+    }
+    ret = pp_register_fix(pp, "repne");
+    if ( ret < 0 ) {
+        pp_delete(pp);
+        return -1;
+    }
+    ret = pp_register_fix(pp, "repnz");
+    if ( ret < 0 ) {
+        pp_delete(pp);
+        return -1;
+    }
+    ret = pp_register_fix(pp, "far");
+    if ( ret < 0 ) {
+        pp_delete(pp);
+        return -1;
+    }
+
+    /* Preprocess the code */
+    pcode = preprocess(pp, fname);
+    if ( NULL == pcode ) {
+        pp_delete(pp);
+        return -1;
+    }
+
+    /* Parse the code */
+    vec = parse(pcode);
+    if ( NULL == vec ) {
+        pp_delete(pp);
+        return -1;
+    }
+
+    pp_delete(pp);
+
+    _assemble(vec);
 
     return 0;
 }

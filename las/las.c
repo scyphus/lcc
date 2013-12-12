@@ -33,11 +33,15 @@ main(int argc, const char *const argv[])
     stmt_vector_t *vec;
     const char *fname;
 
+    /* Get the input file */
     if ( argc < 2 ) {
         usage(argv[0]);
     }
     fname = argv[1];
 
+    arch_x86_64_assemble(fname);
+
+#if 0
     /* Preprocess the code */
     pcode = preprocess(fname);
     if ( NULL == pcode ) {
@@ -53,6 +57,7 @@ main(int argc, const char *const argv[])
     }
 
     arch_assemble_x86_64(vec);
+#endif
 
     return 0;
 }

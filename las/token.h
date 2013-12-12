@@ -28,6 +28,7 @@ typedef enum _token_type {
 
     /* Symbol */
     TOK_SYMBOL,
+    TOK_FIX,
 
     /* Keywords */
     TOK_KW_GLOBAL,

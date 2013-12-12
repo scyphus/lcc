@@ -120,7 +120,9 @@ typedef enum _x86_64_target {
  * Assembler option
  */
 typedef struct _x86_64_asm_opt {
-    x86_64_target_t target;
+    x86_64_target_t tgt;
+    int prefix;
+    int suffix;
 } x86_64_asm_opt_t;
 
 #ifdef __cplusplus

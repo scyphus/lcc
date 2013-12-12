@@ -805,7 +805,7 @@ parse_operand(pcode_t *pcode)
  *              opcode operand ( "," operand )*
  */
 stmt_t *
-parse_instr(pcode_t *pcode, const char *sym)
+parse_instr(pcode_t *pcode, token_t *tok0)
 {
     stmt_t *stmt;
     instr_t *instr;
@@ -826,9 +826,36 @@ parse_instr(pcode_t *pcode, const char *sym)
         return NULL;
     }
 
-    /* Push the first opcode */
-    opcodestr = strdup(sym);
-    if ( NULL == opcode ) {
+    tok = tok0;
+    /* Prefix */
+    while ( TOK_FIX == tok->type ) {
+        /* Push the opcode prefixes */
+        opcodestr = strdup(tok->val.sym);
+        if ( NULL == opcodestr ) {
+            opcode_vector_delete(opcode);
+            operands_delete(vec);
+            return NULL;
+        }
+        if ( NULL == mvector_push_back(opcode, opcodestr) ) {
+            free(opcodestr);
+            opcode_vector_delete(opcode);
+            operands_delete(vec);
+            return NULL;
+        }
+        tok = token_queue_cur(pcode->token_queue);
+        (void)token_queue_next(pcode->token_queue);
+    }
+
+    /* Operation */
+    if ( TOK_SYMBOL != tok->type ) {
+        /* Operation must be a symbol */
+        opcode_vector_delete(opcode);
+        operands_delete(vec);
+        return NULL;
+    }
+    /* Push the operation */
+    opcodestr = strdup(tok->val.sym);
+    if ( NULL == opcodestr ) {
         opcode_vector_delete(opcode);
         operands_delete(vec);
         return NULL;
@@ -838,6 +865,25 @@ parse_instr(pcode_t *pcode, const char *sym)
         opcode_vector_delete(opcode);
         operands_delete(vec);
         return NULL;
+    }
+
+    /* Suffix */
+    tok = token_queue_cur(pcode->token_queue);
+    while ( TOK_FIX == tok->type ) {
+        /* Push the opcode suffixes */
+        opcodestr = strdup(tok->val.sym);
+        if ( NULL == opcodestr ) {
+            opcode_vector_delete(opcode);
+            operands_delete(vec);
+            return NULL;
+        }
+        if ( NULL == mvector_push_back(opcode, opcodestr) ) {
+            free(opcodestr);
+            opcode_vector_delete(opcode);
+            operands_delete(vec);
+            return NULL;
+        }
+        tok = token_queue_next(pcode->token_queue);
     }
 
     /* Read until the end of line */
@@ -902,7 +948,7 @@ parse_instr(pcode_t *pcode, const char *sym)
  *              symbol ":"
  */
 stmt_t *
-parse_label(pcode_t *pcode, const char *sym)
+parse_label(pcode_t *pcode, const token_t *tok)
 {
     stmt_t *stmt;
 
@@ -914,7 +960,7 @@ parse_label(pcode_t *pcode, const char *sym)
     }
     /* Set attributes */
     stmt->type = STMT_LABEL;
-    stmt->u.label = strdup(sym);
+    stmt->u.label = strdup(tok->val.sym);
     if ( NULL == stmt->u.label ) {
         /* Can't allocate memory */
         free(stmt);
@@ -977,7 +1023,7 @@ stmt_vector_t *
 parse(pcode_t *pcode)
 {
     token_t *tok;
-    char *sym;
+    token_t *tok0;
     stmt_t *stmt;
     stmt_vector_t *vec;
 
@@ -1006,20 +1052,29 @@ parse(pcode_t *pcode)
                 return NULL;
             }
             break;
-        case TOK_SYMBOL:
-            /* Store the symbol */
-            sym = strdup(tok->val.sym);
-            if ( NULL == sym ) {
+        case TOK_FIX:
+            /* PREFIX */
+            (void)token_queue_next(pcode->token_queue);
+            stmt = parse_instr(pcode, tok);
+            if ( NULL == stmt ) {
+                /* Parse error */
                 return NULL;
             }
+            if ( NULL == mvector_push_back(vec, stmt) ) {
+                stmt_free(stmt);
+                return NULL;
+            }
+            break;
+        case TOK_SYMBOL:
+            /* Store the current token */
+            tok0 = tok;
             tok = token_queue_next(pcode->token_queue);
             if ( TOK_COLON == tok->type ) {
                 /* Label token */
-                stmt = parse_label(pcode, sym);
+                stmt = parse_label(pcode, tok0);
             } else {
-                stmt = parse_instr(pcode, sym);
+                stmt = parse_instr(pcode, tok0);
             }
-            free(sym);
             if ( NULL == stmt ) {
                 /* Parse error */
                 return NULL;

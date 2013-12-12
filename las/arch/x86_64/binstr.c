@@ -1035,16 +1035,19 @@ _build_instruction(x86_64_target_t target, const x86_64_enop_t *enop,
 
     instr->prefix1 = -1;
     instr->prefix2 = -1;
+    /* Operand size prefix */
     if ( p66 ) {
         instr->prefix3 = 0x66;
     } else {
         instr->prefix3 = -1;
     }
+    /* Address size prefix */
     if ( p67 ) {
         instr->prefix4 = 0x67;
     } else {
         instr->prefix4 = -1;
     }
+    /* REX prefix */
     instr->rex = rex;
     instr->modrm = enop->modrm;
     instr->sib = enop->sib;

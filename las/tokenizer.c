@@ -453,14 +453,17 @@ _scan_number(tokenizer_t *tokenizer, token_queue_t *tq)
  * Scan symbol
  */
 static int
-_scan_symbol(tokenizer_t *tokenizer, token_queue_t *tq)
+_scan_symbol(preprocessor_t *pp, tokenizer_t *tokenizer, token_queue_t *tq)
 {
+    int i;
     int c;
     unsigned char *sp;
     unsigned char *tp;
     char *val;
     int ret;
     token_t *token;
+    token_fix_t *fix;
+    token_type_t type;
 
     /* Store the current pointer */
     sp = _curp(tokenizer);
@@ -479,17 +482,28 @@ _scan_symbol(tokenizer_t *tokenizer, token_queue_t *tq)
         /* Invalidate if the length is zero */
         (void)_next(tokenizer);
         ret = _append_typed_token(tokenizer, tq, TOK_INVAL);
-    } else if ( 0 == memcmp(sp, "global", 5) ) {
+    } else if ( tp - sp == 5 && 0 == memcmp(sp, "global", 5) ) {
         ret = _append_typed_token(tokenizer, tq, TOK_KW_GLOBAL);
-    } else if ( 0 == memcmp(sp, "byte", 4) ) {
+    } else if ( tp - sp == 4 && 0 == memcmp(sp, "byte", 4) ) {
         ret = _append_typed_token(tokenizer, tq, TOK_KW_BYTE);
-    } else if ( 0 == memcmp(sp, "word", 4) ) {
+    } else if ( tp - sp == 4 && 0 == memcmp(sp, "word", 4) ) {
         ret = _append_typed_token(tokenizer, tq, TOK_KW_WORD);
-    } else if ( 0 == memcmp(sp, "dword", 5) ) {
+    } else if ( tp - sp == 5 && 0 == memcmp(sp, "dword", 5) ) {
         ret = _append_typed_token(tokenizer, tq, TOK_KW_DWORD);
-    } else if ( 0 == memcmp(sp, "qword", 5) ) {
+    } else if ( tp - sp == 5 && 0 == memcmp(sp, "qword", 5) ) {
         ret = _append_typed_token(tokenizer, tq, TOK_KW_QWORD);
     } else {
+        type = TOK_SYMBOL;
+        /* Search from the registered fix keywords */
+        for ( i = 0; i < mvector_size(pp->fix); i++ ) {
+            fix = mvector_at(pp->fix, i);
+            if ( tp - sp == strlen(fix->kw)
+                 && 0 == memcmp(sp, fix->kw, strlen(fix->kw)) ) {
+                type = TOK_FIX;
+                break;
+            }
+        }
+
         /* Copy the value */
         val = malloc(sizeof(char) * (tp - sp + 1));
         if ( NULL == val ) {
@@ -504,7 +518,7 @@ _scan_symbol(tokenizer_t *tokenizer, token_queue_t *tq)
             free(val);
             return -1;
         }
-        token->type = TOK_SYMBOL;
+        token->type = type;
         token->val.sym = val;
 
         ret = token_queue_insert_tail(tq, token);
@@ -517,7 +531,7 @@ _scan_symbol(tokenizer_t *tokenizer, token_queue_t *tq)
  * Proceed to the next token
  */
 int
-_next_token(tokenizer_t *tokenizer, token_queue_t *tq)
+_next_token(preprocessor_t *pp, tokenizer_t *tokenizer, token_queue_t *tq)
 {
     int c;
     int ret;
@@ -636,7 +650,7 @@ _next_token(tokenizer_t *tokenizer, token_queue_t *tq)
             ret = _scan_number(tokenizer, tq);
         } else {
             /* else; then scan symbol */
-            ret = _scan_symbol(tokenizer, tq);
+            ret = _scan_symbol(pp, tokenizer, tq);
         }
     }
 
@@ -648,7 +662,7 @@ _next_token(tokenizer_t *tokenizer, token_queue_t *tq)
  * Tokenize
  */
 tcode_t *
-tokenize(scode_t *scode)
+tokenize(preprocessor_t *pp, scode_t *scode)
 {
     tcode_t *tcode;
     tokenizer_t tokenizer;
@@ -668,7 +682,7 @@ tokenize(scode_t *scode)
     tokenizer.pos.c = 0;
 
     for ( ;; ) {
-        ret = _next_token(&tokenizer, tcode->token_queue);
+        ret = _next_token(pp, &tokenizer, tcode->token_queue);
         if ( ret < 0 ) {
             break;
         }
@@ -676,39 +690,6 @@ tokenize(scode_t *scode)
     /*printf("%lld [%zu:%zu]\n", tokenizer.cur, tokenizer.pos.l, tokenizer.pos.c);*/
 
     return tcode;
-}
-
-/*
- * Preprocess
- */
-pcode_t *
-preprocess(const char *fname)
-{
-    scode_t *scode;
-    tcode_t *tcode;
-    pcode_t *pcode;
-
-    /* Read source code from the input file */
-    scode = scode_read(fname);
-    if ( NULL == scode ) {
-        return NULL;
-    }
-
-    tcode = tokenize(scode);
-    if ( NULL == tcode ) {
-        /* FIXME: Free scode */
-        return NULL;
-    }
-
-    pcode = malloc(sizeof(pcode_t));
-    if ( NULL == pcode ) {
-        /* FIXME: Free scode and tcode */
-        return NULL;
-    }
-    pcode->token_queue = tcode->token_queue;
-    pcode->tree = NULL;
-
-    return pcode;
 }
 
 

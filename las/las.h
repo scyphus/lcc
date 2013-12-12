@@ -26,6 +26,7 @@
 #define EUNKNOWN        1
 #define EOPERAND        2
 #define ESIZE           3
+#define EPREFIX         4
 
 /*
  * String (can be binary)
@@ -51,6 +52,8 @@ typedef struct _token {
     union {
         /* Symbol, identifier, or label */
         char *sym;
+        /* Prefix/Suffix keyword */
+        char *fix;
         /* Numerical value */
         char *num;
     } val;
@@ -122,13 +125,16 @@ typedef struct tokenizer {
     } pos;
 } tokenizer_t;
 
+typedef struct mvector fix_vector_t;
+typedef struct _token_fix {
+    char *kw;
+} token_fix_t;
 
 /*
  * Preprocessor
  */
 typedef struct preprocessor {
-    tcode_t *tcode;
-    /*hashtable*/
+    fix_vector_t *fix;
 } preprocessor_t;
 
 
@@ -248,11 +254,15 @@ typedef struct assembler {
 extern "C" {
 #endif
 
-    tcode_t * tokenize(scode_t *);
-    pcode_t * preprocess(const char *);
+    tcode_t * tokenize(preprocessor_t *, scode_t *);
+    pcode_t * preprocess(preprocessor_t *, const char *);
 
     scode_t * scode_read(const char *);
     void scode_delete(scode_t *);
+
+    preprocessor_t * pp_new(void);
+    void pp_delete(preprocessor_t *);
+    int pp_register_fix(preprocessor_t *, const char *);
 
     void token_queue_rewind(token_queue_t *);
     token_t * token_queue_cur(token_queue_t *);

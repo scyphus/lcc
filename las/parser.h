@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
     expr_t * parse_expr(pcode_t *);
-    stmt_t * parse_instr(pcode_t *, const char *);
+    stmt_t * parse_instr(pcode_t *, token_t *);
     stmt_vector_t * parse(pcode_t *);
 
 #ifdef __cplusplus

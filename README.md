@@ -3,11 +3,23 @@
 # LCC: Lightweight C Compiler
 
 ## About
-LCC is (to be) an implementation of lightweight c compiler with assembler and
+LCC is (to be) an implementation of lightweight C compiler with assembler and
 linker.  This is mainly for my operating system but we may try to provide
 portable one.  Its output format has not yet been fixed at the current time.
 
-## Grammar (Intel Syntax)
+## LLD: Lightweight Linker
+
+
+## LAS: Lightweight Assembler
+
+### Command
+    las <filename>
+
+### Intel Syntax-based Assembly Language
+    instruction ( operand ( "," operand )* )?
+
+
+### Grammar (Intel Syntax)
     atom ::=
                  symbol | literal | "(" expression ")"
     
