@@ -14,6 +14,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define OPCODE_PREFIX_LOCK              (1)
+#define OPCODE_PREFIX_REP               (1<<1)
+#define OPCODE_PREFIX_REPE              (1<<2)
+#define OPCODE_PREFIX_REPZ              (1<<3)
+#define OPCODE_PREFIX_REPNE             (1<<4)
+#define OPCODE_PREFIX_REPNZ             (1<<5)
+#define OPCODE_PREFIX_BRANCH_TAKEN      (1<<6)
+#define OPCODE_PREFIX_BRANCH_NOT_TAKEN  (1<<7)
+#define OPCODE_SUFFIX_FAR               (1)
+
 typedef enum _x86_64_enc {
     ENC_NP,
     ENC_NP_AL_DX,
@@ -75,7 +85,7 @@ extern "C" {
 #endif
 
     int
-    binstr(x86_64_instr_t *, x86_64_target_t, int, int, int, int, int,
+    binstr(x86_64_instr_t *, const x86_64_asm_opt_t *, int, int, int, int, int,
            const operand_vector_t *, x86_64_enc_t);
 
 #ifdef __cplusplus
