@@ -1126,13 +1126,12 @@ int
 _jmp(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    /* To be implemented */
-    return -EUNKNOWN;
-}
-int
-_jmpfar(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-        x86_64_instr_t *instr)
-{
+    if ( OPCODE_SUFFIX_FAR & opt->suffix ) {
+        /* w/ far */
+    } else {
+        /* w/o far */
+    }
+
     /* To be implemented */
     return -EUNKNOWN;
 }
@@ -1336,17 +1335,15 @@ static int
 _ret(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
      x86_64_instr_t *instr)
 {
-    PASS0(binstr(instr, opt, 0, 0xc3, -1, -1, -1, ops, ENC_NP));
-    PASS0(binstr(instr, opt, 0, 0xc2, -1, -1, -1, ops, ENC_I_IMM16));
-
-    return -EOPERAND;
-}
-static int
-_retfar(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-        x86_64_instr_t *instr)
-{
-    PASS0(binstr(instr, opt, 0, 0xcb, -1, -1, -1, ops, ENC_NP));
-    PASS0(binstr(instr, opt, 0, 0xca, -1, -1, -1, ops, ENC_I_IMM16));
+    if ( OPCODE_SUFFIX_FAR & opt->suffix ) {
+        /* w/ far */
+        PASS0(binstr(instr, opt, 0, 0xcb, -1, -1, -1, ops, ENC_NP));
+        PASS0(binstr(instr, opt, 0, 0xca, -1, -1, -1, ops, ENC_I_IMM16));
+    } else {
+        /* w/o far */
+        PASS0(binstr(instr, opt, 0, 0xc3, -1, -1, -1, ops, ENC_NP));
+        PASS0(binstr(instr, opt, 0, 0xc2, -1, -1, -1, ops, ENC_I_IMM16));
+    }
 
     return -EOPERAND;
 }
@@ -1534,13 +1531,11 @@ _get_instr(const opcode_vector_t *opcode, int *prefix, int *suffix)
        REGISTER_INSTR(ifunc, str, iretd);
        REGISTER_INSTR(ifunc, str, iretq);
        REGISTER_INSTR(ifunc, str, jmp);
-       REGISTER_INSTR(ifunc, str, jmpfar);
        REGISTER_INSTR(ifunc, str, monitor);
        REGISTER_INSTR(ifunc, str, mov);
        REGISTER_INSTR(ifunc, str, out);
        REGISTER_INSTR(ifunc, str, popcnt);
        REGISTER_INSTR(ifunc, str, ret);
-       REGISTER_INSTR(ifunc, str, retfar);
        REGISTER_INSTR(ifunc, str, xor);
    } else {
        return NULL;
