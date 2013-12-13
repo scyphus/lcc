@@ -449,6 +449,19 @@ _scan_number(tokenizer_t *tokenizer, token_queue_t *tq)
     return ret;
 }
 
+static int
+_strmemcmp(const unsigned char *a0, const unsigned char *a1, const char *b)
+{
+    size_t len;
+
+    len = strlen(b);
+    if ( a1 - a0 == len && 0 == memcmp(a0, b, len) ) {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
 /*
  * Scan symbol
  */
@@ -482,15 +495,15 @@ _scan_symbol(preprocessor_t *pp, tokenizer_t *tokenizer, token_queue_t *tq)
         /* Invalidate if the length is zero */
         (void)_next(tokenizer);
         ret = _append_typed_token(tokenizer, tq, TOK_INVAL);
-    } else if ( tp - sp == 5 && 0 == memcmp(sp, "global", 5) ) {
+    } else if ( 0 == _strmemcmp(sp, tp, "global") ) {
         ret = _append_typed_token(tokenizer, tq, TOK_KW_GLOBAL);
-    } else if ( tp - sp == 4 && 0 == memcmp(sp, "byte", 4) ) {
+    } else if ( 0 == _strmemcmp(sp, tp, "byte") ) {
         ret = _append_typed_token(tokenizer, tq, TOK_KW_BYTE);
-    } else if ( tp - sp == 4 && 0 == memcmp(sp, "word", 4) ) {
+    } else if ( 0 == _strmemcmp(sp, tp, "word") ) {
         ret = _append_typed_token(tokenizer, tq, TOK_KW_WORD);
-    } else if ( tp - sp == 5 && 0 == memcmp(sp, "dword", 5) ) {
+    } else if ( 0 == _strmemcmp(sp, tp, "dword") ) {
         ret = _append_typed_token(tokenizer, tq, TOK_KW_DWORD);
-    } else if ( tp - sp == 5 && 0 == memcmp(sp, "qword", 5) ) {
+    } else if ( 0 == _strmemcmp(sp, tp, "qword") ) {
         ret = _append_typed_token(tokenizer, tq, TOK_KW_QWORD);
     } else {
         type = TOK_SYMBOL;

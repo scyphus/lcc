@@ -23,10 +23,12 @@
 #define SIZE64  8
 
 /* Errors */
-#define EUNKNOWN        1
-#define EOPERAND        2
-#define ESIZE           3
-#define EPREFIX         4
+#define EGENERIC        1
+#define EUNKNOWN        2
+#define EOPERAND        3
+#define ESIZE           4
+#define EPREFIX         5
+#define EDUP            6
 
 /*
  * String (can be binary)
@@ -184,20 +186,6 @@ typedef struct _instruction {
     opcode_vector_t *opcode;
     operand_vector_t *operands;
 } instr_t;
-
-/*
- * Global statement
- */
-typedef struct _stmt_global {
-    char *symbol;
-} stmt_global_t;
-
-/*
- * Label statement
- */
-typedef struct _stmt_label {
-    char *symbol;
-} stmt_label_t;
 
 /*
  * Statement type

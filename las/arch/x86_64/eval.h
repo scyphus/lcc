@@ -107,24 +107,6 @@ typedef struct _x86_64_encoded_instruction {
 } x86_64_instr_t;
 
 
-/*
- * Target
- */
-typedef enum _x86_64_target {
-    X86_64_O16,
-    X86_64_O32,
-    X86_64_O64,
-} x86_64_target_t;
-
-/*
- * Assembler option
- */
-typedef struct _x86_64_asm_opt {
-    x86_64_target_t tgt;
-    int prefix;
-    int suffix;
-} x86_64_asm_opt_t;
-
 #ifdef __cplusplus
 extern "C" {
 #endif

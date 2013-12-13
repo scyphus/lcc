@@ -1062,6 +1062,12 @@ _build_instruction(const x86_64_asm_opt_t *opt, const x86_64_enop_t *enop,
         }
         instr->prefix1 = 0xf0;
     }
+    if ( OPCODE_PREFIX_CRC32 & opt->prefix ) {
+        if ( instr->prefix1 >= 0 ) {
+            return -EPREFIX;
+        }
+        instr->prefix1 = 0xf2;
+    }
     if ( OPCODE_PREFIX_REPNE & opt->prefix ) {
         if ( instr->prefix1 >= 0 ) {
             return -EPREFIX;
