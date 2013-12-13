@@ -112,7 +112,6 @@ typedef struct _x86_64_encoded_instruction {
 extern "C" {
 #endif
 
-    x86_64_val_t * x86_64_eval_expr(expr_t *);
     x86_64_val_t *
     x86_64_eval_operand(const x86_64_label_table_t *, operand_t *);
 

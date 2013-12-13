@@ -13,16 +13,18 @@
 /*
  * Prototype declarations
  */
-static x86_64_val_t * _eval_expr_var(expr_t *);
-static x86_64_val_t * _eval_expr_int(expr_t *);
-static x86_64_val_t * _eval_expr_op(expr_t *);
-static x86_64_val_t * _eval_expr(expr_t *);
+static x86_64_val_t *
+_eval_expr_var(const x86_64_label_table_t *ltbl, expr_t *);
+static x86_64_val_t *
+_eval_expr_int(const x86_64_label_table_t *ltbl, expr_t *);
+static x86_64_val_t * _eval_expr_op(const x86_64_label_table_t *ltbl, expr_t *);
+static x86_64_val_t * _eval_expr(const x86_64_label_table_t *ltbl, expr_t *);
 
 /*
  * Evaluate var expression
  */
 static x86_64_val_t *
-_eval_expr_var(expr_t *expr)
+_eval_expr_var(const x86_64_label_table_t *ltbl, expr_t *expr)
 {
     x86_64_val_t *val;
     x86_64_reg_t reg;
@@ -52,7 +54,7 @@ _eval_expr_var(expr_t *expr)
  * Evaluate integer expression
  */
 static x86_64_val_t *
-_eval_expr_int(expr_t *expr)
+_eval_expr_int(const x86_64_label_table_t *ltbl, expr_t *expr)
 {
     x86_64_val_t *val;
 
@@ -71,7 +73,7 @@ _eval_expr_int(expr_t *expr)
  * Evaluate operand
  */
 static x86_64_val_t *
-_eval_expr_op(expr_t *expr)
+_eval_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
 {
     x86_64_val_t *val;
     x86_64_val_t *lval;
@@ -88,7 +90,7 @@ _eval_expr_op(expr_t *expr)
     /* Refactoring is required... */
     if ( FIX_PREFIX == expr->u.op.fix_type ) {
         expr0 = vector_at(expr->u.op.args, 0);
-        lval = _eval_expr(expr0);
+        lval = _eval_expr(ltbl, expr0);
         if ( NULL == lval ) {
             free(val);
             return NULL;
@@ -112,12 +114,12 @@ _eval_expr_op(expr_t *expr)
         expr0 = vector_at(expr->u.op.args, 0);
         expr1 = vector_at(expr->u.op.args, 1);
 
-        lval = _eval_expr(expr0);
+        lval = _eval_expr(ltbl, expr0);
         if ( NULL == lval ) {
             free(val);
             return NULL;
         }
-        rval = _eval_expr(expr1);
+        rval = _eval_expr(ltbl, expr1);
         if ( NULL == rval ) {
             /* Free lval */
             free(val);
@@ -288,19 +290,19 @@ _eval_expr_op(expr_t *expr)
  * Evaluate the expression (static function)
  */
 static x86_64_val_t *
-_eval_expr(expr_t *expr)
+_eval_expr(const x86_64_label_table_t *ltbl, expr_t *expr)
 {
     x86_64_val_t *val;
 
     switch ( expr->type ) {
     case EXPR_VAR:
-        val = _eval_expr_var(expr);
+        val = _eval_expr_var(ltbl, expr);
         break;
     case EXPR_INT:
-        val = _eval_expr_int(expr);
+        val = _eval_expr_int(ltbl, expr);
         break;
     case EXPR_OP:
-        val = _eval_expr_op(expr);
+        val = _eval_expr_op(ltbl, expr);
         break;
     default:
         val = NULL;
@@ -313,11 +315,11 @@ _eval_expr(expr_t *expr)
  * Evaluate the operand (immediate value or register)
  */
 static x86_64_val_t *
-_eval_expr_imm_or_reg(expr_t *expr)
+_eval_expr_imm_or_reg(const x86_64_label_table_t *ltbl, expr_t *expr)
 {
     x86_64_val_t *val;
 
-    val = _eval_expr(expr);
+    val = _eval_expr(ltbl, expr);
 
     /* Verify the returned value */
     if ( NULL == val ) {
@@ -334,13 +336,13 @@ _eval_expr_imm_or_reg(expr_t *expr)
  * Evaluate the operand (address operand)
  */
 static x86_64_val_t *
-_eval_expr_addr(pexpr_t *pexpr)
+_eval_expr_addr(const x86_64_label_table_t *ltbl, pexpr_t *pexpr)
 {
     x86_64_val_t *val;
     x86_64_reg_t reg;
     int64_t imm;
 
-    val = _eval_expr(pexpr->expr);
+    val = _eval_expr(ltbl, pexpr->expr);
     if ( NULL == val ) {
         return NULL;
     }
@@ -401,10 +403,10 @@ x86_64_eval_operand(const x86_64_label_table_t *ltbl, operand_t *op)
 
     if ( OPERAND_EXPR == op->type ) {
         /* Immediate value or register */
-        val = _eval_expr_imm_or_reg(op->op.expr);
+        val = _eval_expr_imm_or_reg(ltbl, op->op.expr);
     } else {
         /* Address */
-        val = _eval_expr_addr(op->op.pexpr);
+        val = _eval_expr_addr(ltbl, op->op.pexpr);
     }
     /* Check the returned value */
     if ( NULL == val ) {
