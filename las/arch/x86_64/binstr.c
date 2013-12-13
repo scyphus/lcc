@@ -1829,7 +1829,8 @@ _encode_i(const x86_64_val_t *val, size_t immsz, x86_64_enop_t *enop)
  * Evaluate operands
  */
 static int
-_eval1(x86_64_val_t **val, const operand_vector_t *operands)
+_eval1(const x86_64_label_table_t *ltbl, x86_64_val_t **val,
+       const operand_vector_t *operands)
 {
     operand_t *op;
 
@@ -1840,7 +1841,7 @@ _eval1(x86_64_val_t **val, const operand_vector_t *operands)
     /* Obtain operands */
     op = mvector_at(operands, 0);
     /* Evaluate operands */
-    *val = x86_64_eval_operand(op);
+    *val = x86_64_eval_operand(ltbl, op);
     if ( NULL == *val ) {
         /* Error */
         return -1;
@@ -1849,8 +1850,8 @@ _eval1(x86_64_val_t **val, const operand_vector_t *operands)
     return 1;
 }
 static int
-_eval2(x86_64_val_t **val1, x86_64_val_t **val2,
-       const operand_vector_t *operands)
+_eval2(const x86_64_label_table_t *ltbl, x86_64_val_t **val1,
+       x86_64_val_t **val2, const operand_vector_t *operands)
 {
     operand_t *op1;
     operand_t *op2;
@@ -1863,12 +1864,12 @@ _eval2(x86_64_val_t **val1, x86_64_val_t **val2,
     op1 = mvector_at(operands, 0);
     op2 = mvector_at(operands, 1);
     /* Evaluate operands */
-    *val1 = x86_64_eval_operand(op1);
+    *val1 = x86_64_eval_operand(ltbl, op1);
     if ( NULL == *val1 ) {
         /* Error */
         return -1;
     }
-    *val2 = x86_64_eval_operand(op2);
+    *val2 = x86_64_eval_operand(ltbl, op2);
     if ( NULL == *val2 ) {
         /* Error */
         free(*val1);
@@ -1878,7 +1879,8 @@ _eval2(x86_64_val_t **val1, x86_64_val_t **val2,
     return 1;
 }
 static int
-_eval3(x86_64_val_t **val1, x86_64_val_t **val2, x86_64_val_t **val3,
+_eval3(const x86_64_label_table_t *ltbl, x86_64_val_t **val1,
+       x86_64_val_t **val2, x86_64_val_t **val3,
        const operand_vector_t *operands)
 {
     operand_t *op1;
@@ -1894,22 +1896,71 @@ _eval3(x86_64_val_t **val1, x86_64_val_t **val2, x86_64_val_t **val3,
     op2 = mvector_at(operands, 1);
     op3 = mvector_at(operands, 2);
     /* Evaluate operands */
-    *val1 = x86_64_eval_operand(op1);
+    *val1 = x86_64_eval_operand(ltbl, op1);
     if ( NULL == *val1 ) {
         /* Error */
         return -1;
     }
-    *val2 = x86_64_eval_operand(op2);
+    *val2 = x86_64_eval_operand(ltbl, op2);
     if ( NULL == *val2 ) {
         /* Error */
         free(*val1);
         return -1;
     }
-    *val3 = x86_64_eval_operand(op3);
+    *val3 = x86_64_eval_operand(ltbl, op3);
     if ( NULL == *val3 ) {
         /* Error */
         free(*val1);
         free(*val2);
+        return -1;
+    }
+
+    return 1;
+}
+static int
+_eval4(const x86_64_label_table_t *ltbl, x86_64_val_t **val1,
+       x86_64_val_t **val2, x86_64_val_t **val3, x86_64_val_t **val4,
+       const operand_vector_t *operands)
+{
+    operand_t *op1;
+    operand_t *op2;
+    operand_t *op3;
+    operand_t *op4;
+
+    /* Check the number of operand */
+    if ( 4 != mvector_size(operands) ) {
+        return 0;
+    }
+    /* Obtain operands */
+    op1 = mvector_at(operands, 0);
+    op2 = mvector_at(operands, 1);
+    op3 = mvector_at(operands, 2);
+    op4 = mvector_at(operands, 3);
+    /* Evaluate operands */
+    *val1 = x86_64_eval_operand(ltbl, op1);
+    if ( NULL == *val1 ) {
+        /* Error */
+        return -1;
+    }
+    *val2 = x86_64_eval_operand(ltbl, op2);
+    if ( NULL == *val2 ) {
+        /* Error */
+        free(*val1);
+        return -1;
+    }
+    *val3 = x86_64_eval_operand(ltbl, op3);
+    if ( NULL == *val3 ) {
+        /* Error */
+        free(*val1);
+        free(*val2);
+        return -1;
+    }
+    *val4 = x86_64_eval_operand(ltbl, op4);
+    if ( NULL == *val4 ) {
+        /* Error */
+        free(*val1);
+        free(*val2);
+        free(*val3);
         return -1;
     }
 
@@ -2245,31 +2296,38 @@ binstr(x86_64_instr_t *instr, const x86_64_asm_opt_t *opt, int opsize, int opc1,
     /* Obtain the number of operands */
     nr = mvector_size(operands);
     if ( 1 == nr ) {
-       /* Evaluate operands */
-       ret = _eval1(&val[0], operands);
-       if ( ret < 0 ) {
-           return -EOPERAND;
-       } else if ( 0 == ret ) {
-           return 0;
-       }
+        /* Evaluate operands */
+        ret = _eval1(opt->ltbl, &val[0], operands);
+        if ( ret < 0 ) {
+            return -EOPERAND;
+        } else if ( 0 == ret ) {
+            return 0;
+        }
    } else if ( 2 == nr ) {
-       /* Evaluate operands */
-       ret = _eval2(&val[0], &val[1], operands);
-       if ( ret < 0 ) {
-           return -EOPERAND;
-       } else if ( 0 == ret ) {
-           return 0;
-       }
-   } else if ( 3 == nr ) {
-       /* Evaluate operands */
-       ret = _eval3(&val[0], &val[1], &val[2], operands);
-       if ( ret < 0 ) {
-           return -EOPERAND;
-       } else if ( 0 == ret ) {
-           return 0;
-       }
+        /* Evaluate operands */
+        ret = _eval2(opt->ltbl, &val[0], &val[1], operands);
+        if ( ret < 0 ) {
+            return -EOPERAND;
+        } else if ( 0 == ret ) {
+            return 0;
+        }
+    } else if ( 3 == nr ) {
+        /* Evaluate operands */
+        ret = _eval3(opt->ltbl, &val[0], &val[1], &val[2], operands);
+        if ( ret < 0 ) {
+            return -EOPERAND;
+        } else if ( 0 == ret ) {
+            return 0;
+        }
+    } else if ( 3 == nr ) {
+        /* Evaluate operands */
+        ret = _eval4(opt->ltbl, &val[0], &val[1], &val[2], &val[3], operands);
+        if ( ret < 0 ) {
+            return -EOPERAND;
+        } else if ( 0 == ret ) {
+            return 0;
+        }
     }
-
 
     stat = 0;
     switch ( enc ) {

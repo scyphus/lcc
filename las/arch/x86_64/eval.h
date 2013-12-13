@@ -10,6 +10,7 @@
 
 #include "../../las.h"
 #include "reg.h"
+#include "main.h"
 #include <stdint.h>
 
 typedef enum _x86_64_val_type {
@@ -112,7 +113,8 @@ extern "C" {
 #endif
 
     x86_64_val_t * x86_64_eval_expr(expr_t *);
-    x86_64_val_t * x86_64_eval_operand(operand_t *);
+    x86_64_val_t *
+    x86_64_eval_operand(const x86_64_label_table_t *, operand_t *);
 
 #ifdef __cplusplus
 }

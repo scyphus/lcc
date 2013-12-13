@@ -394,7 +394,7 @@ _eval_expr_addr(pexpr_t *pexpr)
  * Evaluate an operand
  */
 x86_64_val_t *
-x86_64_eval_operand(operand_t *op)
+x86_64_eval_operand(const x86_64_label_table_t *ltbl, operand_t *op)
 {
     x86_64_val_t *val;
     size_t sz;
