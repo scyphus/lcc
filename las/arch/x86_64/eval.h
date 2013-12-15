@@ -19,6 +19,14 @@ typedef enum _x86_64_val_type {
     X86_64_VAL_ADDR,
 } x86_64_val_type_t;
 
+typedef enum _x86_64_eval_type {
+    /*X86_64_EVAL_REL,*/
+    X86_64_EVAL_IMM,
+    X86_64_EVAL_SIMM,
+    X86_64_EVAL_REG,
+    X86_64_EVAL_ADDR,
+} x86_64_eval_type_t;
+
 typedef int x86_64_addr_flag_t;
 #define X86_64_ADDR_BASE        1
 #define X86_64_ADDR_DISP        2
@@ -60,6 +68,47 @@ typedef struct _x86_64_val {
         x86_64_addr_t addr;
     } u;
 } x86_64_val_t;
+
+/*
+ * Address operand (w/ estimated displacement)
+ */
+typedef struct _x86_64_eaddr {
+    /* Flags for each field */
+    x86_64_addr_flag_t flags;
+    /* Specified address size */
+    size_t saddrsize;
+    /* Base register */
+    x86_64_reg_t base;
+    /* Displacement */
+    expr_t *disp_expr;
+    int64_t disp_min;
+    int64_t disp_max;
+    /* Offset register */
+    x86_64_reg_t offset;
+    /* Scale multiplier */
+    int scale;
+} x86_64_eaddr_t;
+
+/*
+ * Estimated operand value
+ */
+typedef struct _x86_64_eval {
+    x86_64_eval_type_t type;
+    /* Specified operand size */
+    size_t sopsize;
+    union {
+        /* Immediate value */
+        int64_t imm;
+        /* Immediate value with symbols */
+        expr_t *imm_expr;
+        int64_t min;
+        int64_t max;
+        /* Register */
+        x86_64_reg_t reg;
+        /* Address operand */
+        x86_64_eaddr_t eaddr;
+    } u;
+} x86_64_eval_t;
 
 /*
  * Encoded operand
