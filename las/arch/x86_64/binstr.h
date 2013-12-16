@@ -94,6 +94,9 @@ typedef enum _x86_64_enc {
     ENC_RMI_R32_RM32_IMM32,
     ENC_RMI_R64_RM64_IMM8,
     ENC_RMI_R64_RM64_IMM32,
+    ENC_RMI_R16_RM16_RELA16,
+    ENC_RMI_R32_RM32_RELA32,
+    ENC_RMI_R64_RM64_RELA32,
 } x86_64_enc_t;
 
 #ifdef __cplusplus

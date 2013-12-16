@@ -1038,6 +1038,22 @@ _imul(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
     PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xaf, -1, -1, ops, ENC_RM_R64_RM64));
     PASS0(binstr(instr, opt, SIZE16, 0x6b, -1, -1, -1, ops,
                  ENC_RMI_R16_RM16_IMM8));
+    PASS0(binstr(instr, opt, SIZE32, 0x6b, -1, -1, -1, ops,
+                 ENC_RMI_R32_RM32_IMM8));
+    PASS0(binstr(instr, opt, SIZE64, 0x6b, -1, -1, -1, ops,
+                 ENC_RMI_R64_RM64_IMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x69, -1, -1, -1, ops,
+                 ENC_RMI_R16_RM16_IMM16));
+    PASS0(binstr(instr, opt, SIZE16, 0x69, -1, -1, -1, ops,
+                 ENC_RMI_R16_RM16_RELA16));
+    PASS0(binstr(instr, opt, SIZE32, 0x69, -1, -1, -1, ops,
+                 ENC_RMI_R32_RM32_IMM32));
+    PASS0(binstr(instr, opt, SIZE32, 0x69, -1, -1, -1, ops,
+                 ENC_RMI_R32_RM32_RELA32));
+    PASS0(binstr(instr, opt, SIZE64, 0x69, -1, -1, -1, ops,
+                 ENC_RMI_R64_RM64_IMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x69, -1, -1, -1, ops,
+                 ENC_RMI_R64_RM64_RELA32));
 
     return -EOPERAND;
 }

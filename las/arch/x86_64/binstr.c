@@ -681,7 +681,7 @@ _is_r16_rm16_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
             if ( eval3->u.imm >= -128 && eval3->u.imm <= 127 ) {
                 return 1;
             }
-        } else if ( SIZE8 == eval2->sopsize ) {
+        } else if ( SIZE8 == eval3->sopsize ) {
             return 1;
         } else {
             return 0;
@@ -708,7 +708,7 @@ _is_r32_rm32_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
             if ( eval3->u.imm >= -128 && eval3->u.imm <= 127 ) {
                 return 1;
             }
-        } else if ( SIZE8 == eval2->sopsize ) {
+        } else if ( SIZE8 == eval3->sopsize ) {
             return 1;
         } else {
             return 0;
@@ -735,7 +735,7 @@ _is_r64_rm64_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
             if ( eval3->u.imm >= -128 && eval3->u.imm <= 127 ) {
                 return 1;
             }
-        } else if ( SIZE8 == eval2->sopsize ) {
+        } else if ( SIZE16 == eval3->sopsize ) {
             return 1;
         } else {
             return 0;
@@ -762,7 +762,30 @@ _is_r16_rm16_imm16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
             if ( eval3->u.imm >= -32768 && eval3->u.imm <= 32767 ) {
                 return 1;
             }
-        } else if ( SIZE16 == eval2->sopsize ) {
+        } else if ( SIZE16 == eval3->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_r16_rm16_rela16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
+                   const x86_64_eval_t *eval3)
+{
+    /* Check the type of all operands */
+    if ( X86_64_EVAL_REG == eval1->type
+         && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
+         && X86_64_EVAL_SIMM == eval3->type ) {
+        if ( SIZE16 != eval1->sopsize ) {
+            return 0;
+        }
+        if ( 0 != eval2->sopsize && SIZE16 != eval2->sopsize ) {
+            return 0;
+        }
+        if ( 0 == eval3->sopsize || SIZE16 == eval3->sopsize ) {
             return 1;
         } else {
             return 0;
@@ -789,7 +812,30 @@ _is_r32_rm32_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
             if ( eval3->u.imm >= -2147483648 && eval3->u.imm <= 2147483647 ) {
                 return 1;
             }
-        } else if ( SIZE8 == eval2->sopsize ) {
+        } else if ( SIZE32 == eval3->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_r32_rm32_rela32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
+                   const x86_64_eval_t *eval3)
+{
+    /* Check the type of all operands */
+    if ( X86_64_EVAL_REG == eval1->type
+         && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
+         && X86_64_EVAL_IMM == eval3->type ) {
+        if ( SIZE32 != eval1->sopsize ) {
+            return 0;
+        }
+        if ( 0 != eval2->sopsize && SIZE32 != eval2->sopsize ) {
+            return 0;
+        }
+        if ( 0 == eval3->sopsize || SIZE32 == eval3->sopsize ) {
             return 1;
         } else {
             return 0;
@@ -816,7 +862,30 @@ _is_r64_rm64_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
             if ( eval3->u.imm >= -2147483648 && eval3->u.imm <= 2147483647 ) {
                 return 1;
             }
-        } else if ( SIZE8 == eval2->sopsize ) {
+        } else if ( SIZE32 == eval3->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    return 0;
+}
+static __inline__ int
+_is_r64_rm64_rela32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
+                    const x86_64_eval_t *eval3)
+{
+    /* Check the type of all operands */
+    if ( X86_64_EVAL_REG == eval1->type
+         && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
+         && X86_64_EVAL_SIMM == eval3->type ) {
+        if ( SIZE64 != eval1->sopsize ) {
+            return 0;
+        }
+        if ( 0 != eval2->sopsize && SIZE64 != eval2->sopsize ) {
+            return 0;
+        }
+        if ( 0 == eval3->sopsize || SIZE32 == eval3->sopsize ) {
             return 1;
         } else {
             return 0;
@@ -3009,6 +3078,13 @@ binstr(x86_64_instr_t *instr, const x86_64_asm_opt_t *opt, int opsize, int opc1,
                                eval[0], eval[1], eval[2], SIZE16);
         }
         break;
+    case ENC_RMI_R16_RM16_RELA16:
+        /* Check the number of operands and format */
+        if ( 3 == nr && _is_r16_rm16_rela16(eval[0], eval[1], eval[2]) ) {
+            stat = _binstr_rmi(instr, opt, opc1, opc2, opc3, opsize,
+                               eval[0], eval[1], eval[2], SIZE16);
+        }
+        break;
     case ENC_RMI_R32_RM32_IMM8:
         /* Check the number of operands and format */
         if ( 3 == nr && _is_r32_rm32_imm8(eval[0], eval[1], eval[2]) ) {
@@ -3023,6 +3099,13 @@ binstr(x86_64_instr_t *instr, const x86_64_asm_opt_t *opt, int opsize, int opc1,
                                eval[0], eval[1], eval[2], SIZE32);
         }
         break;
+    case ENC_RMI_R32_RM32_RELA32:
+        /* Check the number of operands and format */
+        if ( 3 == nr && _is_r32_rm32_rela32(eval[0], eval[1], eval[2]) ) {
+            stat = _binstr_rmi(instr, opt, opc1, opc2, opc3, opsize,
+                               eval[0], eval[1], eval[2], SIZE32);
+        }
+        break;
     case ENC_RMI_R64_RM64_IMM8:
         /* Check the number of operands and format */
         if ( 3 == nr && _is_r64_rm64_imm8(eval[0], eval[1], eval[2]) ) {
@@ -3033,6 +3116,13 @@ binstr(x86_64_instr_t *instr, const x86_64_asm_opt_t *opt, int opsize, int opc1,
     case ENC_RMI_R64_RM64_IMM32:
         /* Check the number of operands and format */
         if ( 3 == nr && _is_r64_rm64_imm32(eval[0], eval[1], eval[2]) ) {
+            stat = _binstr_rmi(instr, opt, opc1, opc2, opc3, opsize,
+                               eval[0], eval[1], eval[2], SIZE32);
+        }
+        break;
+    case ENC_RMI_R64_RM64_RELA32:
+        /* Check the number of operands and format */
+        if ( 3 == nr && _is_r64_rm64_rela32(eval[0], eval[1], eval[2]) ) {
             stat = _binstr_rmi(instr, opt, opc1, opc2, opc3, opsize,
                                eval[0], eval[1], eval[2], SIZE32);
         }
