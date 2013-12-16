@@ -100,9 +100,11 @@ typedef struct _x86_64_eval {
         /* Immediate value */
         int64_t imm;
         /* Immediate value with symbols */
-        expr_t *imm_expr;
-        int64_t min;
-        int64_t max;
+        struct {
+            expr_t *expr;
+            int64_t min;
+            int64_t max;
+        } simm;
         /* Register */
         x86_64_reg_t reg;
         /* Address operand */
@@ -110,59 +112,15 @@ typedef struct _x86_64_eval {
     } u;
 } x86_64_eval_t;
 
-/*
- * Encoded operand
- */
-typedef struct _x86_64_encoded_operand {
-    int opreg;
-    struct {
-        int r;
-        int x;
-        int b;
-    } rex;
-    int modrm;
-    int sib;
-    struct {
-        size_t sz;
-        int64_t val;
-    } disp;
-    struct {
-        size_t sz;
-        int64_t val;
-    } imm;
-} x86_64_enop_t;
-
-/*
- * Encoded instruction
- */
-typedef struct _x86_64_encoded_instruction {
-    int prefix1;
-    int prefix2;
-    int prefix3;
-    int prefix4;
-    int rex;
-    int opcode1;
-    int opcode2;
-    int opcode3;
-    int modrm;
-    int sib;
-    struct {
-        size_t sz;
-        int64_t val;
-    } disp;
-    struct {
-        size_t sz;
-        int64_t val;
-    } imm;
-} x86_64_instr_t;
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
     x86_64_val_t *
     x86_64_eval_operand(const x86_64_label_table_t *, operand_t *);
+
+    x86_64_eval_t *
+    x86_64_estimate_operand(const x86_64_label_table_t *, operand_t *);
 
 #ifdef __cplusplus
 }

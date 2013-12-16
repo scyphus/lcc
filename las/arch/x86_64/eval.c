@@ -14,10 +14,12 @@
 /*
  * Prototype declarations
  */
+#if 0
 static x86_64_val_t * _eval_expr_var(const x86_64_label_table_t *, expr_t *);
 static x86_64_val_t * _eval_expr_int(const x86_64_label_table_t *, expr_t *);
 static x86_64_val_t * _eval_expr_op(const x86_64_label_table_t *, expr_t *);
 static x86_64_val_t * _eval_expr(const x86_64_label_table_t *, expr_t *);
+#endif
 
 static x86_64_eval_t *
 _estimate_expr_var(const x86_64_label_table_t *, expr_t *);
@@ -27,7 +29,7 @@ static x86_64_eval_t *
 _estimate_expr_op(const x86_64_label_table_t *, expr_t *);
 static x86_64_eval_t * _estimate_expr(const x86_64_label_table_t *, expr_t *);
 
-
+#if 0
 /*
  * Evaluate var expression
  */
@@ -478,7 +480,7 @@ x86_64_eval_operand(const x86_64_label_table_t *ltbl, operand_t *op)
 
     return val;
 }
-
+#endif
 
 
 
@@ -537,9 +539,9 @@ _estimate_expr_var(const x86_64_label_table_t *ltbl, expr_t *expr)
             return NULL;
         }
         eval->type = X86_64_EVAL_SIMM;
-        eval->u.imm_expr = expr;
-        eval->u.min = lb->min;
-        eval->u.max = lb->max;
+        eval->u.simm.expr = expr;
+        eval->u.simm.min = lb->min;
+        eval->u.simm.max = lb->max;
         eval->sopsize = 0;
     } else {
         /* Register */
@@ -621,8 +623,8 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
                 break;
             case OP_MINUS:
                 /* Minus */
-                eval->u.min = -leval->u.max;
-                eval->u.max = -leval->u.min;
+                eval->u.simm.min = -leval->u.simm.max;
+                eval->u.simm.max = -leval->u.simm.min;
                 break;
             default:
                 free(eval);
@@ -658,23 +660,23 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
             } else if ( X86_64_EVAL_IMM == leval->type
                         && X86_64_EVAL_SIMM == reval->type ) {
                 eval->type = X86_64_EVAL_SIMM;
-                eval->u.imm_expr = expr;
-                eval->u.min = leval->u.imm + reval->u.min;
-                eval->u.max = leval->u.imm + reval->u.max;
+                eval->u.simm.expr = expr;
+                eval->u.simm.min = leval->u.imm + reval->u.simm.min;
+                eval->u.simm.max = leval->u.imm + reval->u.simm.max;
                 eval->sopsize = 0;
             } else if ( X86_64_EVAL_SIMM == leval->type
                         && X86_64_EVAL_IMM == reval->type ) {
                 eval->type = X86_64_EVAL_SIMM;
-                eval->u.imm_expr = expr;
-                eval->u.min = leval->u.min + reval->u.imm;
-                eval->u.max = leval->u.max + reval->u.imm;
+                eval->u.simm.expr = expr;
+                eval->u.simm.min = leval->u.simm.min + reval->u.imm;
+                eval->u.simm.max = leval->u.simm.max + reval->u.imm;
                 eval->sopsize = 0;
             } else if ( X86_64_EVAL_SIMM == leval->type
                         && X86_64_EVAL_SIMM == reval->type ) {
                 eval->type = X86_64_EVAL_SIMM;
-                eval->u.imm_expr = expr;
-                eval->u.min = leval->u.min + reval->u.min;
-                eval->u.max = leval->u.max + reval->u.max;
+                eval->u.simm.expr = expr;
+                eval->u.simm.min = leval->u.simm.min + reval->u.simm.min;
+                eval->u.simm.max = leval->u.simm.max + reval->u.simm.max;
                 eval->sopsize = 0;
             } else if ( X86_64_EVAL_REG == leval->type
                         && X86_64_EVAL_IMM == reval->type ) {
@@ -693,9 +695,9 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
                 eval->type = X86_64_EVAL_ADDR;
                 eval->u.eaddr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
                 eval->u.eaddr.base = leval->u.reg;
-                eval->u.eaddr.disp_expr = reval->u.imm_expr;
-                eval->u.eaddr.disp_min = reval->u.min;
-                eval->u.eaddr.disp_max = reval->u.max;
+                eval->u.eaddr.disp_expr = reval->u.simm.expr;
+                eval->u.eaddr.disp_min = reval->u.simm.min;
+                eval->u.eaddr.disp_max = reval->u.simm.max;
                 eval->u.eaddr.saddrsize = 0;
                 eval->sopsize = 0;
             } else if ( X86_64_EVAL_IMM == leval->type
@@ -715,9 +717,9 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
                 eval->type = X86_64_EVAL_ADDR;
                 eval->u.eaddr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
                 eval->u.eaddr.base = reval->u.reg;
-                eval->u.eaddr.disp_expr = leval->u.imm_expr;
-                eval->u.eaddr.disp_min = leval->u.min;
-                eval->u.eaddr.disp_max = leval->u.max;
+                eval->u.eaddr.disp_expr = leval->u.simm.expr;
+                eval->u.eaddr.disp_min = leval->u.simm.min;
+                eval->u.eaddr.disp_max = leval->u.simm.max;
                 eval->u.eaddr.saddrsize = 0;
                 eval->sopsize = 0;
             } else if ( X86_64_EVAL_ADDR == leval->type ) {
@@ -765,9 +767,9 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
                     eval->type = X86_64_EVAL_ADDR;
                     eval->u.eaddr.flags = X86_64_ADDR_DISP
                         | leval->u.eaddr.flags;
-                    eval->u.eaddr.disp_expr = reval->u.imm_expr;
-                    eval->u.eaddr.disp_min = reval->u.min;
-                    eval->u.eaddr.disp_max = reval->u.max;
+                    eval->u.eaddr.disp_expr = reval->u.simm.expr;
+                    eval->u.eaddr.disp_min = reval->u.simm.min;
+                    eval->u.eaddr.disp_max = reval->u.simm.max;
                     eval->u.eaddr.saddrsize = 0;
                     eval->sopsize = 0;
                 } else {
@@ -822,9 +824,9 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
                     eval->type = X86_64_EVAL_ADDR;
                     eval->u.eaddr.flags = X86_64_ADDR_DISP
                         | reval->u.eaddr.flags;
-                    eval->u.eaddr.disp_expr = leval->u.imm_expr;
-                    eval->u.eaddr.disp_min = leval->u.min;
-                    eval->u.eaddr.disp_max = leval->u.max;
+                    eval->u.eaddr.disp_expr = leval->u.simm.expr;
+                    eval->u.eaddr.disp_min = leval->u.simm.min;
+                    eval->u.eaddr.disp_max = leval->u.simm.max;
                     eval->u.eaddr.saddrsize = 0;
                     eval->sopsize = 0;
                 } else {
@@ -851,23 +853,23 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
             } else if ( X86_64_EVAL_SIMM == leval->type
                  && X86_64_EVAL_IMM == reval->type ) {
                 eval->type = X86_64_EVAL_SIMM;
-                eval->u.imm_expr = expr;
-                eval->u.min = leval->u.min - reval->u.imm;
-                eval->u.max = leval->u.max - reval->u.imm;
+                eval->u.simm.expr = expr;
+                eval->u.simm.min = leval->u.simm.min - reval->u.imm;
+                eval->u.simm.max = leval->u.simm.max - reval->u.imm;
                 eval->sopsize = 0;
             } else if ( X86_64_EVAL_IMM == leval->type
                  && X86_64_EVAL_SIMM == reval->type ) {
                 eval->type = X86_64_EVAL_SIMM;
-                eval->u.imm_expr = expr;
-                eval->u.min = leval->u.imm - reval->u.max;
-                eval->u.max = leval->u.imm - reval->u.min;
+                eval->u.simm.expr = expr;
+                eval->u.simm.min = leval->u.imm - reval->u.simm.max;
+                eval->u.simm.max = leval->u.imm - reval->u.simm.min;
                 eval->sopsize = 0;
             } else if ( X86_64_EVAL_SIMM == leval->type
                  && X86_64_EVAL_SIMM == reval->type ) {
                 eval->type = X86_64_EVAL_SIMM;
-                eval->u.imm_expr = expr;
-                eval->u.min = leval->u.min - reval->u.max;
-                eval->u.max = leval->u.max - reval->u.min;
+                eval->u.simm.expr = expr;
+                eval->u.simm.min = leval->u.simm.min - reval->u.simm.max;
+                eval->u.simm.max = leval->u.simm.max - reval->u.simm.min;
                 eval->sopsize = 0;
             } else {
                 /* Invalid */
@@ -1016,8 +1018,8 @@ _estimate_expr_addr(const x86_64_label_table_t *ltbl, pexpr_t *pexpr)
         eval->u.eaddr.saddrsize = eval->sopsize;
         eval->sopsize = 0;
     } else if ( X86_64_EVAL_SIMM == eval->type ) {
-        imin = eval->u.min;
-        imax = eval->u.max;
+        imin = eval->u.simm.min;
+        imax = eval->u.simm.max;
         eval->type = X86_64_EVAL_ADDR;
         eval->u.eaddr.flags = X86_64_ADDR_DISP;
         eval->u.eaddr.disp_expr = pexpr->expr;
