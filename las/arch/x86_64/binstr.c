@@ -45,6 +45,161 @@ _encode_mi(const x86_64_eval_t *, const x86_64_eval_t *, int, size_t,
 static __inline__ int
 _is_imm8(x86_64_eval_t *eval)
 {
+    if ( X86_64_EVAL_IMM == eval->type
+         && X86_64_IMM_FIXED == eval->u.imm.type ) {
+        /* Fixed value */
+        if ( 0 == eval->sopsize ) {
+            /* Operand size is not specified */
+            if ( eval->u.imm.u.fixed >= -128 && eval->u.imm.u.fixed <= 127 ) {
+                /* In the range of imm16 */
+                return 1;
+            } else {
+                return 0;
+            }
+        } else if ( SIZE8 == eval->sopsize ) {
+            /* Operand size is specified */
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+static __inline__ int
+_is_imm16(x86_64_eval_t *eval)
+{
+    if ( X86_64_EVAL_IMM == eval->type
+        && X86_64_IMM_FIXED == eval->u.imm.type ) {
+        /* Fixed value */
+        if ( 0 == eval->sopsize ) {
+            /* Operand size is not specified */
+            if ( eval->u.imm.u.fixed >= -32768
+                 && eval->u.imm.u.fixed <= 32767 ) {
+                /* In the range of imm16 */
+                return 1;
+            } else {
+                return 0;
+            }
+        } else if ( SIZE16 == eval->sopsize ) {
+            /* Operand size is specified */
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+static __inline__ int
+_is_imm32(x86_64_eval_t *eval)
+{
+    if ( X86_64_EVAL_IMM == eval->type
+         && X86_64_IMM_FIXED == eval->u.imm.type ) {
+        /* Fixed value */
+        if ( 0 == eval->sopsize ) {
+            /* Operand size is not specified */
+            if ( eval->u.imm.u.fixed >= -2147483648
+                 && eval->u.imm.u.fixed <= 2147483647 ) {
+                /* In the range of imm16 */
+                return 1;
+            } else {
+                return 0;
+            }
+        } else if ( SIZE32 == eval->sopsize ) {
+            /* Operand size is specified */
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+static __inline__ int
+_is_imm64(x86_64_eval_t *eval)
+{
+    if ( X86_64_EVAL_IMM == eval->type
+         && X86_64_IMM_FIXED == eval->u.imm.type ) {
+        if ( 0 == eval->sopsize ) {
+            return 1;
+        } else if ( SIZE64 == eval->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+
+/*
+ * Is a relocatable address?
+ */
+static __inline__ int
+_is_rela8(x86_64_eval_t *eval)
+{
+    if ( X86_64_EVAL_IMM == eval->type
+         && X86_64_IMM_REL == eval->u.imm.type  ) {
+        if ( 0 == eval->sopsize || SIZE8 == eval->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+static __inline__ int
+_is_rela16(x86_64_eval_t *eval)
+{
+    if ( X86_64_EVAL_IMM == eval->type
+        && X86_64_IMM_REL == eval->u.imm.type ) {
+        if ( 0 == eval->sopsize || SIZE16 == eval->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+static __inline__ int
+_is_rela32(x86_64_eval_t *eval)
+{
+    if ( X86_64_EVAL_IMM == eval->type
+         && X86_64_IMM_REL == eval->u.imm.type ) {
+        if ( 0 == eval->sopsize || SIZE32 == eval->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+static __inline__ int
+_is_rela64(x86_64_eval_t *eval)
+{
+    if ( X86_64_EVAL_IMM == eval->type
+         && X86_64_IMM_REL == eval->u.imm.type ) {
+        if ( 0 == eval->sopsize || SIZE64 == eval->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+
+/*
+ * Is the estimated value an X-bit relative address?
+ */
+#if 0
+static __inline__ int
+_is_drel8(x86_64_eval_t *eval, off_t pos)
+{
     if ( X86_64_EVAL_IMM == eval->type ) {
         /* Fixed value */
         if ( 0 == eval->sopsize ) {
@@ -68,11 +223,13 @@ _is_imm8(x86_64_eval_t *eval)
 static __inline__ int
 _is_imm16(x86_64_eval_t *eval)
 {
-    if ( X86_64_EVAL_IMM == eval->type ) {
+    if ( X86_64_EVAL_IMM == eval->type
+         && X86_64_IMM_FIXED == eval->u.imm.type ) {
         /* Fixed value */
         if ( 0 == eval->sopsize ) {
             /* Operand size is not specified */
-            if ( eval->u.imm >= -32768 && eval->u.imm <= 32767 ) {
+            if ( eval->u.imm.u.fixed >= -32768
+                 && eval->u.imm.u.fixed <= 32767 ) {
                 /* In the range of imm16 */
                 return 1;
             } else {
@@ -91,11 +248,13 @@ _is_imm16(x86_64_eval_t *eval)
 static __inline__ int
 _is_imm32(x86_64_eval_t *eval)
 {
-    if ( X86_64_EVAL_IMM == eval->type ) {
+    if ( X86_64_EVAL_IMM == eval->type
+         && X86_64_IMM_FIXED == eval->u.imm.type ) {
         /* Fixed value */
         if ( 0 == eval->sopsize ) {
             /* Operand size is not specified */
-            if ( eval->u.imm >= -2147483648 && eval->u.imm <= 2147483647 ) {
+            if ( eval->u.imm.u.fixed >= -2147483648
+                 && eval->u.imm.u.fixed <= 2147483647 ) {
                 /* In the range of imm16 */
                 return 1;
             } else {
@@ -126,62 +285,8 @@ _is_imm64(x86_64_eval_t *eval)
         return 0;
     }
 }
+#endif
 
-/*
- * Is a relocatable address?
- */
-static __inline__ int
-_is_rela8(x86_64_eval_t *eval)
-{
-    if ( X86_64_EVAL_SIMM == eval->type ) {
-        if ( 0 == eval->sopsize || SIZE8 == eval->sopsize ) {
-            return 1;
-        } else {
-            return 0;
-        }
-    } else {
-        return 0;
-    }
-}
-static __inline__ int
-_is_rela16(x86_64_eval_t *eval)
-{
-    if ( X86_64_EVAL_SIMM == eval->type ) {
-        if ( 0 == eval->sopsize || SIZE16 == eval->sopsize ) {
-            return 1;
-        } else {
-            return 0;
-        }
-    } else {
-        return 0;
-    }
-}
-static __inline__ int
-_is_rela32(x86_64_eval_t *eval)
-{
-    if ( X86_64_EVAL_SIMM == eval->type ) {
-        if ( 0 == eval->sopsize || SIZE32 == eval->sopsize ) {
-            return 1;
-        } else {
-            return 0;
-        }
-    } else {
-        return 0;
-    }
-}
-static __inline__ int
-_is_rela64(x86_64_eval_t *eval)
-{
-    if ( X86_64_EVAL_SIMM == eval->type ) {
-        if ( 0 == eval->sopsize || SIZE64 == eval->sopsize ) {
-            return 1;
-        } else {
-            return 0;
-        }
-    } else {
-        return 0;
-    }
-}
 
 /*
  * Does the estimated value equal the specified register?
@@ -458,9 +563,10 @@ _is_r8_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
 {
     /* Check the first and second operands */
     if ( X86_64_EVAL_REG == eval1->type && SIZE8 == eval1->sopsize
-         && X86_64_EVAL_IMM == eval2->type ) {
+         && X86_64_EVAL_IMM == eval2->type
+         && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize ) {
-            if ( eval2->u.imm >= -128 && eval2->u.imm <= 127 ) {
+            if ( eval2->u.imm.u.fixed >= -128 && eval2->u.imm.u.fixed <= 127 ) {
                 return 1;
             }
         } else if ( SIZE8 == eval2->sopsize ) {
@@ -475,9 +581,11 @@ _is_r16_imm16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
 {
     /* Check the first and second operands */
     if ( X86_64_EVAL_REG == eval1->type && SIZE16 == eval1->sopsize
-         && X86_64_EVAL_IMM == eval2->type ) {
+         && X86_64_EVAL_IMM == eval2->type
+         && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize ) {
-            if ( eval2->u.imm >= -32768 && eval2->u.imm <= 32767 ) {
+            if ( eval2->u.imm.u.fixed >= -32768
+                 && eval2->u.imm.u.fixed <= 32767 ) {
                 return 1;
             }
         } else if ( SIZE16 == eval2->sopsize ) {
@@ -492,9 +600,11 @@ _is_r32_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
 {
     /* Check the first and second operands */
     if ( X86_64_EVAL_REG == eval1->type && SIZE32 == eval1->sopsize
-         && X86_64_EVAL_IMM == eval2->type ) {
+         && X86_64_EVAL_IMM == eval2->type
+         && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize ) {
-            if ( eval2->u.imm >= -2147483648 && eval2->u.imm <= 2147483647 ) {
+            if ( eval2->u.imm.u.fixed >= -2147483648
+                 && eval2->u.imm.u.fixed <= 2147483647 ) {
                 return 1;
             }
         } else if ( SIZE32 == eval2->sopsize ) {
@@ -509,7 +619,8 @@ _is_r64_imm64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
 {
     /* Check the first and second operands */
     if ( X86_64_EVAL_REG == eval1->type && SIZE64 == eval1->sopsize
-         && X86_64_EVAL_IMM == eval2->type ) {
+         && X86_64_EVAL_IMM == eval2->type
+         && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize ) {
             return 1;
         } else if ( SIZE64 == eval2->sopsize ) {
@@ -524,7 +635,8 @@ _is_r8_rela8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
 {
     /* Check the first and second operands */
     if ( X86_64_EVAL_REG == eval1->type && SIZE8 == eval1->sopsize
-         && X86_64_EVAL_SIMM == eval2->type ) {
+         && X86_64_EVAL_IMM == eval2->type
+         && X86_64_IMM_REL == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize || SIZE8 == eval2->sopsize ) {
             return 1;
         }
@@ -537,7 +649,8 @@ _is_r16_rela16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
 {
     /* Check the first and second operands */
     if ( X86_64_EVAL_REG == eval1->type && SIZE16 == eval1->sopsize
-         && X86_64_EVAL_SIMM == eval2->type ) {
+         && X86_64_EVAL_IMM == eval2->type
+         && X86_64_IMM_REL == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize || SIZE16 == eval2->sopsize ) {
             return 1;
         }
@@ -550,7 +663,8 @@ _is_r32_rela32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
 {
     /* Check the first and second operands */
     if ( X86_64_EVAL_REG == eval1->type && SIZE32 == eval1->sopsize
-         && X86_64_EVAL_SIMM == eval2->type ) {
+         && X86_64_EVAL_IMM == eval2->type
+         && X86_64_IMM_REL == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize || SIZE32 == eval2->sopsize ) {
             return 1;
         }
@@ -563,7 +677,8 @@ _is_r64_rela64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
 {
     /* Check the first and second operands */
     if ( X86_64_EVAL_REG == eval1->type && SIZE64 == eval1->sopsize
-         && X86_64_EVAL_SIMM == eval2->type ) {
+         && X86_64_EVAL_IMM == eval2->type
+        && X86_64_IMM_REL == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize || SIZE64 == eval2->sopsize ) {
             return 1;
         }
@@ -576,10 +691,12 @@ _is_rm8_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
 {
     /* Check the first and second operands */
     if ( (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
-         && X86_64_EVAL_IMM == eval2->type ) {
+         && X86_64_EVAL_IMM == eval2->type
+         && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( SIZE8 == eval1->sopsize ) {
             if ( 0 == eval2->sopsize ) {
-                if ( eval2->u.imm >= -128 && eval2->u.imm <= 127 ) {
+                if ( eval2->u.imm.u.fixed >= -128
+                     && eval2->u.imm.u.fixed <= 127 ) {
                     return 1;
                 }
             } else if ( SIZE8 == eval2->sopsize ) {
@@ -599,10 +716,12 @@ _is_rm16_imm16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
 {
     /* Check the first and second operands */
     if ( (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
-         && X86_64_EVAL_IMM == eval2->type ) {
+         && X86_64_EVAL_IMM == eval2->type
+         && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( SIZE16 == eval1->sopsize ) {
             if ( 0 == eval2->sopsize ) {
-                if ( eval2->u.imm >= -32768 && eval2->u.imm <= 32767 ) {
+                if ( eval2->u.imm.u.fixed >= -32768
+                     && eval2->u.imm.u.fixed <= 32767 ) {
                     return 1;
                 }
             } else if ( SIZE16 == eval2->sopsize ) {
@@ -622,11 +741,12 @@ _is_rm32_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
 {
     /* Check the first and second operands */
     if ( (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
-         && X86_64_EVAL_IMM == eval2->type ) {
+         && X86_64_EVAL_IMM == eval2->type
+         && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( SIZE32 == eval1->sopsize ) {
             if ( 0 == eval2->sopsize ) {
-                if ( eval2->u.imm >= -2147483648
-                     && eval2->u.imm <= 2147483647 ) {
+                if ( eval2->u.imm.u.fixed >= -2147483648
+                     && eval2->u.imm.u.fixed <= 2147483647 ) {
                     return 1;
                 }
             } else if ( SIZE32 == eval2->sopsize ) {
@@ -646,7 +766,8 @@ _is_rm64_imm64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
 {
     /* Check the first and second operands */
     if ( (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
-         && X86_64_EVAL_IMM == eval2->type ) {
+         && X86_64_EVAL_IMM == eval2->type
+         && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( SIZE64 == eval1->sopsize ) {
             if ( 0 == eval2->sopsize ) {
                 return 1;
@@ -670,7 +791,8 @@ _is_r16_rm16_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     /* Check the type of all operands */
     if ( X86_64_EVAL_REG == eval1->type
          && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type ) {
+         && X86_64_EVAL_IMM == eval3->type
+         && X86_64_IMM_FIXED == eval3->u.imm.type ) {
         if ( SIZE16 != eval1->sopsize ) {
             return 0;
         }
@@ -678,7 +800,7 @@ _is_r16_rm16_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
             return 0;
         }
         if ( 0 == eval3->sopsize ) {
-            if ( eval3->u.imm >= -128 && eval3->u.imm <= 127 ) {
+            if ( eval3->u.imm.u.fixed >= -128 && eval3->u.imm.u.fixed <= 127 ) {
                 return 1;
             }
         } else if ( SIZE8 == eval3->sopsize ) {
@@ -697,7 +819,8 @@ _is_r32_rm32_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     /* Check the type of all operands */
     if ( X86_64_EVAL_REG == eval1->type
          && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type ) {
+         && X86_64_EVAL_IMM == eval3->type
+         && X86_64_IMM_FIXED == eval3->u.imm.type ) {
         if ( SIZE32 != eval1->sopsize ) {
             return 0;
         }
@@ -705,7 +828,7 @@ _is_r32_rm32_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
             return 0;
         }
         if ( 0 == eval3->sopsize ) {
-            if ( eval3->u.imm >= -128 && eval3->u.imm <= 127 ) {
+            if ( eval3->u.imm.u.fixed >= -128 && eval3->u.imm.u.fixed <= 127 ) {
                 return 1;
             }
         } else if ( SIZE8 == eval3->sopsize ) {
@@ -724,7 +847,8 @@ _is_r64_rm64_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     /* Check the type of all operands */
     if ( X86_64_EVAL_REG == eval1->type
          && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type ) {
+         && X86_64_EVAL_IMM == eval3->type
+         && X86_64_IMM_FIXED == eval3->u.imm.type ) {
         if ( SIZE64 != eval1->sopsize ) {
             return 0;
         }
@@ -732,10 +856,10 @@ _is_r64_rm64_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
             return 0;
         }
         if ( 0 == eval3->sopsize ) {
-            if ( eval3->u.imm >= -128 && eval3->u.imm <= 127 ) {
+            if ( eval3->u.imm.u.fixed >= -128 && eval3->u.imm.u.fixed <= 127 ) {
                 return 1;
             }
-        } else if ( SIZE16 == eval3->sopsize ) {
+        } else if ( SIZE8 == eval3->sopsize ) {
             return 1;
         } else {
             return 0;
@@ -751,7 +875,8 @@ _is_r16_rm16_imm16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     /* Check the type of all operands */
     if ( X86_64_EVAL_REG == eval1->type
          && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type ) {
+         && X86_64_EVAL_IMM == eval3->type
+         && X86_64_IMM_FIXED == eval3->u.imm.type ) {
         if ( SIZE16 != eval1->sopsize ) {
             return 0;
         }
@@ -759,7 +884,8 @@ _is_r16_rm16_imm16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
             return 0;
         }
         if ( 0 == eval3->sopsize ) {
-            if ( eval3->u.imm >= -32768 && eval3->u.imm <= 32767 ) {
+            if ( eval3->u.imm.u.fixed >= -32768
+                 && eval3->u.imm.u.fixed <= 32767 ) {
                 return 1;
             }
         } else if ( SIZE16 == eval3->sopsize ) {
@@ -778,7 +904,8 @@ _is_r16_rm16_rela16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     /* Check the type of all operands */
     if ( X86_64_EVAL_REG == eval1->type
          && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_SIMM == eval3->type ) {
+         && X86_64_EVAL_IMM == eval3->type
+         && X86_64_IMM_REL == eval3->u.imm.type ) {
         if ( SIZE16 != eval1->sopsize ) {
             return 0;
         }
@@ -801,7 +928,8 @@ _is_r32_rm32_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     /* Check the type of all operands */
     if ( X86_64_EVAL_REG == eval1->type
          && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type ) {
+         && X86_64_EVAL_IMM == eval3->type
+         && X86_64_IMM_FIXED == eval3->u.imm.type ) {
         if ( SIZE32 != eval1->sopsize ) {
             return 0;
         }
@@ -809,7 +937,8 @@ _is_r32_rm32_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
             return 0;
         }
         if ( 0 == eval3->sopsize ) {
-            if ( eval3->u.imm >= -2147483648 && eval3->u.imm <= 2147483647 ) {
+            if ( eval3->u.imm.u.fixed >= -2147483648
+                 && eval3->u.imm.u.fixed <= 2147483647 ) {
                 return 1;
             }
         } else if ( SIZE32 == eval3->sopsize ) {
@@ -828,7 +957,8 @@ _is_r32_rm32_rela32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     /* Check the type of all operands */
     if ( X86_64_EVAL_REG == eval1->type
          && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type ) {
+         && X86_64_EVAL_IMM == eval3->type
+         && X86_64_IMM_REL == eval3->u.imm.type ) {
         if ( SIZE32 != eval1->sopsize ) {
             return 0;
         }
@@ -851,7 +981,8 @@ _is_r64_rm64_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     /* Check the type of all operands */
     if ( X86_64_EVAL_REG == eval1->type
          && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type ) {
+         && X86_64_EVAL_IMM == eval3->type
+         && X86_64_IMM_FIXED == eval3->u.imm.type ) {
         if ( SIZE64 != eval1->sopsize ) {
             return 0;
         }
@@ -859,7 +990,8 @@ _is_r64_rm64_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
             return 0;
         }
         if ( 0 == eval3->sopsize ) {
-            if ( eval3->u.imm >= -2147483648 && eval3->u.imm <= 2147483647 ) {
+            if ( eval3->u.imm.u.fixed >= -2147483648
+                 && eval3->u.imm.u.fixed <= 2147483647 ) {
                 return 1;
             }
         } else if ( SIZE32 == eval3->sopsize ) {
@@ -878,7 +1010,8 @@ _is_r64_rm64_rela32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     /* Check the type of all operands */
     if ( X86_64_EVAL_REG == eval1->type
          && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_SIMM == eval3->type ) {
+         && X86_64_EVAL_IMM == eval3->type
+         && X86_64_IMM_REL == eval3->u.imm.type ) {
         if ( SIZE64 != eval1->sopsize ) {
             return 0;
         }
@@ -1889,17 +2022,20 @@ _encode_rmi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
         return -1;
     }
 
+    /* FIXME!!!! */
     /* Check the third operand */
-    if ( X86_64_EVAL_IMM == eval3->type ) {
+    if ( X86_64_EVAL_IMM == eval3->type
+         && X86_64_IMM_FIXED == eval3->u.imm.type ) {
         /* Update immediate value */
         enop->imm.sz = immsz;
-        enop->imm.val = eval3->u.imm;
+        enop->imm.val = eval3->u.imm.u.fixed;
         enop->imm.expr = NULL;
-    } else if ( X86_64_EVAL_SIMM == eval3->type ) {
+    } else if ( X86_64_EVAL_IMM == eval3->type
+                && X86_64_IMM_REL == eval3->u.imm.type ) {
         /* Update relocatable value */
         enop->imm.sz = immsz;
         enop->imm.val = 0;
-        enop->imm.expr = eval3->u.simm.expr;
+        enop->imm.expr = eval3->u.imm.u.rela.expr;
     } else {
         return -1;
     }
@@ -1940,8 +2076,11 @@ _encode_oi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, size_t immsz,
         return -1;
     }
 
+    /* FIXME!!!! */
+
     /* Check the second operand */
-    if ( X86_64_EVAL_IMM == eval2->type ) {
+    if ( X86_64_EVAL_IMM == eval2->type
+         && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         /* Immediate value */
         enop->opreg = reg;
         enop->rex.r = REX_NONE;
@@ -1953,11 +2092,12 @@ _encode_oi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, size_t immsz,
         enop->disp.val = 0;
         enop->disp.expr = NULL;
         enop->imm.sz = immsz;
-        enop->imm.val = eval2->u.imm;
+        enop->imm.val = eval2->u.imm.u.fixed;
         enop->imm.expr = NULL;
 
         return 0;
-    } else if ( X86_64_EVAL_SIMM == eval2->type ) {
+    } else if ( X86_64_EVAL_IMM == eval2->type
+                && X86_64_IMM_REL == eval2->u.imm.type ) {
         /* Relocatable address */
         enop->opreg = reg;
         enop->rex.r = REX_NONE;
@@ -1970,7 +2110,7 @@ _encode_oi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, size_t immsz,
         enop->disp.expr = NULL;
         enop->imm.sz = immsz;
         enop->imm.val = 0;
-        enop->imm.expr = eval2->u.simm.expr;
+        enop->imm.expr = eval2->u.imm.u.rela.expr;
 
         return 0;
     } else {
@@ -2007,15 +2147,19 @@ _encode_mi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, int reg,
         return -1;
     }
 
+    /* FIXME!!! */
+
     /* Check the second operand */
-    if ( X86_64_EVAL_IMM == eval2->type ) {
+    if ( X86_64_EVAL_IMM == eval2->type
+         && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         /* Update immediate value */
         enop->imm.sz = immsz;
-        enop->imm.val = eval2->u.imm;
-    } else if ( X86_64_EVAL_SIMM == eval2->type ) {
+        enop->imm.val = eval2->u.imm.u.fixed;
+    } else if ( X86_64_EVAL_IMM == eval2->type
+                && X86_64_IMM_REL == eval2->u.imm.type ) {
         /* Update immediate value */
         enop->imm.sz = immsz;
-        enop->imm.expr = eval2->u.simm.expr;
+        enop->imm.expr = eval2->u.imm.u.rela.expr;
     } else {
         return -1;
     }
@@ -2087,8 +2231,11 @@ _encode_o(const x86_64_eval_t *eval, x86_64_enop_t *enop)
 static int
 _encode_i(const x86_64_eval_t *eval, size_t immsz, x86_64_enop_t *enop)
 {
+    /* FIXME!!! */
+
     /* Check the operand type */
-    if ( X86_64_EVAL_IMM == eval->type ) {
+    if ( X86_64_EVAL_IMM == eval->type
+         && X86_64_IMM_FIXED == eval->u.imm.type ) {
         enop->opreg = -1;
         enop->rex.r = REX_NONE;
         enop->rex.x = REX_NONE;
@@ -2099,10 +2246,11 @@ _encode_i(const x86_64_eval_t *eval, size_t immsz, x86_64_enop_t *enop)
         enop->disp.val = 0;
         enop->disp.expr = NULL;
         enop->imm.sz = immsz;
-        enop->imm.val = eval->u.imm;
+        enop->imm.val = eval->u.imm.u.fixed;
         enop->imm.expr = NULL;
         return 0;
-    } else if ( X86_64_EVAL_SIMM != eval->type ) {
+    } else if ( X86_64_EVAL_IMM == eval->type
+                && X86_64_IMM_REL == eval->u.imm.type ) {
         enop->opreg = -1;
         enop->rex.r = REX_NONE;
         enop->rex.x = REX_NONE;
@@ -2114,7 +2262,7 @@ _encode_i(const x86_64_eval_t *eval, size_t immsz, x86_64_enop_t *enop)
         enop->disp.expr = NULL;
         enop->imm.sz = immsz;
         enop->imm.val = 0;
-        enop->imm.expr = eval->u.simm.expr;
+        enop->imm.expr = eval->u.imm.u.rela.expr;
         return 0;
     } else {
         return -1;
@@ -2794,6 +2942,15 @@ binstr(x86_64_instr_t *instr, const x86_64_asm_opt_t *opt, int opsize, int opc1,
                              SIZE8);
         }
         break;
+#if 0
+    case ENC_D_REL8:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_drel8(eval[0], pos) ) {
+            stat = _binstr_d(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                             SIZE8);
+        }
+        break;
+#endif
     case ENC_MI_RM8_IMM8:
         /* Check the number of operands and format */
         if ( 2 == nr && _is_rm8(eval[0]) && _is_imm8(eval[1]) ) {

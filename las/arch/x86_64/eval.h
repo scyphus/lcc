@@ -19,10 +19,13 @@ typedef enum _x86_64_val_type {
     X86_64_VAL_ADDR,
 } x86_64_val_type_t;
 
+typedef enum _x86_64_imm_type {
+    X86_64_IMM_FIXED,
+    X86_64_IMM_REL,
+} x86_64_imm_type_t;
+
 typedef enum _x86_64_eval_type {
-    /*X86_64_EVAL_REL,*/
     X86_64_EVAL_IMM,
-    X86_64_EVAL_SIMM,
     X86_64_EVAL_REG,
     X86_64_EVAL_ADDR,
 } x86_64_eval_type_t;
@@ -70,6 +73,30 @@ typedef struct _x86_64_val {
 } x86_64_val_t;
 
 /*
+ * Estimated value
+ */
+typedef struct _x86_64_rela {
+    /* Original expression */
+    expr_t *expr;
+    /* Range estimated from local symbols */
+    int64_t min;
+    int64_t max;
+    /* Local offsets */
+    int loff;
+    /* ABS or S or PC */
+} x86_64_rela_t;
+
+typedef struct _x86_64_imm {
+    x86_64_imm_type_t type;
+    union {
+        /* Immediate value */
+        int64_t fixed;
+        /* Immediate value with symbols */
+        x86_64_rela_t rela;
+    } u;
+} x86_64_imm_t;
+
+/*
  * Address operand (w/ estimated displacement)
  */
 typedef struct _x86_64_eaddr {
@@ -83,6 +110,7 @@ typedef struct _x86_64_eaddr {
     expr_t *disp_expr;
     int64_t disp_min;
     int64_t disp_max;
+    x86_64_imm_t disp;
     /* Offset register */
     x86_64_reg_t offset;
     /* Scale multiplier */
@@ -98,13 +126,7 @@ typedef struct _x86_64_eval {
     size_t sopsize;
     union {
         /* Immediate value */
-        int64_t imm;
-        /* Immediate value with symbols */
-        struct {
-            expr_t *expr;
-            int64_t min;
-            int64_t max;
-        } simm;
+        x86_64_imm_t imm;
         /* Register */
         x86_64_reg_t reg;
         /* Address operand */

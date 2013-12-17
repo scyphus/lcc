@@ -19,12 +19,10 @@
 #include <assert.h>
 
 
-#define X86_64_INSTR_SIZE_MIN   1
-#define X86_64_INSTR_SIZE_MAX   22
-
-#define PASS0(ret) do {                                                 \
-        if ( 0 < ret ) { return ret; }                                  \
-        else if ( 0 > ret ) { return 0; }                               \
+#define PASS0(f) do {                                                   \
+        int ret = (f);                                                  \
+        if ( ret < 0 ) { return ret; }                                  \
+        else if ( ret > 0 ) { return 0; }                               \
     } while ( 0 )
 
 
@@ -1184,12 +1182,20 @@ _jmp(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
 {
     if ( OPCODE_SUFFIX_FAR & opt->suffix ) {
         /* w/ far */
+
+        /* To be implemented */
+        return -EUNKNOWN;
     } else {
         /* w/o far */
-    }
+        PASS0(binstr(instr, opt, SIZE8, 0xeb, -1, -1, -1, ops, ENC_D_REL8));
+        PASS0(binstr(instr, opt, SIZE16, 0xe9, -1, -1, -1, ops, ENC_D_REL16));
+        PASS0(binstr(instr, opt, SIZE32, 0xe9, -1, -1, -1, ops, ENC_D_REL32));
+        PASS0(binstr(instr, opt, SIZE16, 0xff, -1, -1, 4, ops, ENC_M_RM16));
+        PASS0(binstr(instr, opt, SIZE32, 0xff, -1, -1, 4, ops, ENC_M_RM32));
+        PASS0(binstr(instr, opt, SIZE64, 0xff, -1, -1, 4, ops, ENC_M_RM64));
 
-    /* To be implemented */
-    return -EUNKNOWN;
+        return -EOPERAND;
+    }
 }
 
 /*
@@ -1600,7 +1606,8 @@ _get_instr(const opcode_vector_t *opcode, int *prefix, int *suffix)
  * Assemble an instruction
  */
 static int
-_assemble_instr(const x86_64_label_table_t *tbl, const opcode_vector_t *opcode,
+_assemble_instr(const x86_64_label_table_t *tbl, off_t pos,
+                const opcode_vector_t *opcode,
                 const operand_vector_t *operands, x86_64_instr_t *instr)
 {
     int ret;
@@ -1614,13 +1621,14 @@ _assemble_instr(const x86_64_label_table_t *tbl, const opcode_vector_t *opcode,
 
     ifunc = _get_instr(opcode, &(opt.prefix), &(opt.suffix));
     if ( NULL != ifunc ) {
+        opt.pos = pos;
         ret = ifunc(&opt, operands, instr);
         if ( ret >= 0 ) {
             _print_instruction_bin(instr);
 #if 0
             _print_instruction(instr);
-#endif
             printf("\n");
+#endif
         } else {
             /* Error */
             fprintf(stderr, "Error:");
@@ -1794,13 +1802,15 @@ _assemble(stmt_vector_t *vec)
     }
 
     /* Assemble */
+    pos = 0;
     for ( i = 0; i < mvector_size(vec); i++ ) {
         stmt = mvector_at(vec, i);
         switch ( stmt->type ) {
         case STMT_INSTR:
             /* Assemble the instruction */
-            ret = _assemble_instr(&lbtbl, stmt->u.instr->opcode,
+            ret = _assemble_instr(&lbtbl, pos, stmt->u.instr->opcode,
                                   stmt->u.instr->operands, &instr);
+            pos++;
             break;
         default:
             /* Do nothing */
