@@ -108,6 +108,7 @@ _eval_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
         switch ( expr->u.op.type ) {
         case OP_PLUS:
             /* Do nothing */
+            val->u.imm = lval->u.imm;
             break;
         case OP_MINUS:
             /* Minus */
@@ -535,16 +536,19 @@ _estimate_expr_var(const x86_64_label_table_t *ltbl, expr_t *expr)
         lb = _search_label(ltbl, expr->u.var);
         if ( NULL == lb ) {
             /* Not found */
-            free(eval);
-            return NULL;
+            eval->type = X86_64_EVAL_IMM;
+            eval->u.imm.type = X86_64_IMM_REL;
+            eval->u.imm.u.rel = expr;
+            eval->sopsize = 0;
+        } else {
+            eval->type = X86_64_EVAL_IMM;
+            eval->u.imm.type = X86_64_IMM_ESTIMATED;
+            eval->u.imm.u.est.loff = 1;
+            eval->u.imm.u.est.expr = expr;
+            eval->u.imm.u.est.min = lb->min;
+            eval->u.imm.u.est.max = lb->max;
+            eval->sopsize = 0;
         }
-        eval->type = X86_64_EVAL_IMM;
-        eval->u.imm.type = X86_64_IMM_REL;
-        eval->u.imm.u.rela.loff = 1;
-        eval->u.imm.u.rela.expr = expr;
-        eval->u.imm.u.rela.min = lb->min;
-        eval->u.imm.u.rela.max = lb->max;
-        eval->sopsize = 0;
     } else {
         /* Register */
         eval->type = X86_64_EVAL_REG;
@@ -608,7 +612,8 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
                 eval->u.imm.type = X86_64_IMM_FIXED;
                 switch ( expr->u.op.type ) {
                 case OP_PLUS:
-                    /* Do nothing */
+                    /* Do nothing: Just copy */
+                    eval->u.imm.u.fixed = leval->u.imm.u.fixed;
                     break;
                 case OP_MINUS:
                     /* Minus */
@@ -622,18 +627,36 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
                     free(eval);
                     return NULL;
                 }
+            } else if ( X86_64_IMM_ESTIMATED == leval->u.imm.type ) {
+                eval->type = X86_64_EVAL_IMM;
+                eval->u.imm.type = X86_64_IMM_ESTIMATED;
+                switch ( expr->u.op.type ) {
+                case OP_PLUS:
+                    /* Do nothing */
+                    eval->u.imm.u.est.loff = leval->u.imm.u.est.loff;
+                    eval->u.imm.u.est.expr = expr;
+                    eval->u.imm.u.est.min = leval->u.imm.u.est.max;
+                    eval->u.imm.u.est.max = leval->u.imm.u.est.min;
+                    break;
+                case OP_MINUS:
+                    /* Minus */
+                    eval->u.imm.u.est.loff = -leval->u.imm.u.est.loff;
+                    eval->u.imm.u.est.expr = expr;
+                    eval->u.imm.u.est.min = -leval->u.imm.u.est.max;
+                    eval->u.imm.u.est.max = -leval->u.imm.u.est.min;
+                    break;
+                default:
+                    free(eval);
+                    return NULL;
+                }
             } else {
                 eval->type = X86_64_EVAL_IMM;
                 eval->u.imm.type = X86_64_IMM_REL;
                 switch ( expr->u.op.type ) {
                 case OP_PLUS:
-                    /* Do nothing */
-                    break;
                 case OP_MINUS:
-                    /* Minus */
-                    eval->u.imm.u.rela.loff = -leval->u.imm.u.rela.loff;
-                    eval->u.imm.u.rela.min = -leval->u.imm.u.rela.max;
-                    eval->u.imm.u.rela.max = -leval->u.imm.u.rela.min;
+                    /* Do nothing */
+                    eval->u.imm.u.rel = expr;
                     break;
                 default:
                     free(eval);
@@ -672,37 +695,43 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
                         = leval->u.imm.u.fixed + reval->u.imm.u.fixed;
                     eval->sopsize = 0;
                 } else if ( X86_64_IMM_FIXED == leval->u.imm.type
-                            && X86_64_IMM_REL == reval->u.imm.type ) {
+                            && X86_64_IMM_ESTIMATED == reval->u.imm.type ) {
                     eval->type = X86_64_EVAL_IMM;
-                    eval->u.imm.type = X86_64_IMM_REL;
-                    eval->u.imm.u.rela.loff = reval->u.imm.u.rela.loff;
-                    eval->u.imm.u.rela.expr = expr;
-                    eval->u.imm.u.rela.min
-                        = leval->u.imm.u.fixed + reval->u.imm.u.rela.min;
-                    eval->u.imm.u.rela.max
-                        = leval->u.imm.u.fixed + reval->u.imm.u.rela.max;
+                    eval->u.imm.type = X86_64_IMM_ESTIMATED;
+                    eval->u.imm.u.est.loff = reval->u.imm.u.est.loff;
+                    eval->u.imm.u.est.expr = expr;
+                    eval->u.imm.u.est.min
+                        = leval->u.imm.u.fixed + reval->u.imm.u.est.min;
+                    eval->u.imm.u.est.max
+                        = leval->u.imm.u.fixed + reval->u.imm.u.est.max;
                     eval->sopsize = 0;
-                } else if ( X86_64_IMM_REL == leval->u.imm.type
+                } else if ( X86_64_IMM_ESTIMATED == leval->u.imm.type
                             && X86_64_IMM_FIXED == reval->u.imm.type ) {
                     eval->type = X86_64_EVAL_IMM;
-                    eval->u.imm.type = X86_64_IMM_REL;
-                    eval->u.imm.u.rela.loff = leval->u.imm.u.rela.loff;
-                    eval->u.imm.u.rela.expr = expr;
-                    eval->u.imm.u.rela.min
-                        = leval->u.imm.u.rela.min + reval->u.imm.u.fixed;
-                    eval->u.imm.u.rela.max
-                        = leval->u.imm.u.rela.max + reval->u.imm.u.fixed;
+                    eval->u.imm.type = X86_64_IMM_ESTIMATED;
+                    eval->u.imm.u.est.loff = leval->u.imm.u.est.loff;
+                    eval->u.imm.u.est.expr = expr;
+                    eval->u.imm.u.est.min
+                        = leval->u.imm.u.est.min + reval->u.imm.u.fixed;
+                    eval->u.imm.u.est.max
+                        = leval->u.imm.u.est.max + reval->u.imm.u.fixed;
+                    eval->sopsize = 0;
+                } else if ( X86_64_IMM_ESTIMATED == leval->u.imm.type
+                            && X86_64_IMM_ESTIMATED == reval->u.imm.type ) {
+                    eval->type = X86_64_EVAL_IMM;
+                    eval->u.imm.type = X86_64_IMM_ESTIMATED;
+                    eval->u.imm.u.est.loff = leval->u.imm.u.est.loff;
+                    eval->u.imm.u.est.expr = expr;
+                    eval->u.imm.u.est.min
+                        = leval->u.imm.u.est.min + reval->u.imm.u.est.min;
+                    eval->u.imm.u.est.max
+                        = leval->u.imm.u.est.max + reval->u.imm.u.est.max;
                     eval->sopsize = 0;
                 } else if ( X86_64_IMM_REL == leval->u.imm.type
-                            && X86_64_IMM_REL == reval->u.imm.type ) {
+                            || X86_64_IMM_REL == reval->u.imm.type ) {
                     eval->type = X86_64_EVAL_IMM;
                     eval->u.imm.type = X86_64_IMM_REL;
-                    eval->u.imm.u.rela.loff = leval->u.imm.u.rela.loff;
-                    eval->u.imm.u.rela.expr = expr;
-                    eval->u.imm.u.rela.min
-                        = leval->u.imm.u.rela.min + reval->u.imm.u.rela.min;
-                    eval->u.imm.u.rela.max
-                        = leval->u.imm.u.rela.max + reval->u.imm.u.rela.max;
+                    eval->u.imm.u.rel = expr;
                     eval->sopsize = 0;
                 } else {
                     /* Invalid syntax */
@@ -828,37 +857,43 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
                         = leval->u.imm.u.fixed - reval->u.imm.u.fixed;
                     eval->sopsize = 0;
                 } else if ( X86_64_IMM_FIXED == leval->u.imm.type
-                            && X86_64_IMM_REL == reval->u.imm.type ) {
+                            && X86_64_IMM_ESTIMATED == reval->u.imm.type ) {
                     eval->type = X86_64_EVAL_IMM;
-                    eval->u.imm.type = X86_64_IMM_REL;
-                    eval->u.imm.u.rela.loff = reval->u.imm.u.rela.loff;
-                    eval->u.imm.u.rela.expr = expr;
-                    eval->u.imm.u.rela.min
-                        = leval->u.imm.u.fixed - reval->u.imm.u.rela.max;
-                    eval->u.imm.u.rela.max
-                        = leval->u.imm.u.fixed - reval->u.imm.u.rela.min;
+                    eval->u.imm.type = X86_64_IMM_ESTIMATED;
+                    eval->u.imm.u.est.loff = reval->u.imm.u.est.loff;
+                    eval->u.imm.u.est.expr = expr;
+                    eval->u.imm.u.est.min
+                        = leval->u.imm.u.fixed - reval->u.imm.u.est.max;
+                    eval->u.imm.u.est.max
+                        = leval->u.imm.u.fixed - reval->u.imm.u.est.min;
                     eval->sopsize = 0;
-                } else if ( X86_64_IMM_REL == leval->u.imm.type
+                } else if ( X86_64_IMM_ESTIMATED == leval->u.imm.type
                             && X86_64_IMM_FIXED == reval->u.imm.type ) {
                     eval->type = X86_64_EVAL_IMM;
-                    eval->u.imm.type = X86_64_IMM_REL;
-                    eval->u.imm.u.rela.loff = leval->u.imm.u.rela.loff;
-                    eval->u.imm.u.rela.expr = expr;
-                    eval->u.imm.u.rela.min
-                        = leval->u.imm.u.rela.min - reval->u.imm.u.fixed;
-                    eval->u.imm.u.rela.max
-                        = leval->u.imm.u.rela.max - reval->u.imm.u.fixed;
+                    eval->u.imm.type = X86_64_IMM_ESTIMATED;
+                    eval->u.imm.u.est.loff = leval->u.imm.u.est.loff;
+                    eval->u.imm.u.est.expr = expr;
+                    eval->u.imm.u.est.min
+                        = leval->u.imm.u.est.min - reval->u.imm.u.fixed;
+                    eval->u.imm.u.est.max
+                        = leval->u.imm.u.est.max - reval->u.imm.u.fixed;
+                    eval->sopsize = 0;
+                } else if ( X86_64_IMM_ESTIMATED == leval->u.imm.type
+                            && X86_64_IMM_ESTIMATED == reval->u.imm.type ) {
+                    eval->type = X86_64_EVAL_IMM;
+                    eval->u.imm.type = X86_64_IMM_ESTIMATED;
+                    eval->u.imm.u.est.loff = leval->u.imm.u.est.loff;
+                    eval->u.imm.u.est.expr = expr;
+                    eval->u.imm.u.est.min
+                        = leval->u.imm.u.est.min - reval->u.imm.u.est.max;
+                    eval->u.imm.u.est.max
+                        = leval->u.imm.u.est.max - reval->u.imm.u.est.min;
                     eval->sopsize = 0;
                 } else if ( X86_64_IMM_REL == leval->u.imm.type
-                            && X86_64_IMM_REL == reval->u.imm.type ) {
+                            || X86_64_IMM_REL == reval->u.imm.type ) {
                     eval->type = X86_64_EVAL_IMM;
                     eval->u.imm.type = X86_64_IMM_REL;
-                    eval->u.imm.u.rela.loff = leval->u.imm.u.rela.loff;
-                    eval->u.imm.u.rela.expr = expr;
-                    eval->u.imm.u.rela.min
-                        = leval->u.imm.u.rela.min - reval->u.imm.u.rela.max;
-                    eval->u.imm.u.rela.max
-                        = leval->u.imm.u.rela.max - reval->u.imm.u.rela.min;
+                    eval->u.imm.u.rel = expr;
                     eval->sopsize = 0;
                 } else {
                     /* Invalid syntax */

@@ -21,6 +21,7 @@ typedef enum _x86_64_val_type {
 
 typedef enum _x86_64_imm_type {
     X86_64_IMM_FIXED,
+    X86_64_IMM_ESTIMATED,
     X86_64_IMM_REL,
 } x86_64_imm_type_t;
 
@@ -75,7 +76,7 @@ typedef struct _x86_64_val {
 /*
  * Estimated value
  */
-typedef struct _x86_64_rela {
+typedef struct _x86_64_estimated {
     /* Original expression */
     expr_t *expr;
     /* Range estimated from local symbols */
@@ -84,15 +85,17 @@ typedef struct _x86_64_rela {
     /* Local offsets */
     int loff;
     /* ABS or S or PC */
-} x86_64_rela_t;
+} x86_64_est_t;
 
 typedef struct _x86_64_imm {
     x86_64_imm_type_t type;
     union {
         /* Immediate value */
         int64_t fixed;
-        /* Immediate value with symbols */
-        x86_64_rela_t rela;
+        /* Immediate value with symbols that can be estimated */
+        x86_64_est_t est;
+        /* Immediate value with symbols but cannot be estimated */
+        expr_t *rel;
     } u;
 } x86_64_imm_t;
 
