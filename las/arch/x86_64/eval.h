@@ -84,7 +84,6 @@ typedef struct _x86_64_estimated {
     int64_t max;
     /* Local offsets */
     int loff;
-    /* ABS or S or PC */
 } x86_64_est_t;
 
 typedef struct _x86_64_imm {
@@ -95,7 +94,7 @@ typedef struct _x86_64_imm {
         /* Immediate value with symbols that can be estimated */
         x86_64_est_t est;
         /* Immediate value with symbols but cannot be estimated */
-        expr_t *rel;
+        expr_t *rexpr;
     } u;
 } x86_64_imm_t;
 

@@ -538,7 +538,7 @@ _estimate_expr_var(const x86_64_label_table_t *ltbl, expr_t *expr)
             /* Not found */
             eval->type = X86_64_EVAL_IMM;
             eval->u.imm.type = X86_64_IMM_REL;
-            eval->u.imm.u.rel = expr;
+            eval->u.imm.u.rexpr = expr;
             eval->sopsize = 0;
         } else {
             eval->type = X86_64_EVAL_IMM;
@@ -656,7 +656,7 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
                 case OP_PLUS:
                 case OP_MINUS:
                     /* Do nothing */
-                    eval->u.imm.u.rel = expr;
+                    eval->u.imm.u.rexpr = expr;
                     break;
                 default:
                     free(eval);
@@ -731,7 +731,7 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
                             || X86_64_IMM_REL == reval->u.imm.type ) {
                     eval->type = X86_64_EVAL_IMM;
                     eval->u.imm.type = X86_64_IMM_REL;
-                    eval->u.imm.u.rel = expr;
+                    eval->u.imm.u.rexpr = expr;
                     eval->sopsize = 0;
                 } else {
                     /* Invalid syntax */
@@ -893,7 +893,7 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
                             || X86_64_IMM_REL == reval->u.imm.type ) {
                     eval->type = X86_64_EVAL_IMM;
                     eval->u.imm.type = X86_64_IMM_REL;
-                    eval->u.imm.u.rel = expr;
+                    eval->u.imm.u.rexpr = expr;
                     eval->sopsize = 0;
                 } else {
                     /* Invalid syntax */
