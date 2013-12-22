@@ -21,13 +21,10 @@ static x86_64_val_t * _eval_expr_op(const x86_64_label_table_t *, expr_t *);
 static x86_64_val_t * _eval_expr(const x86_64_label_table_t *, expr_t *);
 #endif
 
-static x86_64_eval_t *
-_estimate_expr_var(const x86_64_label_table_t *, expr_t *);
-static x86_64_eval_t *
-_estimate_expr_int(const x86_64_label_table_t *, expr_t *);
-static x86_64_eval_t *
-_estimate_expr_op(const x86_64_label_table_t *, expr_t *);
-static x86_64_eval_t * _estimate_expr(const x86_64_label_table_t *, expr_t *);
+static x86_64_eval_t * _estimate_expr_var(expr_t *);
+static x86_64_eval_t * _estimate_expr_int(expr_t *);
+static x86_64_eval_t * _estimate_expr_op(expr_t *);
+static x86_64_eval_t * _estimate_expr(expr_t *);
 
 #if 0
 /*
@@ -491,7 +488,7 @@ x86_64_eval_operand(const x86_64_label_table_t *ltbl, operand_t *op)
 
 
 
-
+#if 0
 /*
  * Search a label from the table
  */
@@ -511,18 +508,17 @@ _search_label(const x86_64_label_table_t *tbl, const char *var)
 
     return NULL;
 }
-
+#endif
 
 
 /*
  * Estimate var expression
  */
 static x86_64_eval_t *
-_estimate_expr_var(const x86_64_label_table_t *ltbl, expr_t *expr)
+_estimate_expr_var(expr_t *expr)
 {
     x86_64_eval_t *eval;
     x86_64_reg_t reg;
-    x86_64_label_t *lb;
 
     /* Allocate estimated value */
     eval = malloc(sizeof(x86_64_eval_t));
@@ -538,7 +534,7 @@ _estimate_expr_var(const x86_64_label_table_t *ltbl, expr_t *expr)
         eval->u.imm.u.rexpr = expr;
         eval->sopsize = 0;
 #if 0
-        lb = _search_label(ltbl, expr->u.var);
+        lb = _search_label(expr->u.var);
         if ( NULL == lb ) {
             /* Not found */
             eval->type = X86_64_EVAL_IMM;
@@ -566,7 +562,7 @@ _estimate_expr_var(const x86_64_label_table_t *ltbl, expr_t *expr)
  * Estimate integer expression
  */
 static x86_64_eval_t *
-_estimate_expr_int(const x86_64_label_table_t *ltbl, expr_t *expr)
+_estimate_expr_int(expr_t *expr)
 {
     x86_64_eval_t *eval;
 
@@ -586,7 +582,7 @@ _estimate_expr_int(const x86_64_label_table_t *ltbl, expr_t *expr)
  * Estimate operand
  */
 static x86_64_eval_t *
-_estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
+_estimate_expr_op(expr_t *expr)
 {
     x86_64_eval_t *eval;
     x86_64_eval_t *leval;
@@ -604,7 +600,7 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
     /* Refactoring is required... */
     if ( FIX_PREFIX == expr->u.op.fix_type ) {
         expr0 = vector_at(expr->u.op.args, 0);
-        leval = _estimate_expr(ltbl, expr0);
+        leval = _estimate_expr(expr0);
         if ( NULL == leval ) {
             free(eval);
             return NULL;
@@ -652,12 +648,12 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
         expr0 = vector_at(expr->u.op.args, 0);
         expr1 = vector_at(expr->u.op.args, 1);
 
-        leval = _estimate_expr(ltbl, expr0);
+        leval = _estimate_expr(expr0);
         if ( NULL == leval ) {
             free(eval);
             return NULL;
         }
-        reval = _estimate_expr(ltbl, expr1);
+        reval = _estimate_expr(expr1);
         if ( NULL == reval ) {
             /* Free lval */
             free(eval);
@@ -928,19 +924,19 @@ _estimate_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
  * Estimate the expression (static function)
  */
 static x86_64_eval_t *
-_estimate_expr(const x86_64_label_table_t *ltbl, expr_t *expr)
+_estimate_expr(expr_t *expr)
 {
     x86_64_eval_t *eval;
 
     switch ( expr->type ) {
     case EXPR_VAR:
-        eval = _estimate_expr_var(ltbl, expr);
+        eval = _estimate_expr_var(expr);
         break;
     case EXPR_INT:
-        eval = _estimate_expr_int(ltbl, expr);
+        eval = _estimate_expr_int(expr);
         break;
     case EXPR_OP:
-        eval = _estimate_expr_op(ltbl, expr);
+        eval = _estimate_expr_op(expr);
         break;
     default:
         eval = NULL;
@@ -953,11 +949,11 @@ _estimate_expr(const x86_64_label_table_t *ltbl, expr_t *expr)
  * Estimate immediate value or register
  */
 static x86_64_eval_t *
-_estimate_expr_imm_or_reg(const x86_64_label_table_t *ltbl, expr_t *expr)
+_estimate_expr_imm_or_reg(expr_t *expr)
 {
     x86_64_eval_t *eval;
 
-    eval = _estimate_expr(ltbl, expr);
+    eval = _estimate_expr(expr);
 
     /* Verify the returned value */
     if ( NULL == eval ) {
@@ -975,13 +971,13 @@ _estimate_expr_imm_or_reg(const x86_64_label_table_t *ltbl, expr_t *expr)
  * Estimate the expression which is address operand type
  */
 static x86_64_eval_t *
-_estimate_expr_addr(const x86_64_label_table_t *ltbl, pexpr_t *pexpr)
+_estimate_expr_addr(pexpr_t *pexpr)
 {
     x86_64_eval_t *eval;
     x86_64_reg_t reg;
     x86_64_imm_t imm;
 
-    eval = _estimate_expr(ltbl, pexpr->expr);
+    eval = _estimate_expr(pexpr->expr);
     if ( NULL == eval ) {
         return NULL;
     }
@@ -1035,17 +1031,17 @@ _estimate_expr_addr(const x86_64_label_table_t *ltbl, pexpr_t *pexpr)
  * Estimate the operand
  */
 x86_64_eval_t *
-x86_64_estimate_operand(const x86_64_label_table_t *ltbl, operand_t *op)
+x86_64_estimate_operand(operand_t *op)
 {
     x86_64_eval_t *eval;
     size_t sz;
 
     if ( OPERAND_EXPR == op->type ) {
         /* Immediate value or register */
-        eval = _estimate_expr_imm_or_reg(ltbl, op->op.expr);
+        eval = _estimate_expr_imm_or_reg(op->op.expr);
     } else {
         /* Address */
-        eval = _estimate_expr_addr(ltbl, op->op.pexpr);
+        eval = _estimate_expr_addr(op->op.pexpr);
     }
     /* Check the returned value */
     if ( NULL == eval ) {

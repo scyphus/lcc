@@ -2290,7 +2290,7 @@ _eval1(const x86_64_label_table_t *ltbl, x86_64_eval_t **eval,
     /* Obtain operands */
     op = mvector_at(operands, 0);
     /* Evaluate operands */
-    *eval = x86_64_estimate_operand(ltbl, op);
+    *eval = x86_64_estimate_operand(op);
     if ( NULL == *eval ) {
         /* Error */
         return -1;
@@ -2313,12 +2313,12 @@ _eval2(const x86_64_label_table_t *ltbl, x86_64_eval_t **eval1,
     op1 = mvector_at(operands, 0);
     op2 = mvector_at(operands, 1);
     /* Evaluate operands */
-    *eval1 = x86_64_estimate_operand(ltbl, op1);
+    *eval1 = x86_64_estimate_operand(op1);
     if ( NULL == *eval1 ) {
         /* Error */
         return -1;
     }
-    *eval2 = x86_64_estimate_operand(ltbl, op2);
+    *eval2 = x86_64_estimate_operand(op2);
     if ( NULL == *eval2 ) {
         /* Error */
         free(*eval1);
@@ -2345,18 +2345,18 @@ _eval3(const x86_64_label_table_t *ltbl, x86_64_eval_t **eval1,
     op2 = mvector_at(operands, 1);
     op3 = mvector_at(operands, 2);
     /* Evaluate operands */
-    *eval1 = x86_64_estimate_operand(ltbl, op1);
+    *eval1 = x86_64_estimate_operand(op1);
     if ( NULL == *eval1 ) {
         /* Error */
         return -1;
     }
-    *eval2 = x86_64_estimate_operand(ltbl, op2);
+    *eval2 = x86_64_estimate_operand(op2);
     if ( NULL == *eval2 ) {
         /* Error */
         free(*eval1);
         return -1;
     }
-    *eval3 = x86_64_estimate_operand(ltbl, op3);
+    *eval3 = x86_64_estimate_operand(op3);
     if ( NULL == *eval3 ) {
         /* Error */
         free(*eval1);
@@ -2386,25 +2386,25 @@ _eval4(const x86_64_label_table_t *ltbl, x86_64_eval_t **eval1,
     op3 = mvector_at(operands, 2);
     op4 = mvector_at(operands, 3);
     /* Evaluate operands */
-    *eval1 = x86_64_estimate_operand(ltbl, op1);
+    *eval1 = x86_64_estimate_operand(op1);
     if ( NULL == *eval1 ) {
         /* Error */
         return -1;
     }
-    *eval2 = x86_64_estimate_operand(ltbl, op2);
+    *eval2 = x86_64_estimate_operand(op2);
     if ( NULL == *eval2 ) {
         /* Error */
         free(*eval1);
         return -1;
     }
-    *eval3 = x86_64_estimate_operand(ltbl, op3);
+    *eval3 = x86_64_estimate_operand(op3);
     if ( NULL == *eval3 ) {
         /* Error */
         free(*eval1);
         free(*eval2);
         return -1;
     }
-    *eval4 = x86_64_estimate_operand(ltbl, op4);
+    *eval4 = x86_64_estimate_operand(op4);
     if ( NULL == *eval4 ) {
         /* Error */
         free(*eval1);
@@ -2415,6 +2415,30 @@ _eval4(const x86_64_label_table_t *ltbl, x86_64_eval_t **eval1,
 
     return 1;
 }
+static int
+_eval(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    x86_64_eval_t *eval;
+    operand_t *op;
+    size_t nr;
+    size_t i;
+
+    nr = mvector_size(xstmt->stmt->u.instr->operands);
+
+    for ( i = 0; i < nr; i++ ) {
+        /* Obtain operands */
+        op = mvector_at(xstmt->stmt->u.instr->operands, 0);
+        /* Evaluate operands */
+        eval = x86_64_estimate_operand(op);
+        if ( NULL == eval ) {
+            /* Error */
+            return -1;
+        }
+    }
+
+    return 1;
+}
+
 
 /*
  * Build instruction for the NP type Op/En
@@ -3278,11 +3302,32 @@ binstr(x86_64_instr_t *instr, const x86_64_asm_opt_t *opt, int opsize, int opc1,
 
     return stat;
 }
-#if 0
+
 int
 binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
-        int opc2, int opc3, int preg, x86_64_enc_t enc)
+        int opc2, int opc3, x86_64_enc_t enc, int preg)
 {
+    size_t nr;
+    int ret;
+
+    assert( STMT_INSTR == xstmt->stmt->type );
+
+    /* Obtain the number of operands */
+    nr = mvector_size(xstmt->stmt->u.instr->operands);
+    /* Evaluate operands */
+    switch ( nr ) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+        ret = _eval(asmblr, xstmt);
+        break;
+    default:
+        return 0;
+    }
+
+#if 0
     int i;
     int nr;
     int ret;
@@ -3780,8 +3825,10 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
     }
 
     return stat;
-}
 #endif
+
+    return 0;
+}
 
 /*
  * Local variables:

@@ -63,7 +63,7 @@ extern "C" {
     x86_64_eval_operand(const x86_64_label_table_t *, operand_t *);
 
     x86_64_eval_t *
-    x86_64_estimate_operand(const x86_64_label_table_t *, operand_t *);
+    x86_64_estimate_operand(operand_t *);
 
 #ifdef __cplusplus
 }

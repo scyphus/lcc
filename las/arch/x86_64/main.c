@@ -223,7 +223,12 @@ _print_instruction_bin(const x86_64_instr_t *instr)
 static int
 _add(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    if ( X86_64_STMT_FIXED == xstmt->state ) {
+        /* Do nothing */
+        return 0;
+    }
 
+    //PASS0(binstr2(asmblr, xstmt, SIZE8, 0x04, -1, -1, ENC_I_AL_IMM8, -1));
 
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
     x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
