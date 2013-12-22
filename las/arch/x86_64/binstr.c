@@ -2430,6 +2430,7 @@ _eval(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         return -1;
     }
 
+    /* Evaluate operands */
     nr = mvector_size(xstmt->stmt->u.instr->operands);
     for ( i = 0; i < nr; i++ ) {
         /* Obtain operands */
@@ -2451,6 +2452,7 @@ _eval(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         }
     }
 
+    /* Set evals */
     xstmt->evals = evals;
 
     return 1;
@@ -3320,12 +3322,286 @@ binstr(x86_64_instr_t *instr, const x86_64_asm_opt_t *opt, int opsize, int opc1,
     return stat;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static size_t
+_instr_size(const x86_64_instr_t *instr)
+{
+    size_t sz;
+
+    sz = 0;
+    if ( instr->prefix1 >= 0 ) {
+        sz++;
+    }
+    if ( instr->prefix2 >= 0 ) {
+        sz++;
+    }
+    if ( instr->prefix3 >= 0 ) {
+        sz++;
+    }
+    if ( instr->prefix4 >= 0 ) {
+        sz++;
+    }
+    if ( instr->rex >= 0 ) {
+        sz++;
+    }
+    if ( instr->opcode1 >= 0 ) {
+        sz++;
+    }
+    if ( instr->opcode2 >= 0 ) {
+        sz++;
+    }
+    if ( instr->opcode3 >= 0 ) {
+        sz++;
+    }
+    if ( instr->modrm >= 0 ) {
+        sz++;
+    }
+    if ( instr->sib >= 0 ) {
+        sz++;
+    }
+    sz += instr->disp.sz;
+    sz += instr->imm.sz;
+
+    return 0;
+}
+
+/*
+ * Encode instruction from encoded operands
+ */
+static int
+_encode_instr(const x86_64_enop_t *enop, x86_64_target_t tgt, int prefix,
+              size_t opsize, size_t addrsize, x86_64_instr_t *instr)
+{
+    int rex;
+    int p66 = 0;
+    int p67 = 0;
+    int rexw = REX_NONE;
+
+    switch ( tgt ) {
+    case X86_64_O16:
+        /* o16 or D flag=0 */
+        switch ( opsize ) {
+        case SIZE16:
+            p66 = 0;
+            break;
+        case SIZE32:
+            p66 = 1;
+            break;
+        }
+        switch ( addrsize ) {
+        case SIZE16:
+            p67 = 0;
+            break;
+        case SIZE32:
+            p67 = 1;
+            break;
+        }
+        break;
+    case X86_64_O32:
+        /* D flag=1 */
+        switch ( opsize ) {
+        case SIZE16:
+            p66 = 1;
+            break;
+        case SIZE32:
+            p66 = 0;
+            break;
+        }
+        switch ( addrsize ) {
+        case SIZE16:
+            p67 = 1;
+            break;
+        case SIZE32:
+            p67 = 0;
+            break;
+        }
+        break;
+    case X86_64_O64:
+        switch ( opsize ) {
+        case SIZE16:
+            p66 = 1;
+            rexw = REX_NONE;
+            break;
+        case SIZE32:
+            p66 = 0;
+            rexw = REX_NONE;
+            break;
+        case SIZE64:
+            rexw = REX_TRUE;
+            break;
+        }
+        switch ( addrsize ) {
+        case SIZE32:
+            p67 = 1;
+            break;
+        case SIZE64:
+            p67 = 0;
+            break;
+        }
+        break;
+    }
+
+    rex = _rex(rexw, enop->rex.r, enop->rex.x, enop->rex.b);
+    if ( rex < 0 ) {
+        /* Error */
+        return -1;
+    }
+    if ( 0 == rex ) {
+        rex = -1;
+    }
+
+    instr->prefix1 = -1;
+    instr->prefix2 = -1;
+    /* Operand size prefix */
+    if ( p66 ) {
+        instr->prefix3 = 0x66;
+    } else {
+        instr->prefix3 = -1;
+    }
+    /* Address size prefix */
+    if ( p67 ) {
+        instr->prefix4 = 0x67;
+    } else {
+        instr->prefix4 = -1;
+    }
+    /* REX prefix */
+    instr->rex = rex;
+    instr->modrm = enop->modrm;
+    instr->sib = enop->sib;
+    instr->disp.sz = enop->disp.sz;
+    instr->disp.val = enop->disp.val;
+    instr->disp.eval = enop->disp.eval;
+    instr->imm.sz = enop->imm.sz;
+    instr->imm.val = enop->imm.val;
+    instr->imm.eval = enop->imm.eval;
+
+    if ( OPCODE_PREFIX_LOCK & prefix ) {
+        if ( instr->prefix1 >= 0 ) {
+            return -EPREFIX;
+        }
+        instr->prefix1 = 0xf0;
+    }
+    if ( OPCODE_PREFIX_CRC32 & prefix ) {
+        if ( instr->prefix1 >= 0 ) {
+            return -EPREFIX;
+        }
+        instr->prefix1 = 0xf2;
+    }
+    if ( OPCODE_PREFIX_REPNE & prefix ) {
+        if ( instr->prefix1 >= 0 ) {
+            return -EPREFIX;
+        }
+        instr->prefix1 = 0xf2;
+    }
+    if ( OPCODE_PREFIX_REPNZ & prefix ) {
+        if ( instr->prefix1 >= 0 ) {
+            return -EPREFIX;
+        }
+        instr->prefix1 = 0xf2;
+    }
+    if ( OPCODE_PREFIX_REP & prefix ) {
+        if ( instr->prefix1 >= 0 ) {
+            return -EPREFIX;
+        }
+        instr->prefix1 = 0xf3;
+    }
+    if ( OPCODE_PREFIX_REPE & prefix ) {
+        if ( instr->prefix1 >= 0 ) {
+            return -EPREFIX;
+        }
+        instr->prefix1 = 0xf3;
+    }
+    if ( OPCODE_PREFIX_REPZ & prefix ) {
+        if ( instr->prefix1 >= 0 ) {
+            return -EPREFIX;
+        }
+        instr->prefix1 = 0xf3;
+    }
+    if ( OPCODE_PREFIX_BRANCH_NOT_TAKEN & prefix ) {
+        if ( instr->prefix3 >= 0 ) {
+            return -EPREFIX;
+        }
+        instr->prefix3 = 0x2e;
+    }
+    if ( OPCODE_PREFIX_BRANCH_TAKEN & prefix ) {
+        if ( instr->prefix3 >= 0 ) {
+            return -EPREFIX;
+        }
+        instr->prefix3 = 0x3e;
+    }
+
+    return 0;
+}
+
+
+/*
+ * Build instruction for the I type Op/En
+ */
+static int
+_binstr2_i(x86_64_instr_t *instr, x86_64_stmt_t *xstmt, int opc1, int opc2,
+           int opc3, size_t opsize, const x86_64_eval_t *eval, size_t immsz)
+{
+    int ret;
+    x86_64_enop_t enop;
+
+    /* Encode and free the values */
+    ret = _encode_i(eval, immsz, &enop);
+    if ( ret < 0 ) {
+        /* Invalid operand size */
+        return -ESIZE;
+    }
+    /* Build instruction */
+    ret = _encode_instr(&enop, xstmt->tgt, xstmt->prefix, opsize, 0, instr);
+    if ( ret < 0 ) {
+        /* Invalid operands */
+        return -EOPERAND;
+    }
+    instr->opcode1 = opc1;
+    instr->opcode2 = opc2;
+    instr->opcode3 = opc3;
+
+    /* Success */
+    return 1;
+}
+
+
 int
 binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
         int opc2, int opc3, x86_64_enc_t enc, int preg)
 {
-    size_t nr;
     int ret;
+    int stat;
+    x86_64_instr_t *instr;
 
     assert( STMT_INSTR == xstmt->stmt->type );
 
@@ -3336,23 +3612,37 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
         return ret;
     }
 
-    /* Obtain the number of operands */
-    nr = mvector_size(xstmt->evals);
-    /* Evaluate operands */
-    switch ( nr ) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    case 4:
+    stat = 0;
+    switch ( enc ) {
+    case ENC_I_AL_IMM8:
+        /* Check the number of operands and the format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _eq_reg(mvector_at(xstmt->evals, 0), REG_AL)
+             && _is_imm8(mvector_at(xstmt->evals, 1)) ) {
+
+            instr = malloc(sizeof(x86_64_instr_t));
+            if ( NULL == instr ) {
+                return -EUNKNOWN;
+            }
+
+#if 0
+            stat = _binstr_i(instr, opt, opc1, opc2, opc3, opsize,
+                             mvector_at(xstmt->evals, 1),
+                             SIZE8);
+#endif
+            xstmt->sz.fixed = _instr_size(instr);
+            xstmt->instr = instr;
+            xstmt->state = X86_64_STMT_FIXED;
+        }
         break;
     default:
-        return 0;
+        stat = 0;
     }
+
+    return stat;
 
 #if 0
     int i;
-    int stat;
 
 
     stat = 0;

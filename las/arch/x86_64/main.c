@@ -27,53 +27,13 @@
 
 
 
-size_t
-_instr_size(const x86_64_instr_t *instr)
-{
-    size_t sz;
-
-    sz = 0;
-    if ( instr->prefix1 >= 0 ) {
-        sz++;
-    }
-    if ( instr->prefix2 >= 0 ) {
-        sz++;
-    }
-    if ( instr->prefix3 >= 0 ) {
-        sz++;
-    }
-    if ( instr->prefix4 >= 0 ) {
-        sz++;
-    }
-    if ( instr->rex >= 0 ) {
-        sz++;
-    }
-    if ( instr->opcode1 >= 0 ) {
-        sz++;
-    }
-    if ( instr->opcode2 >= 0 ) {
-        sz++;
-    }
-    if ( instr->opcode3 >= 0 ) {
-        sz++;
-    }
-    if ( instr->modrm >= 0 ) {
-        sz++;
-    }
-    if ( instr->sib >= 0 ) {
-        sz++;
-    }
-    sz += instr->disp.sz;
-    sz += instr->imm.sz;
-
-    return 0;
-}
-
+#if 0
 off_t
 _instr_imm_offset(const x86_64_instr_t *instr)
 {
     return _instr_size(instr) - instr->imm.sz;
 }
+#endif
 
 /*
  * Print assembled code
@@ -2086,11 +2046,15 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
     off_t pos;
     x86_64_stmt_t *xstmt;
     x86_64_stmt_vector_t *xvec;
+    x86_64_target_t tgt;
 
     assert( 0 == asmblr->stage );
 
     /* Allocate a new statement vector */
     xvec = mvector_new();
+
+    /* Set the default target */
+    tgt = X86_64_O64;
 
     /* Estimate the position of labels */
     pos = 0;
@@ -2105,6 +2069,7 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
         }
         xstmt->stmt = stmt;
         xstmt->state = X86_64_STMT_INIT;
+        xstmt->tgt = tgt;
         xstmt->evals = NULL;
         xstmt->instr = NULL;
 
