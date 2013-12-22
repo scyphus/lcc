@@ -1823,7 +1823,7 @@ _xor(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
  * Get the function pointer w/ instruction prefixes corresponding to the opcode
  */
 static int
-_get_instr(x86_64_stmt_t *xstmt)
+_resolv_instr(x86_64_stmt_t *xstmt)
 {
     x86_64_instr_f ifunc;
     char *str;
@@ -1941,6 +1941,7 @@ _get_instr(x86_64_stmt_t *xstmt)
     return 0;
 }
 
+
 /*
  * Assemble an instruction
  */
@@ -1951,29 +1952,20 @@ _assemble_instr(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
     int j;
 
     assert( STMT_INSTR == xstmt->stmt->type );
-    ret = _get_instr(xstmt);
-    if ( 0 == ret ) {
-        ret = xstmt->ifunc(asmblr, xstmt);
-        if ( ret >= 0 ) {
-            _print_instruction_bin(xstmt->instr);
+
+    ret = xstmt->ifunc(asmblr, xstmt);
+    if ( ret >= 0 ) {
+        _print_instruction_bin(xstmt->instr);
 #if 0
-            _print_instruction(instr);
-            printf("\n");
+        _print_instruction(instr);
+        printf("\n");
 #endif
-        } else {
-            /* Error */
-            fprintf(stderr, "Error:");
-            for ( j = 0; j < mvector_size(xstmt->stmt->u.instr->opcode); j++ ) {
-                fprintf(stderr, " %s",
-                        mvector_at(xstmt->stmt->u.instr->opcode, j));
-            }
-            fprintf(stderr, "\n");
-        }
     } else {
-        /* Unknown */
-        fprintf(stderr, "Unknown instruction:");
+        /* Error */
+        fprintf(stderr, "Error:");
         for ( j = 0; j < mvector_size(xstmt->stmt->u.instr->opcode); j++ ) {
-            fprintf(stderr, " %s", mvector_at(xstmt->stmt->u.instr->opcode, j));
+            fprintf(stderr, " %s",
+                    mvector_at(xstmt->stmt->u.instr->opcode, j));
         }
         fprintf(stderr, "\n");
     }
@@ -2081,6 +2073,7 @@ static int
 _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
 {
     size_t i;
+    size_t j;
     stmt_t *stmt;
     int ret;
     x86_64_instr_t *instr;
@@ -2103,9 +2096,8 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
             return -1;
         }
         xstmt->stmt = stmt;
-        xstmt->state = X86_64_STMT_NOT_FIXED;
+        xstmt->state = X86_64_STMT_INIT;
         xstmt->evals = NULL;
-        xstmt->sz = 0;
         xstmt->instr = NULL;
 
         switch ( stmt->type ) {
@@ -2119,7 +2111,25 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
             }
             xstmt->instr = instr;
 
+            /* Append */
             if ( NULL == mvector_push_back(xvec, xstmt) ) {
+                /* FIXME: Must free the contents of the vector */
+                mvector_delete(xvec);
+                return -1;
+            }
+
+            /* Resolve the corresponding function pointer to the assembling
+               this instruction */
+            ret = _resolv_instr(xstmt);
+            if ( 0 != ret ) {
+                /* Unknown */
+                fprintf(stderr, "Unknown instruction:");
+                for ( j = 0; j < mvector_size(xstmt->stmt->u.instr->opcode);
+                      j++ ) {
+                    fprintf(stderr, " %s",
+                            mvector_at(xstmt->stmt->u.instr->opcode, j));
+                }
+                fprintf(stderr, "\n");
                 /* FIXME: Must free the contents of the vector */
                 mvector_delete(xvec);
                 return -1;
@@ -2139,6 +2149,33 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
                 _label_table_clear(&asmblr->lbtbl);
                 return -1;
             }
+            break;
+        default:
+            /* Do nothing */
+            ;
+        }
+    }
+
+    asmblr->xvec = xvec;
+
+    return 0;
+}
+static int
+_stage2(x86_64_assembler_t *asmblr, x86_64_stmt_vector_t *xvec)
+{
+    size_t i;
+    size_t j;
+    int ret;
+    x86_64_stmt_t *xstmt;
+
+    for ( i = 0; i < mvector_size(xvec); i++ ) {
+        xstmt = mvector_at(xvec, i);
+
+        switch ( xstmt->stmt->type ) {
+        case STMT_INSTR:
+            break;
+        case STMT_LABEL:
+            /* Estimate label position */
             break;
         default:
             /* Do nothing */
