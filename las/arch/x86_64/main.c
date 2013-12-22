@@ -2081,6 +2081,8 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
     x86_64_stmt_t *xstmt;
     x86_64_stmt_vector_t *xvec;
 
+    assert( 0 == asmblr->stage );
+
     /* Allocate a new statement vector */
     xvec = mvector_new();
 
@@ -2157,19 +2159,20 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
     }
 
     asmblr->xvec = xvec;
+    asmblr->stage = 1;
 
     return 0;
 }
 static int
-_stage2(x86_64_assembler_t *asmblr, x86_64_stmt_vector_t *xvec)
+_stage2(x86_64_assembler_t *asmblr)
 {
     size_t i;
-    size_t j;
-    int ret;
     x86_64_stmt_t *xstmt;
 
-    for ( i = 0; i < mvector_size(xvec); i++ ) {
-        xstmt = mvector_at(xvec, i);
+    assert( 1 == asmblr->stage );
+
+    for ( i = 0; i < mvector_size(asmblr->xvec); i++ ) {
+        xstmt = mvector_at(asmblr->xvec, i);
 
         switch ( xstmt->stmt->type ) {
         case STMT_INSTR:
@@ -2183,11 +2186,38 @@ _stage2(x86_64_assembler_t *asmblr, x86_64_stmt_vector_t *xvec)
         }
     }
 
-    asmblr->xvec = xvec;
+    asmblr->stage = 2;
 
     return 0;
 }
 
+static int
+_stage3(x86_64_assembler_t *asmblr)
+{
+    size_t i;
+    x86_64_stmt_t *xstmt;
+
+    assert( 2 == asmblr->stage );
+
+    for ( i = 0; i < mvector_size(asmblr->xvec); i++ ) {
+        xstmt = mvector_at(asmblr->xvec, i);
+
+        switch ( xstmt->stmt->type ) {
+        case STMT_INSTR:
+            break;
+        case STMT_LABEL:
+            /* Estimate label position */
+            break;
+        default:
+            /* Do nothing */
+            ;
+        }
+    }
+
+    asmblr->stage = 3;
+
+    return 0;
+}
 
 
 /*
@@ -2206,6 +2236,21 @@ _assemble(x86_64_assembler_t *asmblr, stmt_vector_t *vec)
 
     /* Stage 1 */
     ret = _stage1(asmblr, vec);
+    if ( ret < 0 ) {
+        return -1;
+    }
+
+    /* Stage 2 */
+    ret = _stage2(asmblr);
+    if ( ret < 0 ) {
+        return -1;
+    }
+
+    /* Stage 3 */
+    ret = _stage3(asmblr);
+    if ( ret < 0 ) {
+        return -1;
+    }
 
     /* Linker stage: Check global */
     for ( i = 0; i < mvector_size(vec); i++ ) {
@@ -2375,6 +2420,7 @@ arch_x86_64_assemble(const char *fname)
 
     /* Initialize the label table */
     asmblr.lbtbl.root = NULL;
+    asmblr.stage = 0;
 
     _assemble(&asmblr, vec);
 
