@@ -3278,6 +3278,510 @@ binstr(x86_64_instr_t *instr, const x86_64_asm_opt_t *opt, int opsize, int opc1,
 
     return stat;
 }
+#if 0
+int
+binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
+        int opc2, int opc3, int preg, x86_64_enc_t enc)
+{
+    int i;
+    int nr;
+    int ret;
+    int stat;
+    x86_64_eval_t *eval[4];
+
+    /* Obtain the number of operands */
+    nr = mvector_size(operands);
+    if ( 1 == nr ) {
+        /* Evaluate operands */
+        ret = _eval1(opt->ltbl, &eval[0], operands);
+        if ( ret < 0 ) {
+            return -EOPERAND;
+        } else if ( 0 == ret ) {
+            return 0;
+        }
+   } else if ( 2 == nr ) {
+        /* Evaluate operands */
+        ret = _eval2(opt->ltbl, &eval[0], &eval[1], operands);
+        if ( ret < 0 ) {
+            return -EOPERAND;
+        } else if ( 0 == ret ) {
+            return 0;
+        }
+    } else if ( 3 == nr ) {
+        /* Evaluate operands */
+        ret = _eval3(opt->ltbl, &eval[0], &eval[1], &eval[2], operands);
+        if ( ret < 0 ) {
+            return -EOPERAND;
+        } else if ( 0 == ret ) {
+            return 0;
+        }
+    } else if ( 4 == nr ) {
+        /* Evaluate operands */
+        ret = _eval4(opt->ltbl, &eval[0], &eval[1], &eval[2], &eval[3],
+                     operands);
+        if ( ret < 0 ) {
+            return -EOPERAND;
+        } else if ( 0 == ret ) {
+            return 0;
+        }
+    }
+
+    stat = 0;
+    switch ( enc ) {
+    case ENC_NP:
+        /* Check the number of operands */
+        if ( 0 == nr ) {
+            stat = _binstr_np(instr, opt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_NP_AL_DX:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _eq_reg(eval[0], REG_AL) && _eq_reg(eval[1], REG_DX) ) {
+            stat = _binstr_np(instr, opt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_NP_DX_AL:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _eq_reg(eval[0], REG_DX) && _eq_reg(eval[1], REG_AL) ) {
+            stat = _binstr_np(instr, opt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_NP_AX_DX:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _eq_reg(eval[0], REG_AX) && _eq_reg(eval[1], REG_DX) ) {
+            stat = _binstr_np(instr, opt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_NP_DX_AX:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _eq_reg(eval[0], REG_DX) && _eq_reg(eval[1], REG_AX) ) {
+            stat = _binstr_np(instr, opt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_NP_EAX_DX:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _eq_reg(eval[0], REG_EAX)
+             && _eq_reg(eval[1], REG_DX) ) {
+            stat = _binstr_np(instr, opt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_NP_DX_EAX:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _eq_reg(eval[0], REG_DX)
+             && _eq_reg(eval[1], REG_EAX) ) {
+            stat = _binstr_np(instr, opt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_I_FIMM16:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_imm16(eval[0]) ) {
+            stat = _binstr_i(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                             SIZE16);
+        }
+        break;
+    case ENC_I_AL_FIMM8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _eq_reg(eval[0], REG_AL) && _is_imm8(eval[1]) ) {
+            stat = _binstr_i(instr, opt, opc1, opc2, opc3, opsize, eval[1],
+                             SIZE8);
+        }
+        break;
+    case ENC_I_AX_FIMM8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _eq_reg(eval[0], REG_AX) && _is_imm8(eval[1]) ) {
+            stat = _binstr_i(instr, opt, opc1, opc2, opc3, opsize, eval[1],
+                             SIZE8);
+        }
+        break;
+    case ENC_I_AX_FIMM16:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _eq_reg(eval[0], REG_AX) && _is_imm16(eval[1]) ) {
+            stat = _binstr_i(instr, opt, opc1, opc2, opc3, opsize, eval[1],
+                             SIZE16);
+        }
+        break;
+    case ENC_I_EAX_FIMM8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _eq_reg(eval[0], REG_EAX) && _is_imm8(eval[1]) ) {
+            stat = _binstr_i(instr, opt, opc1, opc2, opc3, opsize, eval[1],
+                             SIZE8);
+        }
+        break;
+    case ENC_I_EAX_FIMM32:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _eq_reg(eval[0], REG_EAX) && _is_imm32(eval[1]) ) {
+            stat = _binstr_i(instr, opt, opc1, opc2, opc3, opsize, eval[1],
+                             SIZE32);
+        }
+        break;
+    case ENC_I_RAX_FIMM32:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _eq_reg(eval[0], REG_RAX) && _is_imm32(eval[1]) ) {
+            stat = _binstr_i(instr, opt, opc1, opc2, opc3, opsize, eval[1],
+                             SIZE32);
+        }
+        break;
+    case ENC_I_FIMM8_AL:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_imm8(eval[0]) && _eq_reg(eval[1], REG_AL) ) {
+            stat = _binstr_i(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                             SIZE8);
+        }
+        break;
+    case ENC_I_FIMM8_AX:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_imm8(eval[0]) && _eq_reg(eval[1], REG_AX) ) {
+            stat = _binstr_i(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                             SIZE8);
+        }
+        break;
+    case ENC_I_FIMM8_EAX:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_imm8(eval[0]) && _eq_reg(eval[1], REG_EAX) ) {
+            stat = _binstr_i(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                             SIZE8);
+        }
+        break;
+#if 0
+    case ENC_D_REL8:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_rel8(eval[0], opt->pos) ) {
+            stat = _binstr_d(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                             SIZE8);
+        }
+        break;
+    case ENC_D_REL16:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_rel16(eval[0], pos) ) {
+            stat = _binstr_d(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                             SIZE16);
+        }
+        break;
+    case ENC_D_REL32:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_rel32(eval[0], pos) ) {
+            stat = _binstr_d(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                             SIZE32);
+        }
+        break;
+    case ENC_D_REL32:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_erel32(eval[0], pos) ) {
+            stat = _binstr_d(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                             SIZE32);
+        }
+        break;
+#endif
+    case ENC_MI_RM8_FIMM8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_rm8(eval[0]) && _is_imm8(eval[1]) ) {
+            stat = _binstr_mi(instr, opt, opc1, opc2, opc3, preg, opsize,
+                              eval[0], eval[1], SIZE8);
+        }
+        break;
+    case ENC_MI_RM16_FIMM8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_rm16(eval[0]) && _is_imm8(eval[1]) ) {
+            stat = _binstr_mi(instr, opt, opc1, opc2, opc3, preg, opsize,
+                              eval[0], eval[1], SIZE8);
+        }
+        break;
+    case ENC_MI_RM16_FIMM16:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_rm16(eval[0]) && _is_imm16(eval[1]) ) {
+            stat = _binstr_mi(instr, opt, opc1, opc2, opc3, preg, opsize,
+                              eval[0], eval[1], SIZE16);
+        }
+        break;
+    case ENC_MI_RM32_FIMM8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_rm32(eval[0]) && _is_imm8(eval[1]) ) {
+            stat = _binstr_mi(instr, opt, opc1, opc2, opc3, preg, opsize,
+                              eval[0], eval[1], SIZE8);
+        }
+        break;
+    case ENC_MI_RM32_FIMM32:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_rm32(eval[0]) && _is_imm32(eval[1]) ) {
+            stat = _binstr_mi(instr, opt, opc1, opc2, opc3, preg, opsize,
+                              eval[0], eval[1], SIZE32);
+        }
+        break;
+    case ENC_MI_RM64_FIMM8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_rm64(eval[0]) && _is_imm8(eval[1]) ) {
+            stat = _binstr_mi(instr, opt, opc1, opc2, opc3, preg, opsize,
+                              eval[0], eval[1], SIZE8);
+        }
+        break;
+    case ENC_MI_RM64_FIMM32:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_rm64(eval[0]) && _is_imm32(eval[1]) ) {
+            stat = _binstr_mi(instr, opt, opc1, opc2, opc3, preg, opsize,
+                              eval[0], eval[1], SIZE32);
+        }
+        break;
+    case ENC_MI_RM64_FIMM64:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_rm64(eval[0]) && _is_imm64(eval[1]) ) {
+            stat = _binstr_mi(instr, opt, opc1, opc2, opc3, preg, opsize,
+                              eval[0], eval[1], SIZE64);
+        }
+        break;
+    case ENC_MR_RM8_R8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_rm8_r8(eval[0], eval[1]) ) {
+            stat = _binstr_mr(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                              eval[1]);
+        }
+        break;
+    case ENC_MR_RM16_R16:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_rm16_r16(eval[0], eval[1]) ) {
+            stat = _binstr_mr(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                              eval[1]);
+        }
+        break;
+    case ENC_MR_RM32_R32:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_rm32_r32(eval[0], eval[1]) ) {
+            stat = _binstr_mr(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                              eval[1]);
+        }
+        break;
+    case ENC_MR_RM64_R64:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_rm64_r64(eval[0], eval[1]) ) {
+            stat = _binstr_mr(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                              eval[1]);
+        }
+        break;
+    case ENC_RM_R8_RM8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r8_rm8(eval[0], eval[1]) ) {
+            stat = _binstr_rm(instr, opt, opc1, opc2, opc3, SIZE8, eval[0],
+                              eval[1]);
+        }
+        break;
+    case ENC_RM_R16_RM16:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r16_rm16(eval[0], eval[1]) ) {
+            stat = _binstr_rm(instr, opt, opc1, opc2, opc3, SIZE16, eval[0],
+                              eval[1]);
+        }
+        break;
+    case ENC_RM_R32_RM8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r32_rm8(eval[0], eval[1]) ) {
+            stat = _binstr_rm(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                              eval[1]);
+        }
+        break;
+    case ENC_RM_R32_RM16:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r32_rm16(eval[0], eval[1]) ) {
+            stat = _binstr_rm(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                              eval[1]);
+        }
+        break;
+    case ENC_RM_R32_RM32:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r32_rm32(eval[0], eval[1]) ) {
+            stat = _binstr_rm(instr, opt, opc1, opc2, opc3, SIZE32, eval[0],
+                              eval[1]);
+        }
+        break;
+    case ENC_RM_R64_RM8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r64_rm8(eval[0], eval[1]) ) {
+            stat = _binstr_rm(instr, opt, opc1, opc2, opc3, opsize, eval[0],
+                              eval[1]);
+        }
+        break;
+    case ENC_RM_R64_RM64:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r64_rm64(eval[0], eval[1]) ) {
+            stat = _binstr_rm(instr, opt, opc1, opc2, opc3, SIZE64, eval[0],
+                              eval[1]);
+        }
+        break;
+    case ENC_O_R32:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_reg32(eval[0]) ) {
+            stat = _binstr_o(instr, opt, opc1, opc2, opc3, opsize, eval[0]);
+        }
+        break;
+    case ENC_O_R64:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_reg64(eval[0]) ) {
+            stat = _binstr_o(instr, opt, opc1, opc2, opc3, opsize, eval[0]);
+        }
+        break;
+    case ENC_OI_R8_FIMM8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r8_imm8(eval[0], eval[1]) ) {
+                stat = _binstr_oi(instr, opt, opc1, opc2, opc3, opsize,
+                                  eval[0], eval[1], SIZE8);
+        }
+        break;
+    case ENC_OI_R8_EIMM8:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r8_rela8(eval[0], eval[1]) ) {
+                stat = _binstr_oi(instr, opt, opc1, opc2, opc3, opsize,
+                                  eval[0], eval[1], SIZE8);
+        }
+        break;
+    case ENC_OI_R16_FIMM16:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r16_imm16(eval[0], eval[1]) ) {
+                stat = _binstr_oi(instr, opt, opc1, opc2, opc3, opsize,
+                                  eval[0], eval[1], SIZE16);
+        }
+        break;
+    case ENC_OI_R16_EIMM16:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r16_rela16(eval[0], eval[1]) ) {
+                stat = _binstr_oi(instr, opt, opc1, opc2, opc3, opsize,
+                                  eval[0], eval[1], SIZE16);
+        }
+        break;
+    case ENC_OI_R32_FIMM32:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r32_imm32(eval[0], eval[1]) ) {
+                stat = _binstr_oi(instr, opt, opc1, opc2, opc3, opsize,
+                                  eval[0], eval[1], SIZE32);
+        }
+        break;
+    case ENC_OI_R32_EIMM32:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r32_rela32(eval[0], eval[1]) ) {
+                stat = _binstr_oi(instr, opt, opc1, opc2, opc3, opsize,
+                                  eval[0], eval[1], SIZE32);
+        }
+        break;
+    case ENC_OI_R64_FIMM64:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r64_imm64(eval[0], eval[1]) ) {
+                stat = _binstr_oi(instr, opt, opc1, opc2, opc3, opsize,
+                                  eval[0], eval[1], SIZE64);
+        }
+        break;
+    case ENC_OI_R64_EIMM64:
+        /* Check the number of operands and format */
+        if ( 2 == nr && _is_r64_rela64(eval[0], eval[1]) ) {
+                stat = _binstr_oi(instr, opt, opc1, opc2, opc3, opsize,
+                                  eval[0], eval[1], SIZE64);
+        }
+        break;
+    case ENC_M_M8:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_addr8(eval[0]) ) {
+            stat = _binstr_m(instr, opt, opc1, opc2, opc3, preg, SIZE8,
+                             eval[0]);
+        }
+        break;
+    case ENC_M_RM8:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_rm8(eval[0]) ) {
+            stat = _binstr_m(instr, opt, opc1, opc2, opc3, preg, opsize,
+                             eval[0]);
+        }
+        break;
+    case ENC_M_RM16:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_rm16(eval[0]) ) {
+            stat = _binstr_m(instr, opt, opc1, opc2, opc3, preg, opsize,
+                             eval[0]);
+        }
+    case ENC_M_RM32:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_rm32(eval[0]) ) {
+            stat = _binstr_m(instr, opt, opc1, opc2, opc3, preg, opsize,
+                             eval[0]);
+        }
+        break;
+    case ENC_M_RM64:
+        /* Check the number of operands and format */
+        if ( 1 == nr && _is_rm64(eval[0]) ) {
+            stat = _binstr_m(instr, opt, opc1, opc2, opc3, preg, opsize,
+                             eval[0]);
+        }
+        break;
+    case ENC_RMI_R16_RM16_FIMM8:
+        /* Check the number of operands and format */
+        if ( 3 == nr && _is_r16_rm16_imm8(eval[0], eval[1], eval[2]) ) {
+            stat = _binstr_rmi(instr, opt, opc1, opc2, opc3, opsize,
+                               eval[0], eval[1], eval[2], SIZE8);
+        }
+        break;
+    case ENC_RMI_R16_RM16_FIMM16:
+        /* Check the number of operands and format */
+        if ( 3 == nr && _is_r16_rm16_imm16(eval[0], eval[1], eval[2]) ) {
+            stat = _binstr_rmi(instr, opt, opc1, opc2, opc3, opsize,
+                               eval[0], eval[1], eval[2], SIZE16);
+        }
+        break;
+    case ENC_RMI_R16_RM16_EIMM16:
+        /* Check the number of operands and format */
+        if ( 3 == nr && _is_r16_rm16_rela16(eval[0], eval[1], eval[2]) ) {
+            stat = _binstr_rmi(instr, opt, opc1, opc2, opc3, opsize,
+                               eval[0], eval[1], eval[2], SIZE16);
+        }
+        break;
+    case ENC_RMI_R32_RM32_FIMM8:
+        /* Check the number of operands and format */
+        if ( 3 == nr && _is_r32_rm32_imm8(eval[0], eval[1], eval[2]) ) {
+            stat = _binstr_rmi(instr, opt, opc1, opc2, opc3, opsize,
+                               eval[0], eval[1], eval[2], SIZE8);
+        }
+        break;
+    case ENC_RMI_R32_RM32_FIMM32:
+        /* Check the number of operands and format */
+        if ( 3 == nr && _is_r32_rm32_imm32(eval[0], eval[1], eval[2]) ) {
+            stat = _binstr_rmi(instr, opt, opc1, opc2, opc3, opsize,
+                               eval[0], eval[1], eval[2], SIZE32);
+        }
+        break;
+    case ENC_RMI_R32_RM32_EIMM32:
+        /* Check the number of operands and format */
+        if ( 3 == nr && _is_r32_rm32_rela32(eval[0], eval[1], eval[2]) ) {
+            stat = _binstr_rmi(instr, opt, opc1, opc2, opc3, opsize,
+                               eval[0], eval[1], eval[2], SIZE32);
+        }
+        break;
+    case ENC_RMI_R64_RM64_FIMM8:
+        /* Check the number of operands and format */
+        if ( 3 == nr && _is_r64_rm64_imm8(eval[0], eval[1], eval[2]) ) {
+            stat = _binstr_rmi(instr, opt, opc1, opc2, opc3, opsize,
+                               eval[0], eval[1], eval[2], SIZE8);
+        }
+        break;
+    case ENC_RMI_R64_RM64_FIMM32:
+        /* Check the number of operands and format */
+        if ( 3 == nr && _is_r64_rm64_imm32(eval[0], eval[1], eval[2]) ) {
+            stat = _binstr_rmi(instr, opt, opc1, opc2, opc3, opsize,
+                               eval[0], eval[1], eval[2], SIZE32);
+        }
+        break;
+    case ENC_RMI_R64_RM64_EIMM32:
+        /* Check the number of operands and format */
+        if ( 3 == nr && _is_r64_rm64_rela32(eval[0], eval[1], eval[2]) ) {
+            stat = _binstr_rmi(instr, opt, opc1, opc2, opc3, opsize,
+                               eval[0], eval[1], eval[2], SIZE32);
+        }
+        break;
+    default:
+        stat = 0;
+    }
+
+    /* Free values */
+    for ( i = 0; i < nr; i++ ) {
+        free(eval[i]);
+    }
+
+    return stat;
+}
+#endif
 
 /*
  * Local variables:
