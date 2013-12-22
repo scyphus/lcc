@@ -2434,7 +2434,7 @@ _eval(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
     nr = mvector_size(xstmt->stmt->u.instr->operands);
     for ( i = 0; i < nr; i++ ) {
         /* Obtain operands */
-        op = mvector_at(xstmt->stmt->u.instr->operands, 0);
+        op = mvector_at(xstmt->stmt->u.instr->operands, i);
         /* Evaluate operands */
         eval = x86_64_estimate_operand(op);
         if ( NULL == eval ) {
@@ -3399,8 +3399,8 @@ _instr_size(const x86_64_instr_t *instr)
  * Encode instruction from encoded operands
  */
 static int
-_encode_instr(const x86_64_enop_t *enop, x86_64_target_t tgt, int prefix,
-              size_t opsize, size_t addrsize, x86_64_instr_t *instr)
+_encode_instr(x86_64_instr_t *instr, const x86_64_enop_t *enop,
+              x86_64_target_t tgt, int prefix, size_t opsize, size_t addrsize)
 {
     int rex;
     int p66 = 0;
@@ -3505,6 +3505,7 @@ _encode_instr(const x86_64_enop_t *enop, x86_64_target_t tgt, int prefix,
     instr->imm.val = enop->imm.val;
     instr->imm.eval = enop->imm.eval;
 
+    /* Opcode prefixes */
     if ( OPCODE_PREFIX_LOCK & prefix ) {
         if ( instr->prefix1 >= 0 ) {
             return -EPREFIX;
@@ -3574,18 +3575,20 @@ _binstr2_i(x86_64_instr_t *instr, x86_64_stmt_t *xstmt, int opc1, int opc2,
     int ret;
     x86_64_enop_t enop;
 
-    /* Encode and free the values */
+    /* Encode the operand values */
     ret = _encode_i(eval, immsz, &enop);
     if ( ret < 0 ) {
         /* Invalid operand size */
         return -ESIZE;
     }
-    /* Build instruction */
-    ret = _encode_instr(&enop, xstmt->tgt, xstmt->prefix, opsize, 0, instr);
+    /* Encode instruction */
+    ret = _encode_instr(instr, &enop, xstmt->tgt, xstmt->prefix, opsize, 0);
     if ( ret < 0 ) {
         /* Invalid operands */
         return -EOPERAND;
     }
+
+    /* Set the opcode */
     instr->opcode1 = opc1;
     instr->opcode2 = opc2;
     instr->opcode3 = opc3;
@@ -3594,7 +3597,9 @@ _binstr2_i(x86_64_instr_t *instr, x86_64_stmt_t *xstmt, int opc1, int opc2,
     return 1;
 }
 
-
+/*
+ * Build instruction and return a success/error code
+ */
 int
 binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
         int opc2, int opc3, x86_64_enc_t enc, int preg)
@@ -3619,19 +3624,19 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
         if ( 2 == mvector_size(xstmt->evals)
              && _eq_reg(mvector_at(xstmt->evals, 0), REG_AL)
              && _is_imm8(mvector_at(xstmt->evals, 1)) ) {
-
+            /* Allocaate for the instruction */
             instr = malloc(sizeof(x86_64_instr_t));
             if ( NULL == instr ) {
                 return -EUNKNOWN;
             }
 
-#if 0
-            stat = _binstr_i(instr, opt, opc1, opc2, opc3, opsize,
-                             mvector_at(xstmt->evals, 1),
-                             SIZE8);
-#endif
-            xstmt->sz.fixed = _instr_size(instr);
+            /* Build the instruction */
+            stat = _binstr2_i(instr, xstmt, opc1, opc2, opc3, opsize,
+                             mvector_at(xstmt->evals, 1), SIZE8);
+
+            /* Set the instruction and the size */
             xstmt->instr = instr;
+            xstmt->sz.fixed = _instr_size(instr);
             xstmt->state = X86_64_STMT_FIXED;
         }
         break;

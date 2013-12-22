@@ -188,7 +188,7 @@ _add(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         return 0;
     }
 
-    //PASS0(binstr2(asmblr, xstmt, SIZE8, 0x04, -1, -1, ENC_I_AL_IMM8, -1));
+    PASS0(binstr2(asmblr, xstmt, SIZE8, 0x04, -1, -1, ENC_I_AL_IMM8, -1));
 
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
     x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
@@ -1922,7 +1922,9 @@ _assemble_instr(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 
     ret = xstmt->ifunc(asmblr, xstmt);
     if ( ret >= 0 ) {
-        _print_instruction_bin(xstmt->instr);
+        if ( X86_64_STMT_FIXED == xstmt->state ) {
+            _print_instruction_bin(xstmt->instr);
+        }
 #if 0
         _print_instruction(instr);
         printf("\n");
