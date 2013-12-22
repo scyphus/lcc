@@ -2422,19 +2422,36 @@ _eval(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
     operand_t *op;
     size_t nr;
     size_t i;
+    x86_64_eval_vector_t *evals;
+
+    /* Allocate a vector for evals */
+    evals = mvector_new();
+    if ( NULL == evals ) {
+        return -1;
+    }
 
     nr = mvector_size(xstmt->stmt->u.instr->operands);
-
     for ( i = 0; i < nr; i++ ) {
         /* Obtain operands */
         op = mvector_at(xstmt->stmt->u.instr->operands, 0);
         /* Evaluate operands */
         eval = x86_64_estimate_operand(op);
         if ( NULL == eval ) {
+            /* FIXME: Free the contents of the vector */
+            mvector_delete(evals);
             /* Error */
-            return -1;
+            return -EOPERAND;
+        }
+        if ( NULL == mvector_push_back(evals, eval) ) {
+            free(eval);
+            /* FIXME: Free the contents of the vector */
+            mvector_delete(evals);
+            /* Error */
+            return -EUNKNOWN;
         }
     }
+
+    xstmt->evals = evals;
 
     return 1;
 }
@@ -3312,8 +3329,15 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
 
     assert( STMT_INSTR == xstmt->stmt->type );
 
+    /* Evaluate operands first */
+    ret = _eval(asmblr, xstmt);
+    if ( ret < 0 ) {
+        /* Error */
+        return ret;
+    }
+
     /* Obtain the number of operands */
-    nr = mvector_size(xstmt->stmt->u.instr->operands);
+    nr = mvector_size(xstmt->evals);
     /* Evaluate operands */
     switch ( nr ) {
     case 0:
@@ -3321,7 +3345,6 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
     case 2:
     case 3:
     case 4:
-        ret = _eval(asmblr, xstmt);
         break;
     default:
         return 0;
@@ -3329,47 +3352,8 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
 
 #if 0
     int i;
-    int nr;
-    int ret;
     int stat;
-    x86_64_eval_t *eval[4];
 
-    /* Obtain the number of operands */
-    nr = mvector_size(operands);
-    if ( 1 == nr ) {
-        /* Evaluate operands */
-        ret = _eval1(opt->ltbl, &eval[0], operands);
-        if ( ret < 0 ) {
-            return -EOPERAND;
-        } else if ( 0 == ret ) {
-            return 0;
-        }
-   } else if ( 2 == nr ) {
-        /* Evaluate operands */
-        ret = _eval2(opt->ltbl, &eval[0], &eval[1], operands);
-        if ( ret < 0 ) {
-            return -EOPERAND;
-        } else if ( 0 == ret ) {
-            return 0;
-        }
-    } else if ( 3 == nr ) {
-        /* Evaluate operands */
-        ret = _eval3(opt->ltbl, &eval[0], &eval[1], &eval[2], operands);
-        if ( ret < 0 ) {
-            return -EOPERAND;
-        } else if ( 0 == ret ) {
-            return 0;
-        }
-    } else if ( 4 == nr ) {
-        /* Evaluate operands */
-        ret = _eval4(opt->ltbl, &eval[0], &eval[1], &eval[2], &eval[3],
-                     operands);
-        if ( ret < 0 ) {
-            return -EOPERAND;
-        } else if ( 0 == ret ) {
-            return 0;
-        }
-    }
 
     stat = 0;
     switch ( enc ) {
