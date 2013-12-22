@@ -221,28 +221,36 @@ _print_instruction_bin(const x86_64_instr_t *instr)
  *      I       AL/AX/EAX/RAX   imm8/16/32      NA              NA
  */
 static int
-_add(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+_add(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    PASS0(binstr(instr, opt, SIZE8, 0x04, -1, -1, -1, ops, ENC_I_AL_IMM8));
-    PASS0(binstr(instr, opt, SIZE8, 0x04, -1, -1, -1, ops, ENC_I_AL_RELA8));
-    PASS0(binstr(instr, opt, SIZE16, 0x05, -1, -1, -1, ops, ENC_I_AX_IMM16));
-    PASS0(binstr(instr, opt, SIZE16, 0x05, -1, -1, -1, ops, ENC_I_AX_RELA16));
-    PASS0(binstr(instr, opt, SIZE32, 0x05, -1, -1, -1, ops, ENC_I_EAX_IMM32));
-    PASS0(binstr(instr, opt, SIZE32, 0x05, -1, -1, -1, ops, ENC_I_EAX_RELA32));
-    PASS0(binstr(instr, opt, SIZE64, 0x05, -1, -1, -1, ops, ENC_I_RAX_IMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x05, -1, -1, -1, ops, ENC_I_RAX_RELA32));
-    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 0, ops, ENC_MI_RM8_IMM8));
-    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 0, ops, ENC_MI_RM8_RELA8));
-    PASS0(binstr(instr, opt, SIZE16, 0x83, -1, -1, 0, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 0, ops, ENC_MI_RM16_IMM16));
-    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 0, ops, ENC_MI_RM16_RELA16));
-    PASS0(binstr(instr, opt, SIZE32, 0x83, -1, -1, 0, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 0, ops, ENC_MI_RM32_IMM32));
-    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 0, ops, ENC_MI_RM32_RELA32));
-    PASS0(binstr(instr, opt, SIZE64, 0x83, -1, -1, 0, ops, ENC_MI_RM64_IMM8));
-    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 0, ops, ENC_MI_RM64_IMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 0, ops, ENC_MI_RM64_RELA32));
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
+    PASS0(binstr(instr, opt, SIZE8, 0x04, -1, -1, -1, ops, ENC_I_AL_FIMM8));
+    PASS0(binstr(instr, opt, SIZE8, 0x04, -1, -1, -1, ops, ENC_I_AL_EIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x05, -1, -1, -1, ops, ENC_I_AX_FIMM16));
+    PASS0(binstr(instr, opt, SIZE16, 0x05, -1, -1, -1, ops, ENC_I_AX_EIMM16));
+    PASS0(binstr(instr, opt, SIZE32, 0x05, -1, -1, -1, ops, ENC_I_EAX_FIMM32));
+    PASS0(binstr(instr, opt, SIZE32, 0x05, -1, -1, -1, ops, ENC_I_EAX_EIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x05, -1, -1, -1, ops, ENC_I_RAX_FIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x05, -1, -1, -1, ops, ENC_I_RAX_EIMM32));
+    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 0, ops, ENC_MI_RM8_FIMM8));
+    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 0, ops, ENC_MI_RM8_EIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x83, -1, -1, 0, ops, ENC_MI_RM16_FIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 0, ops, ENC_MI_RM16_FIMM16));
+    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 0, ops, ENC_MI_RM16_EIMM16));
+    PASS0(binstr(instr, opt, SIZE32, 0x83, -1, -1, 0, ops, ENC_MI_RM32_FIMM8));
+    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 0, ops, ENC_MI_RM32_FIMM32));
+    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 0, ops, ENC_MI_RM32_EIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x83, -1, -1, 0, ops, ENC_MI_RM64_FIMM8));
+    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 0, ops, ENC_MI_RM64_FIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 0, ops, ENC_MI_RM64_EIMM32));
     PASS0(binstr(instr, opt, SIZE8, 0x00, -1, -1, -1, ops, ENC_MR_RM8_R8));
     PASS0(binstr(instr, opt, SIZE16, 0x01, -1, -1, -1, ops, ENC_MR_RM16_R16));
     PASS0(binstr(instr, opt, SIZE32, 0x01, -1, -1, -1, ops, ENC_MR_RM32_R32));
@@ -295,28 +303,36 @@ _add(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      I       AL/AX/EAX/RAX   imm8/16/32      NA              NA
  */
 static int
-_and(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+_and(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    PASS0(binstr(instr, opt, SIZE8, 0x24, -1, -1, -1, ops, ENC_I_AL_IMM8));
-    PASS0(binstr(instr, opt, SIZE8, 0x24, -1, -1, -1, ops, ENC_I_AL_RELA8));
-    PASS0(binstr(instr, opt, SIZE16, 0x25, -1, -1, -1, ops, ENC_I_AX_IMM16));
-    PASS0(binstr(instr, opt, SIZE16, 0x25, -1, -1, -1, ops, ENC_I_AX_RELA16));
-    PASS0(binstr(instr, opt, SIZE32, 0x25, -1, -1, -1, ops, ENC_I_EAX_IMM32));
-    PASS0(binstr(instr, opt, SIZE32, 0x25, -1, -1, -1, ops, ENC_I_EAX_RELA32));
-    PASS0(binstr(instr, opt, SIZE64, 0x25, -1, -1, -1, ops, ENC_I_RAX_IMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x25, -1, -1, -1, ops, ENC_I_RAX_RELA32));
-    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 4, ops, ENC_MI_RM8_IMM8));
-    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 4, ops, ENC_MI_RM8_RELA8));
-    PASS0(binstr(instr, opt, SIZE16, 0x83, -1, -1, 4, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 4, ops, ENC_MI_RM16_IMM16));
-    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 4, ops, ENC_MI_RM16_RELA16));
-    PASS0(binstr(instr, opt, SIZE32, 0x83, -1, -1, 4, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 4, ops, ENC_MI_RM32_IMM32));
-    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 4, ops, ENC_MI_RM32_RELA32));
-    PASS0(binstr(instr, opt, SIZE64, 0x83, -1, -1, 4, ops, ENC_MI_RM64_IMM8));
-    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 4, ops, ENC_MI_RM64_IMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 4, ops, ENC_MI_RM64_RELA32));
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
+    PASS0(binstr(instr, opt, SIZE8, 0x24, -1, -1, -1, ops, ENC_I_AL_FIMM8));
+    PASS0(binstr(instr, opt, SIZE8, 0x24, -1, -1, -1, ops, ENC_I_AL_EIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x25, -1, -1, -1, ops, ENC_I_AX_FIMM16));
+    PASS0(binstr(instr, opt, SIZE16, 0x25, -1, -1, -1, ops, ENC_I_AX_EIMM16));
+    PASS0(binstr(instr, opt, SIZE32, 0x25, -1, -1, -1, ops, ENC_I_EAX_FIMM32));
+    PASS0(binstr(instr, opt, SIZE32, 0x25, -1, -1, -1, ops, ENC_I_EAX_EIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x25, -1, -1, -1, ops, ENC_I_RAX_FIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x25, -1, -1, -1, ops, ENC_I_RAX_EIMM32));
+    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 4, ops, ENC_MI_RM8_FIMM8));
+    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 4, ops, ENC_MI_RM8_EIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x83, -1, -1, 4, ops, ENC_MI_RM16_FIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 4, ops, ENC_MI_RM16_FIMM16));
+    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 4, ops, ENC_MI_RM16_EIMM16));
+    PASS0(binstr(instr, opt, SIZE32, 0x83, -1, -1, 4, ops, ENC_MI_RM32_FIMM8));
+    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 4, ops, ENC_MI_RM32_FIMM32));
+    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 4, ops, ENC_MI_RM32_EIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x83, -1, -1, 4, ops, ENC_MI_RM64_FIMM8));
+    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 4, ops, ENC_MI_RM64_FIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 4, ops, ENC_MI_RM64_EIMM32));
     PASS0(binstr(instr, opt, SIZE8, 0x20, -1, -1, -1, ops, ENC_MR_RM8_R8));
     PASS0(binstr(instr, opt, SIZE16, 0x21, -1, -1, -1, ops, ENC_MR_RM16_R16));
     PASS0(binstr(instr, opt, SIZE32, 0x21, -1, -1, -1, ops, ENC_MR_RM32_R32));
@@ -343,9 +359,17 @@ _and(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      RM      ModRM:reg(w)    ModRM:r/m(r)    NA              NA
  */
 static int
-_bsf(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+_bsf(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, -1, 0x0f, 0xbc, -1, -1, ops, ENC_RM_R16_RM16));
     PASS0(binstr(instr, opt, -1, 0x0f, 0xbc, -1, -1, ops, ENC_RM_R32_RM32));
     PASS0(binstr(instr, opt, -1, 0x0f, 0xbc, -1, -1, ops, ENC_RM_R64_RM64));
@@ -367,9 +391,17 @@ _bsf(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      RM      ModRM:reg(w)    ModRM:r/m(r)    NA              NA
  */
 static int
-_bsr(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+_bsr(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, -1, 0x0f, 0xbd, -1, -1, ops, ENC_RM_R16_RM16));
     PASS0(binstr(instr, opt, -1, 0x0f, 0xbd, -1, -1, ops, ENC_RM_R32_RM32));
     PASS0(binstr(instr, opt, -1, 0x0f, 0xbd, -1, -1, ops, ENC_RM_R64_RM64));
@@ -390,9 +422,17 @@ _bsr(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      O       opcode+rd(r,w)  NA              NA              NA
  */
 static int
-_bswap(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-       x86_64_instr_t *instr)
+_bswap(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xc8, -1, -1, ops, ENC_O_R32));
     PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xc8, -1, -1, ops, ENC_O_R64));
 
@@ -418,15 +458,23 @@ _bswap(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      MI      ModRM:r/m(r)    imm8            NA              NA
  */
 static int
-_bt(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-    x86_64_instr_t *instr)
+_bt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE16, 0x0f, 0xa3, -1, -1, ops, ENC_MR_RM16_R16));
     PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xa3, -1, -1, ops, ENC_MR_RM32_R32));
     PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xa3, -1, -1, ops, ENC_MR_RM64_R64));
-    PASS0(binstr(instr, opt, SIZE16, 0x0f, 0xba, -1, 4, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xba, -1, 4, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xba, -1, 4, ops, ENC_MI_RM64_IMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x0f, 0xba, -1, 4, ops, ENC_MI_RM16_FIMM8));
+    PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xba, -1, 4, ops, ENC_MI_RM32_FIMM8));
+    PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xba, -1, 4, ops, ENC_MI_RM64_FIMM8));
 
     return -EOPERAND;
 }
@@ -450,16 +498,24 @@ _bt(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      MR      ModRM:r/m(r)    ModRM:reg(r)    NA              NA
  *      MI      ModRM:r/m(r)    imm8            NA              NA
  */
-int
-_btc(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+static int
+_btc(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE16, 0x0f, 0xbb, -1, -1, ops, ENC_MR_RM16_R16));
     PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xbb, -1, -1, ops, ENC_MR_RM32_R32));
     PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xbb, -1, -1, ops, ENC_MR_RM64_R64));
-    PASS0(binstr(instr, opt, SIZE16, 0x0f, 0xba, -1, 7, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xba, -1, 7, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xba, -1, 7, ops, ENC_MI_RM64_IMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x0f, 0xba, -1, 7, ops, ENC_MI_RM16_FIMM8));
+    PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xba, -1, 7, ops, ENC_MI_RM32_FIMM8));
+    PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xba, -1, 7, ops, ENC_MI_RM64_FIMM8));
 
     return -EOPERAND;
 }
@@ -482,16 +538,24 @@ _btc(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      MR      ModRM:r/m(r)    ModRM:reg(r)    NA              NA
  *      MI      ModRM:r/m(r)    imm8            NA              NA
  */
-int
-_btr(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+static int
+_btr(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE16, 0x0f, 0xb3, -1, -1, ops, ENC_MR_RM16_R16));
     PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xb3, -1, -1, ops, ENC_MR_RM32_R32));
     PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xb3, -1, -1, ops, ENC_MR_RM64_R64));
-    PASS0(binstr(instr, opt, SIZE16, 0x0f, 0xba, -1, 6, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xba, -1, 6, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xba, -1, 6, ops, ENC_MI_RM64_IMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x0f, 0xba, -1, 6, ops, ENC_MI_RM16_FIMM8));
+    PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xba, -1, 6, ops, ENC_MI_RM32_FIMM8));
+    PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xba, -1, 6, ops, ENC_MI_RM64_FIMM8));
 
     return -EOPERAND;
 }
@@ -514,16 +578,24 @@ _btr(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      MR      ModRM:r/m(r)    ModRM:reg(r)    NA              NA
  *      MI      ModRM:r/m(r)    imm8            NA              NA
  */
-int
-_bts(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+static int
+_bts(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE16, 0x0f, 0xab, -1, -1, ops, ENC_MR_RM16_R16));
     PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xab, -1, -1, ops, ENC_MR_RM32_R32));
     PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xab, -1, -1, ops, ENC_MR_RM64_R64));
-    PASS0(binstr(instr, opt, SIZE16, 0x0f, 0xba, -1, 5, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xba, -1, 5, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xba, -1, 5, ops, ENC_MI_RM64_IMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x0f, 0xba, -1, 5, ops, ENC_MI_RM16_FIMM8));
+    PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xba, -1, 5, ops, ENC_MI_RM32_FIMM8));
+    PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xba, -1, 5, ops, ENC_MI_RM64_FIMM8));
 
     return -EOPERAND;
 }
@@ -541,25 +613,49 @@ _bts(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 int
-_cbw(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+_cbw(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE16, 0x98, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 int
-_cwde(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-      x86_64_instr_t *instr)
+_cwde(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE32, 0x98, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 int
-_cdqe(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-      x86_64_instr_t *instr)
+_cdqe(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE64, 0x98, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
@@ -576,9 +672,17 @@ _cdqe(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 int
-_clc(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+_clc(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, 0, 0xf8, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
@@ -594,10 +698,18 @@ _clc(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      Op/En   Operand1        Operand2        Operand3        Operand4
  *      NP      NA              NA              NA              NA
  */
-int
-_cld(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+static int
+_cld(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, 0, 0xfc, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
@@ -613,10 +725,18 @@ _cld(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      Op/En   Operand1        Operand2        Operand3        Operand4
  *      M       ModR/M(w)       NA              NA              NA
  */
-int
-_clflush(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-         x86_64_instr_t *instr)
+static int
+_clflush(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE8, 0x0f, 0xae, -1, 7, ops, ENC_M_M8));
 
     return -EOPERAND;
@@ -632,10 +752,18 @@ _clflush(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      Op/En   Operand1        Operand2        Operand3        Operand4
  *      NP      NA              NA              NA              NA
  */
-int
-_cli(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+static int
+_cli(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, 0, 0xfa, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
@@ -681,28 +809,36 @@ _cli(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      I       AL/AX/EAX/RAX   imm8/16/32      NA              NA
  */
 static int
-_cmp(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+_cmp(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    PASS0(binstr(instr, opt, SIZE8, 0x3c, -1, -1, -1, ops, ENC_I_AL_IMM8));
-    PASS0(binstr(instr, opt, SIZE8, 0x3c, -1, -1, -1, ops, ENC_I_AL_RELA8));
-    PASS0(binstr(instr, opt, SIZE16, 0x3d, -1, -1, -1, ops, ENC_I_AX_IMM16));
-    PASS0(binstr(instr, opt, SIZE16, 0x3d, -1, -1, -1, ops, ENC_I_AX_RELA16));
-    PASS0(binstr(instr, opt, SIZE32, 0x3d, -1, -1, -1, ops, ENC_I_EAX_IMM32));
-    PASS0(binstr(instr, opt, SIZE32, 0x3d, -1, -1, -1, ops, ENC_I_EAX_RELA32));
-    PASS0(binstr(instr, opt, SIZE64, 0x3d, -1, -1, -1, ops, ENC_I_RAX_IMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x3d, -1, -1, -1, ops, ENC_I_RAX_RELA32));
-    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 7, ops, ENC_MI_RM8_IMM8));
-    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 7, ops, ENC_MI_RM8_RELA8));
-    PASS0(binstr(instr, opt, SIZE16, 0x83, -1, -1, 7, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 7, ops, ENC_MI_RM16_IMM16));
-    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 7, ops, ENC_MI_RM16_RELA16));
-    PASS0(binstr(instr, opt, SIZE32, 0x83, -1, -1, 7, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 7, ops, ENC_MI_RM32_IMM32));
-    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 7, ops, ENC_MI_RM32_RELA32));
-    PASS0(binstr(instr, opt, SIZE64, 0x83, -1, -1, 7, ops, ENC_MI_RM64_IMM8));
-    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 7, ops, ENC_MI_RM64_IMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 7, ops, ENC_MI_RM64_RELA32));
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
+    PASS0(binstr(instr, opt, SIZE8, 0x3c, -1, -1, -1, ops, ENC_I_AL_FIMM8));
+    PASS0(binstr(instr, opt, SIZE8, 0x3c, -1, -1, -1, ops, ENC_I_AL_EIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x3d, -1, -1, -1, ops, ENC_I_AX_FIMM16));
+    PASS0(binstr(instr, opt, SIZE16, 0x3d, -1, -1, -1, ops, ENC_I_AX_EIMM16));
+    PASS0(binstr(instr, opt, SIZE32, 0x3d, -1, -1, -1, ops, ENC_I_EAX_FIMM32));
+    PASS0(binstr(instr, opt, SIZE32, 0x3d, -1, -1, -1, ops, ENC_I_EAX_EIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x3d, -1, -1, -1, ops, ENC_I_RAX_FIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x3d, -1, -1, -1, ops, ENC_I_RAX_EIMM32));
+    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 7, ops, ENC_MI_RM8_FIMM8));
+    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 7, ops, ENC_MI_RM8_EIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x83, -1, -1, 7, ops, ENC_MI_RM16_FIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 7, ops, ENC_MI_RM16_FIMM16));
+    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 7, ops, ENC_MI_RM16_EIMM16));
+    PASS0(binstr(instr, opt, SIZE32, 0x83, -1, -1, 7, ops, ENC_MI_RM32_FIMM8));
+    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 7, ops, ENC_MI_RM32_FIMM32));
+    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 7, ops, ENC_MI_RM32_EIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x83, -1, -1, 7, ops, ENC_MI_RM64_FIMM8));
+    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 7, ops, ENC_MI_RM64_FIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 7, ops, ENC_MI_RM64_EIMM32));
     PASS0(binstr(instr, opt, SIZE8, 0x38, -1, -1, -1, ops, ENC_MR_RM8_R8));
     PASS0(binstr(instr, opt, SIZE16, 0x39, -1, -1, -1, ops, ENC_MR_RM16_R16));
     PASS0(binstr(instr, opt, SIZE32, 0x39, -1, -1, -1, ops, ENC_MR_RM32_R32));
@@ -735,9 +871,17 @@ _cmp(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      MR      ModRM:r/m(r,w)  ModRM:reg(r)    NA              NA
  */
 static int
-_cmpxchg(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-         x86_64_instr_t *instr)
+_cmpxchg(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE8, 0x0f, 0xb0, -1, -1, ops, ENC_MR_RM8_R8));
     PASS0(binstr(instr, opt, SIZE16, 0x0f, 0xb1, -1, -1, ops, ENC_MR_RM16_R16));
     PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xb1, -1, -1, ops, ENC_MR_RM32_R32));
@@ -756,10 +900,18 @@ _cmpxchg(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      Op/En   Operand1        Operand2        Operand3        Operand4
  *      NP      NA              NA              NA              NA
  */
-int
-_cpuid(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-       x86_64_instr_t *instr)
+static int
+_cpuid(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, 0, 0x0f, 0xa2, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
@@ -787,9 +939,17 @@ _cpuid(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      RM      ModRM:reg(r,w)  ModRM:r/m(r)    NA              NA
  */
 static int
-_crc32(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-       x86_64_instr_t *instr)
+_crc32(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     /* FIXME */
     x86_64_asm_opt_t o;
 
@@ -821,26 +981,50 @@ _crc32(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      Op/En   Operand1        Operand2        Operand3        Operand4
  *      NP      NA              NA              NA              NA
  */
-int
-_cwd(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+static int
+_cwd(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE16, 0x99, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
-int
-_cdq(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+static int
+_cdq(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE32, 0x99, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
-int
-_cqo(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+static int
+_cqo(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE64, 0x99, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
@@ -856,10 +1040,18 @@ _cqo(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      Op/En   Operand1        Operand2        Operand3        Operand4
  *      NP      NA              NA              NA              NA
  */
-int
-_daa(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+static int
+_daa(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, 0, 0x27, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
@@ -875,10 +1067,18 @@ _daa(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      Op/En   Operand1        Operand2        Operand3        Operand4
  *      NP      NA              NA              NA              NA
  */
-int
-_das(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+static int
+_das(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, 0, 0x2f, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
@@ -905,9 +1105,17 @@ _das(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      O       opcode+rd(r,w)  NA              NA              NA
  */
 static int
-_dec(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+_dec(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE8, 0xfe, -1, -1, 1, ops, ENC_M_RM8));
     PASS0(binstr(instr, opt, SIZE16, 0xff, -1, -1, 1, ops, ENC_M_RM16));
     PASS0(binstr(instr, opt, SIZE32, 0xff, -1, -1, 1, ops, ENC_M_RM32));
@@ -934,9 +1142,17 @@ _dec(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      M       ModR/M:r/m(r,w) NA              NA              NA
  */
 static int
-_div(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+_div(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE8, 0xf6, -1, -1, 6, ops, ENC_M_RM8));
     PASS0(binstr(instr, opt, SIZE16, 0xf7, -1, -1, 6, ops, ENC_M_RM16));
     PASS0(binstr(instr, opt, SIZE32, 0xf7, -1, -1, 6, ops, ENC_M_RM32));
@@ -955,10 +1171,18 @@ _div(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      Op/En   Operand1        Operand2        Operand3        Operand4
  *      NP      NA              NA              NA              NA
  */
-int
-_hlt(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+static int
+_hlt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, 0, 0xf4, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
@@ -982,9 +1206,17 @@ _hlt(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      M       ModR/M:r/m(r,w) NA              NA              NA
  */
 static int
-_idiv(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-      x86_64_instr_t *instr)
+_idiv(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE8, 0xf6, -1, -1, 7, ops, ENC_M_RM8));
     PASS0(binstr(instr, opt, SIZE16, 0xf7, -1, -1, 7, ops, ENC_M_RM16));
     PASS0(binstr(instr, opt, SIZE32, 0xf7, -1, -1, 7, ops, ENC_M_RM32));
@@ -1024,9 +1256,17 @@ _idiv(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      RMI     ModRM:reg(r,w)  ModRM:r/m(r)    imm8/16/32      NA
  */
 static int
-_imul(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-      x86_64_instr_t *instr)
+_imul(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE8, 0xf6, -1, -1, 5, ops, ENC_M_RM8));
     PASS0(binstr(instr, opt, SIZE16, 0xf7, -1, -1, 5, ops, ENC_M_RM16));
     PASS0(binstr(instr, opt, SIZE32, 0xf7, -1, -1, 5, ops, ENC_M_RM32));
@@ -1035,23 +1275,23 @@ _imul(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
     PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xaf, -1, -1, ops, ENC_RM_R32_RM32));
     PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xaf, -1, -1, ops, ENC_RM_R64_RM64));
     PASS0(binstr(instr, opt, SIZE16, 0x6b, -1, -1, -1, ops,
-                 ENC_RMI_R16_RM16_IMM8));
+                 ENC_RMI_R16_RM16_FIMM8));
     PASS0(binstr(instr, opt, SIZE32, 0x6b, -1, -1, -1, ops,
-                 ENC_RMI_R32_RM32_IMM8));
+                 ENC_RMI_R32_RM32_FIMM8));
     PASS0(binstr(instr, opt, SIZE64, 0x6b, -1, -1, -1, ops,
-                 ENC_RMI_R64_RM64_IMM8));
+                 ENC_RMI_R64_RM64_FIMM8));
     PASS0(binstr(instr, opt, SIZE16, 0x69, -1, -1, -1, ops,
-                 ENC_RMI_R16_RM16_IMM16));
+                 ENC_RMI_R16_RM16_FIMM16));
     PASS0(binstr(instr, opt, SIZE16, 0x69, -1, -1, -1, ops,
-                 ENC_RMI_R16_RM16_RELA16));
+                 ENC_RMI_R16_RM16_EIMM16));
     PASS0(binstr(instr, opt, SIZE32, 0x69, -1, -1, -1, ops,
-                 ENC_RMI_R32_RM32_IMM32));
+                 ENC_RMI_R32_RM32_FIMM32));
     PASS0(binstr(instr, opt, SIZE32, 0x69, -1, -1, -1, ops,
-                 ENC_RMI_R32_RM32_RELA32));
+                 ENC_RMI_R32_RM32_EIMM32));
     PASS0(binstr(instr, opt, SIZE64, 0x69, -1, -1, -1, ops,
-                 ENC_RMI_R64_RM64_IMM32));
+                 ENC_RMI_R64_RM64_FIMM32));
     PASS0(binstr(instr, opt, SIZE64, 0x69, -1, -1, -1, ops,
-                 ENC_RMI_R64_RM64_RELA32));
+                 ENC_RMI_R64_RM64_EIMM32));
 
     return -EOPERAND;
 }
@@ -1073,12 +1313,20 @@ _imul(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 static int
-_in(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-    x86_64_instr_t *instr)
+_in(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    PASS0(binstr(instr, opt, SIZE8, 0xe4, -1, -1, -1, ops, ENC_I_AL_IMM8));
-    PASS0(binstr(instr, opt, SIZE16, 0xe5, -1, -1, -1, ops, ENC_I_AX_IMM8));
-    PASS0(binstr(instr, opt, SIZE32, 0xe5, -1, -1, -1, ops, ENC_I_EAX_IMM8));
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
+    PASS0(binstr(instr, opt, SIZE8, 0xe4, -1, -1, -1, ops, ENC_I_AL_FIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0xe5, -1, -1, -1, ops, ENC_I_AX_FIMM8));
+    PASS0(binstr(instr, opt, SIZE32, 0xe5, -1, -1, -1, ops, ENC_I_EAX_FIMM8));
     PASS0(binstr(instr, opt, SIZE8, 0xec, -1, -1, -1, ops, ENC_NP_AL_DX));
     PASS0(binstr(instr, opt, SIZE16, 0xed, -1, -1, -1, ops, ENC_NP_AX_DX));
     PASS0(binstr(instr, opt, SIZE32, 0xed, -1, -1, -1, ops, ENC_NP_EAX_DX));
@@ -1107,9 +1355,17 @@ _in(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      O       opcode+rd(r,w)  NA              NA              NA
  */
 static int
-_inc(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+_inc(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE8, 0xfe, -1, -1, 0, ops, ENC_M_RM8));
     PASS0(binstr(instr, opt, SIZE16, 0xff, -1, -1, 0, ops, ENC_M_RM16));
     PASS0(binstr(instr, opt, SIZE32, 0xff, -1, -1, 0, ops, ENC_M_RM32));
@@ -1131,25 +1387,49 @@ _inc(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 static int
-_iret(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-      x86_64_instr_t *instr)
+_iret(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE16, 0xcf, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 static int
-_iretd(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-       x86_64_instr_t *instr)
+_iretd(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE32, 0xcf, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
 }
 static int
-_iretq(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-       x86_64_instr_t *instr)
+_iretq(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE64, 0xcf, -1, -1, -1, ops, ENC_NP));
 
     return -EOPERAND;
@@ -1176,10 +1456,18 @@ _iretq(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      D       Offset          NA              NA              NA
  *      M       ModR/M(r)       NA              NA              NA
  */
-int
-_jmp(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+static int
+_jmp(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     if ( OPCODE_SUFFIX_FAR & opt->suffix ) {
         /* w/ far */
 
@@ -1208,10 +1496,18 @@ _jmp(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      Op/En   Operand1        Operand2        Operand3        Operand4
  *      NP      NA              NA              NA              NA
  */
-int
-_monitor(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-         x86_64_instr_t *instr)
+static int
+_monitor(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, 0, 0x0f, 0x01, 0xc8, -1, ops, ENC_NP));
 
     return -EOPERAND;
@@ -1276,10 +1572,18 @@ _monitor(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      OI      opcode + rd(w)  imm8/16/32/64   NA              NA
  *      MI      ModRM:r/m(w)    imm8/16/32/64   NA              NA
  */
-int
-_mov(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+static int
+_mov(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE8, 0x88, -1, -1, -1, ops, ENC_MR_RM8_R8));
     PASS0(binstr(instr, opt, SIZE16, 0x89, -1, -1, -1, ops, ENC_MR_RM16_R16));
     PASS0(binstr(instr, opt, SIZE32, 0x89, -1, -1, -1, ops, ENC_MR_RM32_R32));
@@ -1290,19 +1594,19 @@ _mov(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
     PASS0(binstr(instr, opt, SIZE32, 0x8b, -1, -1, -1, ops, ENC_RM_R32_RM32));
     PASS0(binstr(instr, opt, SIZE64, 0x8b, -1, -1, -1, ops, ENC_RM_R64_RM64));
 
-    PASS0(binstr(instr, opt, SIZE8, 0xb0, -1, -1, -1, ops, ENC_OI_R8_IMM8));
-    PASS0(binstr(instr, opt, SIZE16, 0xb8, -1, -1, -1, ops, ENC_OI_R16_IMM16));
-    PASS0(binstr(instr, opt, SIZE32, 0xb8, -1, -1, -1, ops, ENC_OI_R32_IMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0xb8, -1, -1, -1, ops, ENC_OI_R64_IMM64));
+    PASS0(binstr(instr, opt, SIZE8, 0xb0, -1, -1, -1, ops, ENC_OI_R8_FIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0xb8, -1, -1, -1, ops, ENC_OI_R16_FIMM16));
+    PASS0(binstr(instr, opt, SIZE32, 0xb8, -1, -1, -1, ops, ENC_OI_R32_FIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0xb8, -1, -1, -1, ops, ENC_OI_R64_FIMM64));
 
-    PASS0(binstr(instr, opt, SIZE8, 0xc6, -1, -1, 0, ops, ENC_MI_RM8_IMM8));
-    PASS0(binstr(instr, opt, SIZE8, 0xc6, -1, -1, 0, ops, ENC_MI_RM8_RELA8));
-    PASS0(binstr(instr, opt, SIZE16, 0xc7, -1, -1, 0, ops, ENC_MI_RM16_IMM16));
-    PASS0(binstr(instr, opt, SIZE16, 0xc7, -1, -1, 0, ops, ENC_MI_RM16_RELA16));
-    PASS0(binstr(instr, opt, SIZE32, 0xc7, -1, -1, 0, ops, ENC_MI_RM32_IMM32));
-    PASS0(binstr(instr, opt, SIZE32, 0xc7, -1, -1, 0, ops, ENC_MI_RM32_RELA32));
-    PASS0(binstr(instr, opt, SIZE64, 0xc7, -1, -1, 0, ops, ENC_MI_RM64_IMM64));
-    PASS0(binstr(instr, opt, SIZE64, 0xc7, -1, -1, 0, ops, ENC_MI_RM64_RELA64));
+    PASS0(binstr(instr, opt, SIZE8, 0xc6, -1, -1, 0, ops, ENC_MI_RM8_FIMM8));
+    PASS0(binstr(instr, opt, SIZE8, 0xc6, -1, -1, 0, ops, ENC_MI_RM8_EIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0xc7, -1, -1, 0, ops, ENC_MI_RM16_FIMM16));
+    PASS0(binstr(instr, opt, SIZE16, 0xc7, -1, -1, 0, ops, ENC_MI_RM16_EIMM16));
+    PASS0(binstr(instr, opt, SIZE32, 0xc7, -1, -1, 0, ops, ENC_MI_RM32_FIMM32));
+    PASS0(binstr(instr, opt, SIZE32, 0xc7, -1, -1, 0, ops, ENC_MI_RM32_EIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0xc7, -1, -1, 0, ops, ENC_MI_RM64_FIMM64));
+    PASS0(binstr(instr, opt, SIZE64, 0xc7, -1, -1, 0, ops, ENC_MI_RM64_EIMM64));
 
     return -EOPERAND;
 }
@@ -1324,12 +1628,20 @@ _mov(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      NP      NA              NA              NA              NA
  */
 static int
-_out(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+_out(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    PASS0(binstr(instr, opt, SIZE8, 0xe6, -1, -1, -1, ops, ENC_I_IMM8_AL));
-    PASS0(binstr(instr, opt, SIZE16, 0xe7, -1, -1, -1, ops, ENC_I_IMM8_AX));
-    PASS0(binstr(instr, opt, SIZE32, 0xe7, -1, -1, -1, ops, ENC_I_IMM8_EAX));
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
+    PASS0(binstr(instr, opt, SIZE8, 0xe6, -1, -1, -1, ops, ENC_I_FIMM8_AL));
+    PASS0(binstr(instr, opt, SIZE16, 0xe7, -1, -1, -1, ops, ENC_I_FIMM8_AX));
+    PASS0(binstr(instr, opt, SIZE32, 0xe7, -1, -1, -1, ops, ENC_I_FIMM8_EAX));
     PASS0(binstr(instr, opt, SIZE8, 0xee, -1, -1, -1, ops, ENC_NP_DX_AL));
     PASS0(binstr(instr, opt, SIZE16, 0xef, -1, -1, -1, ops, ENC_NP_DX_AL));
     PASS0(binstr(instr, opt, SIZE32, 0xef, -1, -1, -1, ops, ENC_NP_DX_EAX));
@@ -1350,10 +1662,18 @@ _out(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      Op/En   Operand1        Operand2        Operand3        Operand4
  *      RM      ModRM:reg(w)    ModRM:r/m(r)
  */
-int
-_popcnt(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-        x86_64_instr_t *instr)
+static int
+_popcnt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     PASS0(binstr(instr, opt, SIZE16, 0xf3, 0x0f, 0xb8, -1, ops,
                  ENC_RM_R16_RM16));
     PASS0(binstr(instr, opt, SIZE32, 0xf3, 0x0f, 0xb8, -1, ops,
@@ -1379,19 +1699,27 @@ _popcnt(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      I       imm16           NA              NA              NA
  */
 static int
-_ret(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+_ret(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
+
     if ( OPCODE_SUFFIX_FAR & opt->suffix ) {
         /* w/ far */
         PASS0(binstr(instr, opt, 0, 0xcb, -1, -1, -1, ops, ENC_NP));
-        PASS0(binstr(instr, opt, 0, 0xca, -1, -1, -1, ops, ENC_I_IMM16));
-        PASS0(binstr(instr, opt, 0, 0xca, -1, -1, -1, ops, ENC_I_RELA16));
+        PASS0(binstr(instr, opt, 0, 0xca, -1, -1, -1, ops, ENC_I_FIMM16));
+        PASS0(binstr(instr, opt, 0, 0xca, -1, -1, -1, ops, ENC_I_EIMM16));
     } else {
         /* w/o far */
         PASS0(binstr(instr, opt, 0, 0xc3, -1, -1, -1, ops, ENC_NP));
-        PASS0(binstr(instr, opt, 0, 0xc2, -1, -1, -1, ops, ENC_I_IMM16));
-        PASS0(binstr(instr, opt, 0, 0xc2, -1, -1, -1, ops, ENC_I_RELA16));
+        PASS0(binstr(instr, opt, 0, 0xc2, -1, -1, -1, ops, ENC_I_FIMM16));
+        PASS0(binstr(instr, opt, 0, 0xc2, -1, -1, -1, ops, ENC_I_EIMM16));
     }
 
     return -EOPERAND;
@@ -1435,30 +1763,38 @@ _ret(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
  *      MR      ModRM:r/m(r,w)  ModRM:reg(r)    NA              NA
  *      RM      ModRM:reg(r,w)  ModRM:r/m(r)    NA              NA
  */
-int
-_xor(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
-     x86_64_instr_t *instr)
+static int
+_xor(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    PASS0(binstr(instr, opt, SIZE8, 0x34, -1, -1, -1, ops, ENC_I_AL_IMM8));
-    PASS0(binstr(instr, opt, SIZE8, 0x34, -1, -1, -1, ops, ENC_I_AL_RELA8));
-    PASS0(binstr(instr, opt, SIZE16, 0x35, -1, -1, -1, ops, ENC_I_AX_IMM16));
-    PASS0(binstr(instr, opt, SIZE16, 0x35, -1, -1, -1, ops, ENC_I_AX_RELA16));
-    PASS0(binstr(instr, opt, SIZE32, 0x35, -1, -1, -1, ops, ENC_I_EAX_IMM32));
-    PASS0(binstr(instr, opt, SIZE32, 0x35, -1, -1, -1, ops, ENC_I_EAX_RELA32));
-    PASS0(binstr(instr, opt, SIZE64, 0x35, -1, -1, -1, ops, ENC_I_RAX_IMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x35, -1, -1, -1, ops, ENC_I_RAX_RELA32));
+    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
+    x86_64_instr_t *instr = xstmt->instr;
+    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
+    opt->tgt = X86_64_O64;
+    opt->ltbl = &asmblr->lbtbl;
+    opt->pos = 0;
+    opt->prefix = xstmt->prefix;
+    opt->suffix = xstmt->suffix;
 
-    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 6, ops, ENC_MI_RM8_IMM8));
-    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 6, ops, ENC_MI_RM8_RELA8));
-    PASS0(binstr(instr, opt, SIZE16, 0x83, -1, -1, 6, ops, ENC_MI_RM16_IMM8));
-    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 6, ops, ENC_MI_RM16_IMM16));
-    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 6, ops, ENC_MI_RM16_RELA16));
-    PASS0(binstr(instr, opt, SIZE32, 0x83, -1, -1, 6, ops, ENC_MI_RM32_IMM8));
-    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 6, ops, ENC_MI_RM32_IMM32));
-    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 6, ops, ENC_MI_RM32_RELA32));
-    PASS0(binstr(instr, opt, SIZE64, 0x83, -1, -1, 6, ops, ENC_MI_RM64_IMM8));
-    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 6, ops, ENC_MI_RM64_IMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 6, ops, ENC_MI_RM64_RELA32));
+    PASS0(binstr(instr, opt, SIZE8, 0x34, -1, -1, -1, ops, ENC_I_AL_FIMM8));
+    PASS0(binstr(instr, opt, SIZE8, 0x34, -1, -1, -1, ops, ENC_I_AL_EIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x35, -1, -1, -1, ops, ENC_I_AX_FIMM16));
+    PASS0(binstr(instr, opt, SIZE16, 0x35, -1, -1, -1, ops, ENC_I_AX_EIMM16));
+    PASS0(binstr(instr, opt, SIZE32, 0x35, -1, -1, -1, ops, ENC_I_EAX_FIMM32));
+    PASS0(binstr(instr, opt, SIZE32, 0x35, -1, -1, -1, ops, ENC_I_EAX_EIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x35, -1, -1, -1, ops, ENC_I_RAX_FIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x35, -1, -1, -1, ops, ENC_I_RAX_EIMM32));
+
+    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 6, ops, ENC_MI_RM8_FIMM8));
+    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 6, ops, ENC_MI_RM8_EIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x83, -1, -1, 6, ops, ENC_MI_RM16_FIMM8));
+    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 6, ops, ENC_MI_RM16_FIMM16));
+    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 6, ops, ENC_MI_RM16_EIMM16));
+    PASS0(binstr(instr, opt, SIZE32, 0x83, -1, -1, 6, ops, ENC_MI_RM32_FIMM8));
+    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 6, ops, ENC_MI_RM32_FIMM32));
+    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 6, ops, ENC_MI_RM32_EIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x83, -1, -1, 6, ops, ENC_MI_RM64_FIMM8));
+    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 6, ops, ENC_MI_RM64_FIMM32));
+    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 6, ops, ENC_MI_RM64_EIMM32));
 
     PASS0(binstr(instr, opt, SIZE8, 0x30, -1, -1, -1, ops, ENC_MR_RM8_R8));
     PASS0(binstr(instr, opt, SIZE16, 0x31, -1, -1, -1, ops, ENC_MR_RM16_R16));
@@ -1483,16 +1819,13 @@ _xor(const x86_64_asm_opt_t *opt, const operand_vector_t *ops,
         }                                       \
     } while ( 0 )
 
-typedef int (*instr_f)(const x86_64_asm_opt_t *, const operand_vector_t *,
-                       x86_64_instr_t *);
-
 /*
  * Get the function pointer w/ instruction prefixes corresponding to the opcode
  */
-instr_f
-_get_instr(const opcode_vector_t *opcode, int *prefix, int *suffix)
+static int
+_get_instr(x86_64_stmt_t *xstmt)
 {
-    instr_f ifunc;
+    x86_64_instr_f ifunc;
     char *str;
     int i;
     int tmpprefix;
@@ -1500,15 +1833,15 @@ _get_instr(const opcode_vector_t *opcode, int *prefix, int *suffix)
 
     ifunc = NULL;
 
-    if ( mvector_size(opcode) < 1 ) {
+    if ( mvector_size(xstmt->stmt->u.instr->opcode) < 1 ) {
         /* No opcode found */
-        return NULL;
+        return -1;
     }
 
     /* Parse prefixes */
     tmpprefix = 0;
-    for ( i = 0; i < mvector_size(opcode); i++ ) {
-        str = mvector_at(opcode, i);
+    for ( i = 0; i < mvector_size(xstmt->stmt->u.instr->opcode); i++ ) {
+        str = mvector_at(xstmt->stmt->u.instr->opcode, i);
         if ( 0 == strcasecmp(str, "lock") ) {
             tmpprefix |= OPCODE_PREFIX_LOCK;
         } else if ( 0 == strcasecmp(str, "rep") ) {
@@ -1531,8 +1864,8 @@ _get_instr(const opcode_vector_t *opcode, int *prefix, int *suffix)
     }
 
    /* Opcode */
-   if ( i < mvector_size(opcode) ) {
-       str = mvector_at(opcode, i);
+   if ( i < mvector_size(xstmt->stmt->u.instr->opcode) ) {
+       str = mvector_at(xstmt->stmt->u.instr->opcode, i);
        REGISTER_INSTR(ifunc, str, add);
        REGISTER_INSTR(ifunc, str, and);
        REGISTER_INSTR(ifunc, str, bsf);
@@ -1576,14 +1909,19 @@ _get_instr(const opcode_vector_t *opcode, int *prefix, int *suffix)
        REGISTER_INSTR(ifunc, str, ret);
        REGISTER_INSTR(ifunc, str, xor);
    } else {
-       return NULL;
+       return -1;
    }
    i++;
 
+   /* Check if the function is found */
+   if ( NULL == ifunc ) {
+       return -1;
+   }
+
     /* Parse suffixes */
     tmpsuffix = 0;
-    for ( ; i < mvector_size(opcode); i++ ) {
-        str = mvector_at(opcode, i);
+    for ( ; i < mvector_size(xstmt->stmt->u.instr->opcode); i++ ) {
+        str = mvector_at(xstmt->stmt->u.instr->opcode, i);
         if ( 0 == strcasecmp(str, "far") ) {
             tmpprefix |= OPCODE_SUFFIX_FAR;
         } else {
@@ -1591,40 +1929,33 @@ _get_instr(const opcode_vector_t *opcode, int *prefix, int *suffix)
         }
     }
 
-    if ( i != mvector_size(opcode) ) {
-        return NULL;
+    if ( i != mvector_size(xstmt->stmt->u.instr->opcode) ) {
+        return -1;
     }
 
     /* Set the values */
-    *prefix = tmpprefix;
-    *suffix = tmpsuffix;
+    xstmt->prefix = tmpprefix;
+    xstmt->suffix = tmpsuffix;
+    xstmt->ifunc = ifunc;
 
-    return ifunc;
+    return 0;
 }
 
 /*
  * Assemble an instruction
  */
 static int
-_assemble_instr(const x86_64_label_table_t *tbl, off_t pos,
-                const opcode_vector_t *opcode,
-                const operand_vector_t *operands, x86_64_instr_t *instr)
+_assemble_instr(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     int ret;
-    instr_f ifunc;
-    x86_64_asm_opt_t opt;
     int j;
 
-    /* 64 bit option */
-    opt.tgt = X86_64_O64;
-    opt.ltbl = tbl;
-
-    ifunc = _get_instr(opcode, &(opt.prefix), &(opt.suffix));
-    if ( NULL != ifunc ) {
-        opt.pos = pos;
-        ret = ifunc(&opt, operands, instr);
+    assert( STMT_INSTR == xstmt->stmt->type );
+    ret = _get_instr(xstmt);
+    if ( 0 == ret ) {
+        ret = xstmt->ifunc(asmblr, xstmt);
         if ( ret >= 0 ) {
-            _print_instruction_bin(instr);
+            _print_instruction_bin(xstmt->instr);
 #if 0
             _print_instruction(instr);
             printf("\n");
@@ -1632,16 +1963,17 @@ _assemble_instr(const x86_64_label_table_t *tbl, off_t pos,
         } else {
             /* Error */
             fprintf(stderr, "Error:");
-            for ( j = 0; j < mvector_size(opcode); j++ ) {
-                fprintf(stderr, " %s", mvector_at(opcode, j));
+            for ( j = 0; j < mvector_size(xstmt->stmt->u.instr->opcode); j++ ) {
+                fprintf(stderr, " %s",
+                        mvector_at(xstmt->stmt->u.instr->opcode, j));
             }
             fprintf(stderr, "\n");
         }
     } else {
         /* Unknown */
         fprintf(stderr, "Unknown instruction:");
-        for ( j = 0; j < mvector_size(opcode); j++ ) {
-            fprintf(stderr, " %s", mvector_at(opcode, j));
+        for ( j = 0; j < mvector_size(xstmt->stmt->u.instr->opcode); j++ ) {
+            fprintf(stderr, " %s", mvector_at(xstmt->stmt->u.instr->opcode, j));
         }
         fprintf(stderr, "\n");
     }
@@ -1741,20 +2073,123 @@ _set_label_global(x86_64_label_table_t *tbl, const char *lstr)
 
 
 /*
- * Assemble x86-64 code
+ * Stage 1: Assemble fixed-size operands
+ * State 2: Estimate label offsets
+ * Stage 3: Assemble non-fixed-size operands
  */
 static int
-_assemble(stmt_vector_t *vec)
+_stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
 {
     size_t i;
     stmt_t *stmt;
     int ret;
-    x86_64_instr_t instr;
+    x86_64_instr_t *instr;
     off_t pos;
-    x86_64_label_table_t lbtbl;
+    x86_64_stmt_t *xstmt;
+    x86_64_stmt_vector_t *xvec;
 
-    /* Initialize the label table */
-    lbtbl.root = NULL;
+    /* Allocate a new statement vector */
+    xvec = mvector_new();
+
+    /* Estimate the position of labels */
+    pos = 0;
+    for ( i = 0; i < mvector_size(vec); i++ ) {
+        stmt = mvector_at(vec, i);
+
+        xstmt = malloc(sizeof(x86_64_stmt_t));
+        if ( NULL == xstmt ) {
+            /* FIXME */
+            mvector_delete(xvec);
+            return -1;
+        }
+        xstmt->stmt = stmt;
+        xstmt->state = X86_64_STMT_NOT_FIXED;
+        xstmt->evals = NULL;
+        xstmt->sz = 0;
+        xstmt->instr = NULL;
+
+        switch ( stmt->type ) {
+        case STMT_INSTR:
+            /* Allocate for instruction */
+            instr = malloc(sizeof(x86_64_instr_t));
+            if ( NULL == instr ) {
+                /* FIXME: Must free the contents of the vector */
+                mvector_delete(xvec);
+                return -1;
+            }
+            xstmt->instr = instr;
+
+            if ( NULL == mvector_push_back(xvec, xstmt) ) {
+                /* FIXME: Must free the contents of the vector */
+                mvector_delete(xvec);
+                return -1;
+            }
+
+            /* Assemble the instruction */
+            ret = _assemble_instr(asmblr, xstmt);
+            pos++;
+            break;
+        case STMT_LABEL:
+            /* Add it to the label table */
+            ret = _add_label(&asmblr->lbtbl, stmt->u.label, pos);
+            if ( ret < 0 ) {
+                if ( -EDUP == ret ) {
+                    fprintf(stderr, "A duplicate label: %s\n", stmt->u.label);
+                }
+                _label_table_clear(&asmblr->lbtbl);
+                return -1;
+            }
+            break;
+        default:
+            /* Do nothing */
+            ;
+        }
+    }
+
+    asmblr->xvec = xvec;
+
+    return 0;
+}
+
+
+
+/*
+ * Assemble x86-64 code
+ */
+static int
+_assemble(x86_64_assembler_t *asmblr, stmt_vector_t *vec)
+{
+    int ret;
+    stmt_t *stmt;
+    size_t i;
+#if 0
+    x86_64_instr_t *instr;
+    off_t pos;
+#endif
+
+    /* Stage 1 */
+    ret = _stage1(asmblr, vec);
+
+    /* Linker stage: Check global */
+    for ( i = 0; i < mvector_size(vec); i++ ) {
+        stmt = mvector_at(vec, i);
+        switch ( stmt->type ) {
+        case STMT_GLOBAL:
+            ret = _set_label_global(&asmblr->lbtbl, stmt->u.global);
+            if ( ret < 0 ) {
+                fprintf(stderr, "Label %s is not defined\n", stmt->u.label);
+                /* Free the label table */
+                _label_table_clear(&asmblr->lbtbl);
+                return -1;
+            }
+            break;
+        default:
+            /* Do nothing */
+            ;
+        }
+    }
+
+#if 0
 
     /* Estimate the position of labels */
     pos = 0;
@@ -1765,14 +2200,14 @@ _assemble(stmt_vector_t *vec)
             pos++;
             break;
         case STMT_LABEL:
-            ret = _add_label(&lbtbl, stmt->u.label, pos);
+            ret = _add_label(&asmblr->lbtbl, stmt->u.label, pos);
             if ( ret < 0 ) {
                 if ( -EDUP == ret ) {
                     fprintf(stderr, "The label is duplicate: %s\n",
                             stmt->u.label);
                 }
                 /* Free the label table */
-                _label_table_clear(&lbtbl);
+                _label_table_clear(&asmblr->lbtbl);
                 return -1;
             }
             break;
@@ -1787,11 +2222,11 @@ _assemble(stmt_vector_t *vec)
         stmt = mvector_at(vec, i);
         switch ( stmt->type ) {
         case STMT_LABEL:
-            ret = _set_label_global(&lbtbl, stmt->u.global);
+            ret = _set_label_global(&asmblr->lbtbl, stmt->u.global);
             if ( ret < 0 ) {
                 fprintf(stderr, "Label %s is not defined\n", stmt->u.label);
                 /* Free the label table */
-                _label_table_clear(&lbtbl);
+                _label_table_clear(&asmblr->lbtbl);
                 return -1;
             }
             break;
@@ -1807,9 +2242,23 @@ _assemble(stmt_vector_t *vec)
         stmt = mvector_at(vec, i);
         switch ( stmt->type ) {
         case STMT_INSTR:
+            /* Allocate for instruction */
+            instr = malloc(sizeof(x86_64_instr_t));
+            if ( NULL == instr ) {
+                /* Free the label table */
+                _label_table_clear(&asmblr->lbtbl);
+                return -1;
+            }
+
             /* Assemble the instruction */
-            ret = _assemble_instr(&lbtbl, pos, stmt->u.instr->opcode,
-                                  stmt->u.instr->operands, &instr);
+            ret = _assemble_instr(&asmblr->lbtbl, pos, stmt->u.instr->opcode,
+                                  stmt->u.instr->operands, instr);
+            if ( 0 != ret ) {
+                /* Error */
+                /* Free the label table */
+                _label_table_clear(&asmblr->lbtbl);
+                return -1;
+            }
             pos++;
             break;
         default:
@@ -1817,6 +2266,7 @@ _assemble(stmt_vector_t *vec)
             ;
         }
     }
+#endif
 
     return 0;
 }
@@ -1831,6 +2281,7 @@ arch_x86_64_assemble(const char *fname)
     stmt_vector_t *vec;
     preprocessor_t *pp;
     int ret;
+    x86_64_assembler_t asmblr;
 
     /* Create a preprocessor instance */
     pp = pp_new();
@@ -1885,7 +2336,10 @@ arch_x86_64_assemble(const char *fname)
         return -1;
     }
 
-    _assemble(vec);
+    /* Initialize the label table */
+    asmblr.lbtbl.root = NULL;
+
+    _assemble(&asmblr, vec);
 
     return 0;
 }
