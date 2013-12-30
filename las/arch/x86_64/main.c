@@ -1988,6 +1988,7 @@ _assemble_instr(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 
     assert( STMT_INSTR == xstmt->stmt->type );
 
+    /* Execute an assembling function */
     ret = xstmt->ifunc(asmblr, xstmt);
     if ( ret >= 0 ) {
         if ( 0 == mvector_size(xstmt->instrs) ) {
@@ -2015,7 +2016,7 @@ _assemble_instr(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
                 }
             }
             xstmt->esize.min = imin;
-            xstmt->esize.min = imax;
+            xstmt->esize.max = imax;
 
             return 0;
         }
@@ -2035,12 +2036,11 @@ _assemble_instr(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 
-
 /*
  * Add label to the table
  */
 static int
-_add_label(x86_64_label_table_t *tbl, const char *lstr, off_t pos)
+_add_label(x86_64_label_table_t *tbl, const char *lstr, off_t imin, off_t imax)
 {
     x86_64_label_t *lb;
     x86_64_label_ent_t **ent;
@@ -2071,8 +2071,8 @@ _add_label(x86_64_label_table_t *tbl, const char *lstr, off_t pos)
         return -EGENERIC;
     }
     /* Set the expected positions of this instruction */
-    lb->min = pos * X86_64_INSTR_SIZE_MIN;
-    lb->max = pos * X86_64_INSTR_SIZE_MAX;
+    lb->min = imin;
+    lb->max = imax;
     lb->scope = 0;
 
     /* Set */
@@ -2167,16 +2167,18 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
         xstmt->evals = NULL;
         xstmt->instr = NULL;
         xstmt->instrs = mvector_new();
+        xstmt->esize.min = 0;
+        xstmt->esize.max = 0;
+
+        /* Append */
+        if ( NULL == mvector_push_back(xvec, xstmt) ) {
+            /* FIXME: Must free the contents of the vector */
+            mvector_delete(xvec);
+            return -1;
+        }
 
         switch ( stmt->type ) {
         case STMT_INSTR:
-            /* Append */
-            if ( NULL == mvector_push_back(xvec, xstmt) ) {
-                /* FIXME: Must free the contents of the vector */
-                mvector_delete(xvec);
-                return -1;
-            }
-
             /* Resolve the corresponding function pointer to the assembling
                this instruction */
             ret = _resolv_instr(xstmt);
@@ -2205,6 +2207,7 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
             pos++;
             break;
         case STMT_LABEL:
+#if 0
             /* Add it to the label table */
             ret = _add_label(&asmblr->lbtbl, stmt->u.label, pos);
             if ( ret < 0 ) {
@@ -2214,6 +2217,7 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
                 _label_table_clear(&asmblr->lbtbl);
                 return -1;
             }
+#endif
             break;
         default:
             /* Do nothing */
@@ -2231,26 +2235,38 @@ _stage2(x86_64_assembler_t *asmblr)
 {
     size_t i;
     x86_64_stmt_t *xstmt;
+    int ret;
+    off_t imin;
+    off_t imax;
 
     assert( 1 == asmblr->stage );
 
+    imin = 0;
+    imax = 0;
+
     for ( i = 0; i < mvector_size(asmblr->xvec); i++ ) {
+        /* Get a statement at i-th position */
         xstmt = mvector_at(asmblr->xvec, i);
 
         switch ( xstmt->stmt->type ) {
         case STMT_INSTR:
-            fprintf(stderr, "# = %zu\n", mvector_size(xstmt->instrs));
-
-            if ( 1 == mvector_size(xstmt->instrs) ) {
-                _print_instruction_bin(mvector_at(xstmt->instrs, 0));
-#if 0
-                _print_instruction(instr);
-                printf("\n");
-#endif
-            }
+            /* Estimate the label position */
+            imin += xstmt->esize.min;
+            imax += xstmt->esize.max;
             break;
         case STMT_LABEL:
-            /* Estimate label position */
+            /* Add it to the label table */
+            ret = _add_label(&asmblr->lbtbl, xstmt->stmt->u.label, imin, imax);
+            fprintf(stderr, "Label position of %s: %lld, %lld\n",
+                    xstmt->stmt->u.label, imin, imax);
+            if ( ret < 0 ) {
+                if ( -EDUP == ret ) {
+                    fprintf(stderr, "A duplicate label: %s\n", xstmt->stmt->u.label);
+                }
+                _label_table_clear(&asmblr->lbtbl);
+                return -1;
+            }
+
             break;
         default:
             /* Do nothing */
@@ -2258,6 +2274,7 @@ _stage2(x86_64_assembler_t *asmblr)
         }
     }
 
+    /* Finishing stage 2 */
     asmblr->stage = 2;
 
     return 0;
@@ -2276,6 +2293,14 @@ _stage3(x86_64_assembler_t *asmblr)
 
         switch ( xstmt->stmt->type ) {
         case STMT_INSTR:
+            fprintf(stderr, "# = %zu\n", mvector_size(xstmt->instrs));
+            if ( 1 == mvector_size(xstmt->instrs) ) {
+                _print_instruction_bin(mvector_at(xstmt->instrs, 0));
+#if 0
+                _print_instruction(instr);
+                printf("\n");
+#endif
+            }
             break;
         case STMT_LABEL:
             /* Estimate label position */
