@@ -3436,6 +3436,7 @@ _instr_size(const x86_64_instr_t *instr)
     }
     sz += instr->disp.sz;
     sz += instr->imm.sz;
+    sz += instr->rel.sz;
 
     return 0;
 }
@@ -3690,7 +3691,7 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
         /* Check the number of operands and the format */
         if ( 2 == mvector_size(xstmt->evals)
              && _eq_reg(mvector_at(xstmt->evals, 0), REG_AX)
-             && _is_imm16(mvector_at(xstmt->evals, 1)) ) {
+             && _is_imm(mvector_at(xstmt->evals, 1), SIZE16) ) {
             /* Allocaate for the instruction */
             instr = malloc(sizeof(x86_64_instr_t));
             if ( NULL == instr ) {
@@ -3702,16 +3703,17 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
                               mvector_at(xstmt->evals, 1), SIZE16);
 
             /* Set the instruction and the size */
-            xstmt->instr = instr;
-            xstmt->sz.fixed = _instr_size(instr);
-            xstmt->state = X86_64_STMT_FIXED;
+            if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
+                free(instr);
+                return -EUNKNOWN;
+            }
         }
         break;
     case ENC_I_EAX_IMM32:
         /* Check the number of operands and the format */
         if ( 2 == mvector_size(xstmt->evals)
              && _eq_reg(mvector_at(xstmt->evals, 0), REG_EAX)
-             && _is_imm32(mvector_at(xstmt->evals, 1)) ) {
+             && _is_imm(mvector_at(xstmt->evals, 1), SIZE32) ) {
             /* Allocaate for the instruction */
             instr = malloc(sizeof(x86_64_instr_t));
             if ( NULL == instr ) {
@@ -3723,16 +3725,17 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
                               mvector_at(xstmt->evals, 1), SIZE32);
 
             /* Set the instruction and the size */
-            xstmt->instr = instr;
-            xstmt->sz.fixed = _instr_size(instr);
-            xstmt->state = X86_64_STMT_FIXED;
+            if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
+                free(instr);
+                return -EUNKNOWN;
+            }
         }
         break;
     case ENC_I_RAX_IMM32:
         /* Check the number of operands and the format */
         if ( 2 == mvector_size(xstmt->evals)
              && _eq_reg(mvector_at(xstmt->evals, 0), REG_RAX)
-             && _is_imm32(mvector_at(xstmt->evals, 1)) ) {
+             && _is_imm(mvector_at(xstmt->evals, 1), SIZE32) ) {
             /* Allocaate for the instruction */
             instr = malloc(sizeof(x86_64_instr_t));
             if ( NULL == instr ) {
@@ -3744,9 +3747,10 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
                               mvector_at(xstmt->evals, 1), SIZE32);
 
             /* Set the instruction and the size */
-            xstmt->instr = instr;
-            xstmt->sz.fixed = _instr_size(instr);
-            xstmt->state = X86_64_STMT_FIXED;
+            if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
+                free(instr);
+                return -EUNKNOWN;
+            }
         }
         break;
 

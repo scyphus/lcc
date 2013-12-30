@@ -40,6 +40,50 @@ _instr_imm_offset(const x86_64_instr_t *instr)
 }
 #endif
 
+
+static size_t
+_instr_size(const x86_64_instr_t *instr)
+{
+    size_t sz;
+
+    sz = 0;
+    if ( instr->prefix1 >= 0 ) {
+        sz++;
+    }
+    if ( instr->prefix2 >= 0 ) {
+        sz++;
+    }
+    if ( instr->prefix3 >= 0 ) {
+        sz++;
+    }
+    if ( instr->prefix4 >= 0 ) {
+        sz++;
+    }
+    if ( instr->rex >= 0 ) {
+        sz++;
+    }
+    if ( instr->opcode1 >= 0 ) {
+        sz++;
+    }
+    if ( instr->opcode2 >= 0 ) {
+        sz++;
+    }
+    if ( instr->opcode3 >= 0 ) {
+        sz++;
+    }
+    if ( instr->modrm >= 0 ) {
+        sz++;
+    }
+    if ( instr->sib >= 0 ) {
+        sz++;
+    }
+    sz += instr->disp.sz;
+    sz += instr->imm.sz;
+    sz += instr->rel.sz;
+
+    return sz;
+}
+
 /*
  * Print assembled code
  */
@@ -90,6 +134,11 @@ _print_instruction(const x86_64_instr_t *instr)
         printf("%.2llX", val & 0xff);
         val >>= 8;
     }
+    val = instr->rel.val;
+    for ( i = 0; i < instr->rel.sz; i++ ) {
+        printf("%.2llX", val & 0xff);
+        val >>= 8;
+    }
 
     return 0;
 }
@@ -137,6 +186,11 @@ _print_instruction_bin(const x86_64_instr_t *instr)
     }
     val = instr->imm.val;
     for ( i = 0; i < instr->imm.sz; i++ ) {
+        printf("%c", (unsigned char)val & 0xff);
+        val >>= 8;
+    }
+    val = instr->rel.val;
+    for ( i = 0; i < instr->rel.sz; i++ ) {
         printf("%c", (unsigned char)val & 0xff);
         val >>= 8;
     }
@@ -198,8 +252,6 @@ _add(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
     EC(binstr2(asmblr, xstmt, SIZE32, 0x05, -1, -1, ENC_I_EAX_IMM32, -1));
     EC(binstr2(asmblr, xstmt, SIZE64, 0x05, -1, -1, ENC_I_RAX_IMM32, -1));
 
-    fprintf(stderr, "NUM: %zu\n", mvector_size(xstmt->instrs));
-    //PASS0(binstr2(instr, opt, SIZE8, 0x80, -1, -1, ENC_MI_RM8_IMM8, 0));
     return 0;
 
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
@@ -1929,18 +1981,44 @@ _assemble_instr(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     int ret;
     int j;
+    size_t imin;
+    size_t imax;
+    size_t sz;
+    x86_64_instr_t *instr;
 
     assert( STMT_INSTR == xstmt->stmt->type );
 
     ret = xstmt->ifunc(asmblr, xstmt);
     if ( ret >= 0 ) {
-        if ( X86_64_STMT_FIXED == xstmt->state ) {
-            _print_instruction_bin(xstmt->instr);
+        if ( 0 == mvector_size(xstmt->instrs) ) {
+            /* Error */
+            fprintf(stderr, "Error:");
+            for ( j = 0; j < mvector_size(xstmt->stmt->u.instr->opcode); j++ ) {
+                fprintf(stderr, " %s",
+                        mvector_at(xstmt->stmt->u.instr->opcode, j));
+            }
+            fprintf(stderr, "\n");
+            /* FIXME */
+            return 0;
+        } else {
+            /* FIXME: Optimize if possible */
+            imin = 0;
+            imax = 0;
+            instr = NULL;
+            for ( j = 0; j < mvector_size(xstmt->instrs); j++ ) {
+                sz = _instr_size(mvector_at(xstmt->instrs, j));
+                if ( 0 == imin || sz < imin ) {
+                    imin = sz;
+                }
+                if ( sz > imax ) {
+                    imax = sz;
+                }
+            }
+            xstmt->esize.min = imin;
+            xstmt->esize.min = imax;
+
+            return 0;
         }
-#if 0
-        _print_instruction(instr);
-        printf("\n");
-#endif
     } else {
         /* Error */
         fprintf(stderr, "Error:");
@@ -1949,6 +2027,8 @@ _assemble_instr(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
                     mvector_at(xstmt->stmt->u.instr->opcode, j));
         }
         fprintf(stderr, "\n");
+        /* FIXME */
+        return 0;
     }
 
     return 0;
@@ -2046,7 +2126,7 @@ _set_label_global(x86_64_label_table_t *tbl, const char *lstr)
 
 
 /*
- * Stage 1: Assemble fixed-size operands
+ * Stage 1: Assemble all the candidates
  * State 2: Estimate label offsets
  * Stage 3: Assemble non-fixed-size operands
  */
@@ -2116,6 +2196,12 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
 
             /* Assemble the instruction */
             ret = _assemble_instr(asmblr, xstmt);
+            if ( 0 != ret ) {
+                /* Error on assembling the instruction */
+                /* FIXME: Must free the contents of the vector */
+                mvector_delete(xvec);
+                return -1;
+            }
             pos++;
             break;
         case STMT_LABEL:
@@ -2153,6 +2239,15 @@ _stage2(x86_64_assembler_t *asmblr)
 
         switch ( xstmt->stmt->type ) {
         case STMT_INSTR:
+            fprintf(stderr, "# = %zu\n", mvector_size(xstmt->instrs));
+
+            if ( 1 == mvector_size(xstmt->instrs) ) {
+                _print_instruction_bin(mvector_at(xstmt->instrs, 0));
+#if 0
+                _print_instruction(instr);
+                printf("\n");
+#endif
+            }
             break;
         case STMT_LABEL:
             /* Estimate label position */

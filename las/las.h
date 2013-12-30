@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <unistd.h>
 
+/* Specify the number of bytes */
 #define SIZE8   1
 #define SIZE16  2
 #define SIZE32  4
