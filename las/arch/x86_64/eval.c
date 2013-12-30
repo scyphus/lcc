@@ -530,7 +530,7 @@ _estimate_expr_var(expr_t *expr)
     if ( REG_UNKNOWN == reg ) {
         /* Symbol */
         eval->type = X86_64_EVAL_IMM;
-        eval->u.imm.type = X86_64_IMM_REL;
+        eval->u.imm.type = X86_64_IMM_EXPR;
         eval->u.imm.u.rexpr = expr;
         eval->sopsize = 0;
 #if 0
@@ -538,12 +538,12 @@ _estimate_expr_var(expr_t *expr)
         if ( NULL == lb ) {
             /* Not found */
             eval->type = X86_64_EVAL_IMM;
-            eval->u.imm.type = X86_64_IMM_REL;
+            eval->u.imm.type = X86_64_IMM_EXPR;
             eval->u.imm.u.rexpr = expr;
             eval->sopsize = 0;
         } else {
             eval->type = X86_64_EVAL_IMM;
-            eval->u.imm.type = X86_64_IMM_REL;
+            eval->u.imm.type = X86_64_IMM_EXPR;
             eval->u.imm.u.rexpr = expr;
             eval->sopsize = 0;
         }
@@ -628,7 +628,7 @@ _estimate_expr_op(expr_t *expr)
                 }
             } else {
                 eval->type = X86_64_EVAL_IMM;
-                eval->u.imm.type = X86_64_IMM_REL;
+                eval->u.imm.type = X86_64_IMM_EXPR;
                 switch ( expr->u.op.type ) {
                 case OP_PLUS:
                 case OP_MINUS:
@@ -671,10 +671,10 @@ _estimate_expr_op(expr_t *expr)
                     eval->u.imm.u.fixed
                         = leval->u.imm.u.fixed + reval->u.imm.u.fixed;
                     eval->sopsize = 0;
-                } else if ( X86_64_IMM_REL == leval->u.imm.type
-                            || X86_64_IMM_REL == reval->u.imm.type ) {
+                } else if ( X86_64_IMM_EXPR == leval->u.imm.type
+                            || X86_64_IMM_EXPR == reval->u.imm.type ) {
                     eval->type = X86_64_EVAL_IMM;
-                    eval->u.imm.type = X86_64_IMM_REL;
+                    eval->u.imm.type = X86_64_IMM_EXPR;
                     eval->u.imm.u.rexpr = expr;
                     eval->sopsize = 0;
                 } else {
@@ -800,10 +800,10 @@ _estimate_expr_op(expr_t *expr)
                     eval->u.imm.u.fixed
                         = leval->u.imm.u.fixed - reval->u.imm.u.fixed;
                     eval->sopsize = 0;
-                } else if ( X86_64_IMM_REL == leval->u.imm.type
-                            || X86_64_IMM_REL == reval->u.imm.type ) {
+                } else if ( X86_64_IMM_EXPR == leval->u.imm.type
+                            || X86_64_IMM_EXPR == reval->u.imm.type ) {
                     eval->type = X86_64_EVAL_IMM;
-                    eval->u.imm.type = X86_64_IMM_REL;
+                    eval->u.imm.type = X86_64_IMM_EXPR;
                     eval->u.imm.u.rexpr = expr;
                     eval->sopsize = 0;
                 } else {

@@ -25,6 +25,11 @@
         else if ( ret > 0 ) { return 0; }                               \
     } while ( 0 )
 
+#define EC(f) do {                                                      \
+        int ret = (f);                                                  \
+        if ( ret < 0 ) { return ret; }                                  \
+    } while ( 0 )
+
 
 
 #if 0
@@ -188,7 +193,14 @@ _add(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         return 0;
     }
 
-    PASS0(binstr2(asmblr, xstmt, SIZE8, 0x04, -1, -1, ENC_I_AL_IMM8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE8, 0x04, -1, -1, ENC_I_AL_IMM8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x05, -1, -1, ENC_I_AX_IMM16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x05, -1, -1, ENC_I_EAX_IMM32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x05, -1, -1, ENC_I_RAX_IMM32, -1));
+
+    fprintf(stderr, "NUM: %zu\n", mvector_size(xstmt->instrs));
+    //PASS0(binstr2(instr, opt, SIZE8, 0x80, -1, -1, ENC_MI_RM8_IMM8, 0));
+    return 0;
 
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
     x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
@@ -2074,6 +2086,7 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
         xstmt->tgt = tgt;
         xstmt->evals = NULL;
         xstmt->instr = NULL;
+        xstmt->instrs = mvector_new();
 
         switch ( stmt->type ) {
         case STMT_INSTR:

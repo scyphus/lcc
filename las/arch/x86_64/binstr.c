@@ -43,6 +43,39 @@ _encode_mi(const x86_64_eval_t *, const x86_64_eval_t *, int, size_t,
  * Is an immediate value? (imm8, imm16, imm32, or imm64)
  */
 static __inline__ int
+_is_imm(x86_64_eval_t *eval, int sz)
+{
+    if ( X86_64_EVAL_IMM == eval->type ) {
+        switch ( eval->u.imm.type ) {
+        case X86_64_IMM_FIXED:
+            /* Fixed value */
+            if ( 0 == eval->sopsize ) {
+                /* Operand size is not specified */
+                return 1;
+            } else if ( sz == eval->sopsize ) {
+                /* Operand size is specified */
+                return 1;
+            } else {
+                return 0;
+            }
+            break;
+        case X86_64_IMM_EXPR:
+            if ( 0 == eval->sopsize )  {
+                /* Operand size is not specified */
+                return 1;
+            } else if ( sz == eval->sopsize ) {
+                /* Operand size is specified */
+                return 1;
+            } else {
+                return 0;
+            }
+            break;
+        }
+    } else {
+        return 0;
+    }
+}
+static __inline__ int
 _is_imm8(x86_64_eval_t *eval)
 {
     if ( X86_64_EVAL_IMM == eval->type ) {
@@ -65,7 +98,7 @@ _is_imm8(x86_64_eval_t *eval)
                 return 0;
             }
             break;
-        case X86_64_IMM_REL:
+        case X86_64_IMM_EXPR:
             if ( SIZE8 == eval->sopsize ) {
                 /* Operand size is specified */
                 return 1;
@@ -103,7 +136,7 @@ _is_imm16(x86_64_eval_t *eval)
                 return 0;
             }
             break;
-        case X86_64_IMM_REL:
+        case X86_64_IMM_EXPR:
             if ( SIZE16 == eval->sopsize ) {
                 /* Operand size is specified */
                 return 1;
@@ -141,7 +174,7 @@ _is_imm32(x86_64_eval_t *eval)
                 return 0;
             }
             break;
-        case X86_64_IMM_REL:
+        case X86_64_IMM_EXPR:
             if ( SIZE32 == eval->sopsize ) {
                 /* Operand size is specified */
                 return 1;
@@ -175,7 +208,7 @@ _is_imm64(x86_64_eval_t *eval)
                 return 0;
             }
             break;
-        case X86_64_IMM_REL:
+        case X86_64_IMM_EXPR:
             if ( SIZE64 == eval->sopsize ) {
                 /* Operand size is specified */
                 return 1;
@@ -640,7 +673,7 @@ _is_r8_rela8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     /* Check the first and second operands */
     if ( X86_64_EVAL_REG == eval1->type && SIZE8 == eval1->sopsize
          && X86_64_EVAL_IMM == eval2->type
-         && X86_64_IMM_REL == eval2->u.imm.type ) {
+         && X86_64_IMM_EXPR == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize || SIZE8 == eval2->sopsize ) {
             return 1;
         }
@@ -654,7 +687,7 @@ _is_r16_rela16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     /* Check the first and second operands */
     if ( X86_64_EVAL_REG == eval1->type && SIZE16 == eval1->sopsize
          && X86_64_EVAL_IMM == eval2->type
-         && X86_64_IMM_REL == eval2->u.imm.type ) {
+         && X86_64_IMM_EXPR == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize || SIZE16 == eval2->sopsize ) {
             return 1;
         }
@@ -668,7 +701,7 @@ _is_r32_rela32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     /* Check the first and second operands */
     if ( X86_64_EVAL_REG == eval1->type && SIZE32 == eval1->sopsize
          && X86_64_EVAL_IMM == eval2->type
-         && X86_64_IMM_REL == eval2->u.imm.type ) {
+         && X86_64_IMM_EXPR == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize || SIZE32 == eval2->sopsize ) {
             return 1;
         }
@@ -682,7 +715,7 @@ _is_r64_rela64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     /* Check the first and second operands */
     if ( X86_64_EVAL_REG == eval1->type && SIZE64 == eval1->sopsize
          && X86_64_EVAL_IMM == eval2->type
-         && X86_64_IMM_REL == eval2->u.imm.type ) {
+         && X86_64_IMM_EXPR == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize || SIZE64 == eval2->sopsize ) {
             return 1;
         }
@@ -909,7 +942,7 @@ _is_r16_rm16_rela16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     if ( X86_64_EVAL_REG == eval1->type
          && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
          && X86_64_EVAL_IMM == eval3->type
-         && X86_64_IMM_REL == eval3->u.imm.type ) {
+         && X86_64_IMM_EXPR == eval3->u.imm.type ) {
         if ( SIZE16 != eval1->sopsize ) {
             return 0;
         }
@@ -962,7 +995,7 @@ _is_r32_rm32_rela32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     if ( X86_64_EVAL_REG == eval1->type
          && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
          && X86_64_EVAL_IMM == eval3->type
-         && X86_64_IMM_REL == eval3->u.imm.type ) {
+         && X86_64_IMM_EXPR == eval3->u.imm.type ) {
         if ( SIZE32 != eval1->sopsize ) {
             return 0;
         }
@@ -1015,7 +1048,7 @@ _is_r64_rm64_rela32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     if ( X86_64_EVAL_REG == eval1->type
          && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
          && X86_64_EVAL_IMM == eval3->type
-         && X86_64_IMM_REL == eval3->u.imm.type ) {
+         && X86_64_IMM_EXPR == eval3->u.imm.type ) {
         if ( SIZE64 != eval1->sopsize ) {
             return 0;
         }
@@ -1398,10 +1431,13 @@ _build_instruction(const x86_64_asm_opt_t *opt, const x86_64_enop_t *enop,
     instr->sib = enop->sib;
     instr->disp.sz = enop->disp.sz;
     instr->disp.val = enop->disp.val;
-    instr->disp.eval = enop->disp.eval;
+    instr->disp.expr = enop->disp.expr;
     instr->imm.sz = enop->imm.sz;
     instr->imm.val = enop->imm.val;
-    instr->imm.eval = enop->imm.eval;
+    instr->imm.expr = enop->imm.expr;
+    instr->rel.sz = enop->rel.sz;
+    instr->rel.val = enop->rel.val;
+    instr->rel.expr = enop->rel.expr;
 
     if ( OPCODE_PREFIX_LOCK & opt->prefix ) {
         if ( instr->prefix1 >= 0 ) {
@@ -2028,7 +2064,7 @@ _encode_rmi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
         enop->imm.val = eval3->u.imm.u.fixed;
         enop->imm.eval = NULL;
     } else if ( X86_64_EVAL_IMM == eval3->type
-                && X86_64_IMM_REL == eval3->u.imm.type ) {
+                && X86_64_IMM_EXPR == eval3->u.imm.type ) {
         /* Update relocatable value */
         enop->imm.sz = immsz;
         enop->imm.val = 0;
@@ -2092,7 +2128,7 @@ _encode_oi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, size_t immsz,
 
         return 0;
     } else if ( X86_64_EVAL_IMM == eval2->type
-                && X86_64_IMM_REL == eval2->u.imm.type ) {
+                && X86_64_IMM_EXPR == eval2->u.imm.type ) {
         /* Relocatable address */
         enop->opreg = reg;
         enop->rex.r = REX_NONE;
@@ -2151,7 +2187,7 @@ _encode_mi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, int reg,
         enop->imm.val = eval2->u.imm.u.fixed;
         enop->imm.eval = NULL;
     } else if ( X86_64_EVAL_IMM == eval2->type
-                && X86_64_IMM_REL == eval2->u.imm.type ) {
+                && X86_64_IMM_EXPR == eval2->u.imm.type ) {
         /* Update immediate value */
         enop->imm.sz = immsz;
         enop->imm.val = 0;
@@ -2228,36 +2264,44 @@ static int
 _encode_i(const x86_64_eval_t *eval, size_t immsz, x86_64_enop_t *enop)
 {
     /* Check the operand type */
-    if ( X86_64_EVAL_IMM == eval->type
-         && X86_64_IMM_FIXED == eval->u.imm.type ) {
-        enop->opreg = -1;
-        enop->rex.r = REX_NONE;
-        enop->rex.x = REX_NONE;
-        enop->rex.b = REX_NONE;
-        enop->modrm = -1;
-        enop->sib = -1;
-        enop->disp.sz = 0;
-        enop->disp.val = 0;
-        enop->disp.eval = NULL;
-        enop->imm.sz = immsz;
-        enop->imm.val = eval->u.imm.u.fixed;
-        enop->imm.eval = NULL;
-        return 0;
-    } else if ( X86_64_EVAL_IMM == eval->type
-                && X86_64_IMM_REL == eval->u.imm.type ) {
-        enop->opreg = -1;
-        enop->rex.r = REX_NONE;
-        enop->rex.x = REX_NONE;
-        enop->rex.b = REX_NONE;
-        enop->modrm = -1;
-        enop->sib = -1;
-        enop->disp.sz = 0;
-        enop->disp.val = 0;
-        enop->disp.eval = NULL;
-        enop->imm.sz = immsz;
-        enop->imm.val = 0;
-        enop->imm.eval = eval;
-        return 0;
+    if ( X86_64_EVAL_IMM == eval->type ) {
+        if ( X86_64_IMM_FIXED == eval->u.imm.type ) {
+            enop->opreg = -1;
+            enop->rex.r = REX_NONE;
+            enop->rex.x = REX_NONE;
+            enop->rex.b = REX_NONE;
+            enop->modrm = -1;
+            enop->sib = -1;
+            enop->disp.sz = 0;
+            enop->disp.val = 0;
+            enop->disp.eval = NULL;
+            enop->imm.sz = immsz;
+            enop->imm.val = eval->u.imm.u.fixed;
+            enop->imm.expr = NULL;
+            enop->rel.sz = 0;
+            enop->rel.val = 0;
+            enop->rel.expr = NULL;
+            return 0;
+        } else if ( X86_64_IMM_EXPR == eval->u.imm.type ) {
+            enop->opreg = -1;
+            enop->rex.r = REX_NONE;
+            enop->rex.x = REX_NONE;
+            enop->rex.b = REX_NONE;
+            enop->modrm = -1;
+            enop->sib = -1;
+            enop->disp.sz = 0;
+            enop->disp.val = 0;
+            enop->disp.eval = NULL;
+            enop->imm.sz = immsz;
+            enop->imm.val = 0;
+            enop->imm.expr = eval->u.imm.u.rexpr;
+            enop->rel.sz = 0;
+            enop->rel.val = 0;
+            enop->rel.expr = NULL;
+            return 0;
+        } else {
+            return -1;
+        }
     } else {
         return -1;
     }
@@ -2523,6 +2567,7 @@ _binstr_i(x86_64_instr_t *instr, const x86_64_asm_opt_t *opt, int opc1,
         /* Invalid operands */
         return -EOPERAND;
     }
+    /* Set opcode */
     instr->opcode1 = opc1;
     instr->opcode2 = opc2;
     instr->opcode3 = opc3;
@@ -3623,7 +3668,7 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
         /* Check the number of operands and the format */
         if ( 2 == mvector_size(xstmt->evals)
              && _eq_reg(mvector_at(xstmt->evals, 0), REG_AL)
-             && _is_imm8(mvector_at(xstmt->evals, 1)) ) {
+             && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
             /* Allocaate for the instruction */
             instr = malloc(sizeof(x86_64_instr_t));
             if ( NULL == instr ) {
@@ -3632,7 +3677,29 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
 
             /* Build the instruction */
             stat = _binstr2_i(instr, xstmt, opc1, opc2, opc3, opsize,
-                             mvector_at(xstmt->evals, 1), SIZE8);
+                              mvector_at(xstmt->evals, 1), SIZE8);
+
+            /* Set the instruction and the size */
+            if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
+                free(instr);
+                return -EUNKNOWN;
+            }
+        }
+        break;
+    case ENC_I_AX_IMM16:
+        /* Check the number of operands and the format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _eq_reg(mvector_at(xstmt->evals, 0), REG_AX)
+             && _is_imm16(mvector_at(xstmt->evals, 1)) ) {
+            /* Allocaate for the instruction */
+            instr = malloc(sizeof(x86_64_instr_t));
+            if ( NULL == instr ) {
+                return -EUNKNOWN;
+            }
+
+            /* Build the instruction */
+            stat = _binstr2_i(instr, xstmt, opc1, opc2, opc3, opsize,
+                              mvector_at(xstmt->evals, 1), SIZE16);
 
             /* Set the instruction and the size */
             xstmt->instr = instr;
@@ -3640,6 +3707,50 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
             xstmt->state = X86_64_STMT_FIXED;
         }
         break;
+    case ENC_I_EAX_IMM32:
+        /* Check the number of operands and the format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _eq_reg(mvector_at(xstmt->evals, 0), REG_EAX)
+             && _is_imm32(mvector_at(xstmt->evals, 1)) ) {
+            /* Allocaate for the instruction */
+            instr = malloc(sizeof(x86_64_instr_t));
+            if ( NULL == instr ) {
+                return -EUNKNOWN;
+            }
+
+            /* Build the instruction */
+            stat = _binstr2_i(instr, xstmt, opc1, opc2, opc3, opsize,
+                              mvector_at(xstmt->evals, 1), SIZE32);
+
+            /* Set the instruction and the size */
+            xstmt->instr = instr;
+            xstmt->sz.fixed = _instr_size(instr);
+            xstmt->state = X86_64_STMT_FIXED;
+        }
+        break;
+    case ENC_I_RAX_IMM32:
+        /* Check the number of operands and the format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _eq_reg(mvector_at(xstmt->evals, 0), REG_RAX)
+             && _is_imm32(mvector_at(xstmt->evals, 1)) ) {
+            /* Allocaate for the instruction */
+            instr = malloc(sizeof(x86_64_instr_t));
+            if ( NULL == instr ) {
+                return -EUNKNOWN;
+            }
+
+            /* Build the instruction */
+            stat = _binstr2_i(instr, xstmt, opc1, opc2, opc3, opsize,
+                              mvector_at(xstmt->evals, 1), SIZE32);
+
+            /* Set the instruction and the size */
+            xstmt->instr = instr;
+            xstmt->sz.fixed = _instr_size(instr);
+            xstmt->state = X86_64_STMT_FIXED;
+        }
+        break;
+
+
     default:
         stat = 0;
     }
