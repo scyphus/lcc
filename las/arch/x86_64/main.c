@@ -2324,10 +2324,6 @@ _assemble(x86_64_assembler_t *asmblr, stmt_vector_t *vec)
     int ret;
     stmt_t *stmt;
     size_t i;
-#if 0
-    x86_64_instr_t *instr;
-    off_t pos;
-#endif
 
     /* Stage 1 */
     ret = _stage1(asmblr, vec);
@@ -2365,85 +2361,6 @@ _assemble(x86_64_assembler_t *asmblr, stmt_vector_t *vec)
             ;
         }
     }
-
-#if 0
-
-    /* Estimate the position of labels */
-    pos = 0;
-    for ( i = 0; i < mvector_size(vec); i++ ) {
-        stmt = mvector_at(vec, i);
-        switch ( stmt->type ) {
-        case STMT_INSTR:
-            pos++;
-            break;
-        case STMT_LABEL:
-            ret = _add_label(&asmblr->lbtbl, stmt->u.label, pos);
-            if ( ret < 0 ) {
-                if ( -EDUP == ret ) {
-                    fprintf(stderr, "The label is duplicate: %s\n",
-                            stmt->u.label);
-                }
-                /* Free the label table */
-                _label_table_clear(&asmblr->lbtbl);
-                return -1;
-            }
-            break;
-        default:
-            /* Do nothing */
-            ;
-        }
-    }
-
-    /* Check global */
-    for ( i = 0; i < mvector_size(vec); i++ ) {
-        stmt = mvector_at(vec, i);
-        switch ( stmt->type ) {
-        case STMT_LABEL:
-            ret = _set_label_global(&asmblr->lbtbl, stmt->u.global);
-            if ( ret < 0 ) {
-                fprintf(stderr, "Label %s is not defined\n", stmt->u.label);
-                /* Free the label table */
-                _label_table_clear(&asmblr->lbtbl);
-                return -1;
-            }
-            break;
-        default:
-            /* Do nothing */
-            ;
-        }
-    }
-
-    /* Assemble */
-    pos = 0;
-    for ( i = 0; i < mvector_size(vec); i++ ) {
-        stmt = mvector_at(vec, i);
-        switch ( stmt->type ) {
-        case STMT_INSTR:
-            /* Allocate for instruction */
-            instr = malloc(sizeof(x86_64_instr_t));
-            if ( NULL == instr ) {
-                /* Free the label table */
-                _label_table_clear(&asmblr->lbtbl);
-                return -1;
-            }
-
-            /* Assemble the instruction */
-            ret = _assemble_instr(&asmblr->lbtbl, pos, stmt->u.instr->opcode,
-                                  stmt->u.instr->operands, instr);
-            if ( 0 != ret ) {
-                /* Error */
-                /* Free the label table */
-                _label_table_clear(&asmblr->lbtbl);
-                return -1;
-            }
-            pos++;
-            break;
-        default:
-            /* Do nothing */
-            ;
-        }
-    }
-#endif
 
     return 0;
 }
