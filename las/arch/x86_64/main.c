@@ -2302,15 +2302,13 @@ _stage3(x86_64_assembler_t *asmblr)
 #endif
             }
             break;
-        case STMT_LABEL:
-            /* Estimate label position */
-            break;
         default:
             /* Do nothing */
             ;
         }
     }
 
+    /* Completed stage 3 */
     asmblr->stage = 3;
 
     return 0;
