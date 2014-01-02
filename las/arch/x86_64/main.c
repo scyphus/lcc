@@ -1162,15 +1162,15 @@ _jmp(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         return -EUNKNOWN;
     } else {
         /* w/o far */
-        EC(binstr2(asmblr, xstmt, SIZE8, 0xeb, -1, -1, ENC_D_REL8, -1));
-        EC(binstr2(asmblr, xstmt, SIZE32, 0xe9, -1, -1, ENC_D_REL32, -1));
-        EC(binstr2(asmblr, xstmt, SIZE64, 0xff, -1, -1, ENC_M_RM64, 4));
+        EC(binstr2(asmblr, xstmt, 0, 0xeb, -1, -1, ENC_D_REL8, -1));
+        EC(binstr2(asmblr, xstmt, 0, 0xe9, -1, -1, ENC_D_REL32, -1));
+        EC(binstr2(asmblr, xstmt, 0, 0xff, -1, -1, ENC_M_RM64, 4));
         /* Invalid for 64-bit mode */
         /*EC(binstr2(asmblr, xstmt, SIZE16, 0xe9, -1, -1, ENC_D_REL16, -1));*/
         /*EC(binstr2(asmblr, xstmt, SIZE16, 0xff, -1, -1, ENC_M_RM16, 4));*/
         /*EC(binstr2(asmblr, xstmt, SIZE32, 0xff, -1, -1, ENC_M_RM32, 4));*/
 
-        return -EOPERAND;
+        return 0;
     }
 }
 
@@ -1962,6 +1962,9 @@ _stage3(x86_64_assembler_t *asmblr)
         case STMT_INSTR:
             if ( NULL != xstmt->sinstr ) {
                 _print_instruction_bin(xstmt->sinstr);
+            } else {
+                fprintf(stderr, "Not fixed instruction: # = %zu\n",
+                        mvector_size(xstmt->instrs));
             }
 
 #if 0
