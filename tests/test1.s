@@ -382,6 +382,39 @@ label35:
 	ret	1
 	ret far	2
 
+label36:
+	xor	al,1
+	xor	ax,2
+	xor	eax,3
+        xor	rax,4
+
+	xor	cl,1
+	xor	ch,2
+	xor	cx,3
+	xor	ecx,4
+	xor	rcx,5
+
+	xor	cx,0x7f01
+	xor	ecx,0x7f02
+	xor	rcx,0x7f03
+
+	xor	al,ah
+	xor	ax,cx
+	xor	eax,ecx
+	xor	rax,rcx
+
+	xor	al,[rbp]
+	xor	ax,[rbp]
+	xor	eax,[rbp]
+	xor	rax,[rbp]
+
+	xor	[rbp],al
+	xor	[rbp],ax
+	xor	[rbp],eax
+	xor	[rbp],rax
+
+
+
 
 
 start:
