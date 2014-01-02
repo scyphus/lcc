@@ -313,6 +313,19 @@ label27:
 	in	ax,dx
 	in	eax,dx
 
+label28:
+	inc	al
+	inc	ax
+	inc	eax
+	inc	rax
+
+	inc	byte [rbp]
+	inc	word [rbp]
+	inc	dword [rbp]
+	inc	qword [rbp]
+
+
+
 
 
 start:

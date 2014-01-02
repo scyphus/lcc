@@ -1091,21 +1091,16 @@ _in(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 static int
 _inc(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
-    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
-    opt->tgt = X86_64_O64;
-    opt->ltbl = &asmblr->lbtbl;
-    opt->pos = 0;
-    opt->prefix = xstmt->prefix;
-    opt->suffix = xstmt->suffix;
+    EC(binstr2(asmblr, xstmt, SIZE8, 0xfe, -1, -1, ENC_M_RM8, 0));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0xff, -1, -1, ENC_M_RM16, 0));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0xff, -1, -1, ENC_M_RM32, 0));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0xff, -1, -1, ENC_M_RM64, 0));
 
-    PASS0(binstr(instr, opt, SIZE8, 0xfe, -1, -1, 0, ops, ENC_M_RM8));
-    PASS0(binstr(instr, opt, SIZE16, 0xff, -1, -1, 0, ops, ENC_M_RM16));
-    PASS0(binstr(instr, opt, SIZE32, 0xff, -1, -1, 0, ops, ENC_M_RM32));
-    PASS0(binstr(instr, opt, SIZE64, 0xff, -1, -1, 0, ops, ENC_M_RM64));
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, SIZE16, 0x40, -1, -1, ENC_O_R16, -1));*/
+    /*EC(binstr2(asmblr, xstmt, SIZE32, 0x40, -1, -1, ENC_O_R32, -1));*/
 
-    return -EOPERAND;
+    return 0;
 }
 
 /*
