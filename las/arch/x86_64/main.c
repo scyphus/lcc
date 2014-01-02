@@ -265,6 +265,16 @@ _add(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
     EC(binstr2(asmblr, xstmt, SIZE32, 0x83, -1, -1, ENC_MI_RM32_IMM8, 0));
     EC(binstr2(asmblr, xstmt, SIZE64, 0x83, -1, -1, ENC_MI_RM64_IMM8, 0));
 
+    EC(binstr2(asmblr, xstmt, SIZE8, 0x00, -1, -1, ENC_MR_RM8_R8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x01, -1, -1, ENC_MR_RM16_R16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x01, -1, -1, ENC_MR_RM32_R32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x01, -1, -1, ENC_MR_RM64_R64, -1));
+
+    EC(binstr2(asmblr, xstmt, SIZE8, 0x02, -1, -1, ENC_RM_R8_RM8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x03, -1, -1, ENC_RM_R16_RM16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x03, -1, -1, ENC_RM_R32_RM32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x03, -1, -1, ENC_RM_R64_RM64, -1));
+
     return 0;
 
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
@@ -276,25 +286,6 @@ _add(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
     opt->prefix = xstmt->prefix;
     opt->suffix = xstmt->suffix;
 
-    PASS0(binstr(instr, opt, SIZE8, 0x04, -1, -1, -1, ops, ENC_I_AL_FIMM8));
-    PASS0(binstr(instr, opt, SIZE8, 0x04, -1, -1, -1, ops, ENC_I_AL_EIMM8));
-    PASS0(binstr(instr, opt, SIZE16, 0x05, -1, -1, -1, ops, ENC_I_AX_FIMM16));
-    PASS0(binstr(instr, opt, SIZE16, 0x05, -1, -1, -1, ops, ENC_I_AX_EIMM16));
-    PASS0(binstr(instr, opt, SIZE32, 0x05, -1, -1, -1, ops, ENC_I_EAX_FIMM32));
-    PASS0(binstr(instr, opt, SIZE32, 0x05, -1, -1, -1, ops, ENC_I_EAX_EIMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x05, -1, -1, -1, ops, ENC_I_RAX_FIMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x05, -1, -1, -1, ops, ENC_I_RAX_EIMM32));
-    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 0, ops, ENC_MI_RM8_FIMM8));
-    PASS0(binstr(instr, opt, SIZE8, 0x80, -1, -1, 0, ops, ENC_MI_RM8_EIMM8));
-    PASS0(binstr(instr, opt, SIZE16, 0x83, -1, -1, 0, ops, ENC_MI_RM16_FIMM8));
-    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 0, ops, ENC_MI_RM16_FIMM16));
-    PASS0(binstr(instr, opt, SIZE16, 0x81, -1, -1, 0, ops, ENC_MI_RM16_EIMM16));
-    PASS0(binstr(instr, opt, SIZE32, 0x83, -1, -1, 0, ops, ENC_MI_RM32_FIMM8));
-    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 0, ops, ENC_MI_RM32_FIMM32));
-    PASS0(binstr(instr, opt, SIZE32, 0x81, -1, -1, 0, ops, ENC_MI_RM32_EIMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x83, -1, -1, 0, ops, ENC_MI_RM64_FIMM8));
-    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 0, ops, ENC_MI_RM64_FIMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x81, -1, -1, 0, ops, ENC_MI_RM64_EIMM32));
     PASS0(binstr(instr, opt, SIZE8, 0x00, -1, -1, -1, ops, ENC_MR_RM8_R8));
     PASS0(binstr(instr, opt, SIZE16, 0x01, -1, -1, -1, ops, ENC_MR_RM16_R16));
     PASS0(binstr(instr, opt, SIZE32, 0x01, -1, -1, -1, ops, ENC_MR_RM32_R32));
@@ -2043,7 +2034,7 @@ _fix_instr(x86_64_stmt_t *xstmt)
             fixed = 0;
         }
 
-        /* Check whether available value */
+        /* Check the operands whether they are acceptable values */
         if ( !_check_size(instr->disp.sz, instr->disp.val)
              || !_check_size(instr->imm.sz, instr->imm.val)
              || !_check_size(instr->rel.sz, instr->rel.val) ) {

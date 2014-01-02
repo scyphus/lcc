@@ -1746,15 +1746,13 @@ _encode_rm_addr_with_base(int reg, int rexr, const x86_64_eval_t *eval,
             /* Scaled index is not specified */
             if ( 0 == dispsz ) {
                 if ( 5 == base && (REX_NONE == rexb || REX_FALSE == rexb) ) {
-                    /* Go to SIB */
+                    /* Set dispsz = 1 */
                     mod = 1;
-                    rm = 4;
+                    rm = 5;
                     dispsz = 1;
-                    idx = 4;
-                    ss = 0;
                     /* Encode ModR/M */
                     modrm = _encode_modrm(reg, mod, rm);
-                    sib = _encode_sib(base, idx, ss);
+                    sib = -1;
                 } else if ( 4 == base
                             && (REX_NONE == rexb || REX_FALSE == rexb) ) {
                     /* Go to SIB */
@@ -2223,13 +2221,13 @@ _encode_mi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, int reg,
         /* Update immediate value */
         enop->imm.sz = immsz;
         enop->imm.val = eval2->u.imm.u.fixed;
-        enop->imm.eval = NULL;
+        enop->imm.expr = NULL;
     } else if ( X86_64_EVAL_IMM == eval2->type
                 && X86_64_IMM_EXPR == eval2->u.imm.type ) {
         /* Update immediate value */
         enop->imm.sz = immsz;
         enop->imm.val = 0;
-        enop->imm.eval = eval2;
+        enop->imm.expr = eval2->u.imm.u.rexpr;
     } else {
         return -1;
     }
@@ -3730,6 +3728,112 @@ _binstr2_mi(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, int preg,
 }
 
 /*
+ * Build instruction for the MR type Op/En
+ */
+static int
+_binstr2_mr(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
+            const x86_64_eval_t *evalm, const x86_64_eval_t *evalr)
+{
+    int ret;
+    x86_64_enop_t enop;
+    ssize_t addrsize;
+    x86_64_instr_t *instr;
+
+    /* Allocaate for the instruction */
+    instr = malloc(sizeof(x86_64_instr_t));
+    if ( NULL == instr ) {
+        return -EUNKNOWN;
+    }
+
+    /* Encode and free the values */
+    ret = _encode_mr(evalm, evalr, &enop);
+    if ( ret < 0 ) {
+        /* Invalid operand size */
+        free(instr);
+        return -ESIZE;
+    }
+    /* Obtain address size */
+    addrsize = _resolve_address_size1(evalm);
+    if ( addrsize < 0 ) {
+        free(instr);
+        return -ESIZE;
+    }
+    /* Encode instruction */
+    ret = _encode_instr(instr, &enop, xstmt->tgt, xstmt->prefix, opsize,
+                        addrsize);
+    if ( ret < 0 ) {
+        /* Invalid operands */
+        free(instr);
+        return -EOPERAND;
+    }
+    instr->opcode1 = opc1;
+    instr->opcode2 = opc2;
+    instr->opcode3 = opc3;
+
+    /* Set the instruction and the size */
+    if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
+        free(instr);
+        return -EUNKNOWN;
+    }
+
+    /* Success */
+    return 1;
+}
+
+/*
+ * Build instruction for the RM type Op/En
+ */
+static int
+_binstr2_rm(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
+            const x86_64_eval_t *evalm, const x86_64_eval_t *evalr)
+{
+    int ret;
+    x86_64_enop_t enop;
+    ssize_t addrsize;
+    x86_64_instr_t *instr;
+
+    /* Allocaate for the instruction */
+    instr = malloc(sizeof(x86_64_instr_t));
+    if ( NULL == instr ) {
+        return -EUNKNOWN;
+    }
+
+    /* Encode and free the values */
+    ret = _encode_rm(evalm, evalr, &enop);
+    if ( ret < 0 ) {
+        /* Invalid operand size */
+        free(instr);
+        return -ESIZE;
+    }
+    /* Obtain address size */
+    addrsize = _resolve_address_size1(evalm);
+    if ( addrsize < 0 ) {
+        free(instr);
+        return -ESIZE;
+    }
+    /* Encode instruction */
+    ret = _encode_instr(instr, &enop, xstmt->tgt, xstmt->prefix, opsize,
+                        addrsize);
+    if ( ret < 0 ) {
+        /* Invalid operands */
+        free(instr);
+        return -EOPERAND;
+    }
+    instr->opcode1 = opc1;
+    instr->opcode2 = opc2;
+    instr->opcode3 = opc3;
+
+    /* Set the instruction and the size */
+    if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
+        free(instr);
+        return -EUNKNOWN;
+    }
+
+    /* Success */
+    return 1;
+}
+
+/*
  * Build instruction and return a success/error code
  */
 int
@@ -3877,6 +3981,103 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
             stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
                                mvector_at(xstmt->evals, 0),
                                mvector_at(xstmt->evals, 1), SIZE8);
+        }
+        break;
+
+    case ENC_MR_RM8_R8:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_rm8_r8(mvector_at(xstmt->evals, 0),
+                           mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_mr(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1));
+        }
+        break;
+    case ENC_MR_RM16_R16:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_rm16_r16(mvector_at(xstmt->evals, 0),
+                             mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_mr(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1));
+        }
+    case ENC_MR_RM32_R32:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_rm32_r32(mvector_at(xstmt->evals, 0),
+                             mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_mr(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1));
+        }
+        break;
+    case ENC_MR_RM64_R64:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_rm64_r64(mvector_at(xstmt->evals, 0),
+                             mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_mr(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1));
+        }
+        break;
+
+    case ENC_RM_R8_RM8:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_r8_rm8(mvector_at(xstmt->evals, 0),
+                           mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1));
+        }
+        break;
+    case ENC_RM_R16_RM16:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_r16_rm16(mvector_at(xstmt->evals, 0),
+                             mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1));
+        }
+        break;
+    case ENC_RM_R32_RM32:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_r32_rm32(mvector_at(xstmt->evals, 0),
+                             mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1));
+        }
+        break;
+    case ENC_RM_R64_RM64:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_r64_rm64(mvector_at(xstmt->evals, 0),
+                             mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1));
         }
         break;
 
