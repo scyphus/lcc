@@ -324,6 +324,11 @@ label28:
 	inc	dword [rbp]
 	inc	qword [rbp]
 
+label29:
+	iret
+	iretd
+	iretq
+
 
 
 
