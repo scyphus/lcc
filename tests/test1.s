@@ -299,6 +299,11 @@ label26:
 	imul	r8d,r9d,0x7ff4
 	imul	r8,r9,0x7ff5
 
+	imul	r8w,[rbp],1
+	imul	r8d,[rbp],2
+	imul	r8,[rbp],3
+	imul	r8d,[rbp],0x7ff4
+	imul	r8,[rbp],0x7ff5
 
 
 
