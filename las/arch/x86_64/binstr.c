@@ -1916,8 +1916,6 @@ _encode_rm_addr(int reg, int rexr, const x86_64_eval_t *eval,
 
     assert( X86_64_EVAL_ADDR == eval->type );
 
-    fprintf(stderr, "[%d]\n", eval->u.eaddr.base);
-
     if ( X86_64_ADDR_BASE & eval->u.eaddr.flags ) {
         /* With base register */
         ret = _encode_rm_addr_with_base(reg, rexr, eval, enop);
