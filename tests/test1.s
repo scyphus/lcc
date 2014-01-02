@@ -169,6 +169,36 @@ label13:
 label14:
 	cli
 
+label15:
+	cmp	al,1
+	cmp	ax,2
+	cmp	eax,3
+        cmp	rax,4
+
+	cmp	cl,1
+	cmp	ch,2
+	cmp	cx,3
+	cmp	ecx,4
+	cmp	rcx,5
+
+	cmp	cx,0x7f01
+	cmp	ecx,0x7f02
+	cmp	rcx,0x7f03
+
+	cmp	al,ah
+	cmp	ax,cx
+	cmp	eax,ecx
+	cmp	rax,rcx
+
+	cmp	al,[rbp]
+	cmp	ax,[rbp]
+	cmp	eax,[rbp]
+	cmp	rax,[rbp]
+
+	cmp	[rbp],al
+	cmp	[rbp],ax
+	cmp	[rbp],eax
+	cmp	[rbp],rax
 
 
 
