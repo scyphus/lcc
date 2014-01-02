@@ -152,6 +152,10 @@ label9:
 	bts	dword [rbp],5
 	bts	qword [rbp],6
 
+label10:
+	cbw
+	cwde
+	cdqe
 
 
 

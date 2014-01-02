@@ -3643,10 +3643,71 @@ _encode_instr(x86_64_instr_t *instr, const x86_64_enop_t *enop,
 
 
 /*
+ * Build instruction for the NP type Op/En
+ */
+static int
+_binstr2_np(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize)
+{
+    int ret;
+    x86_64_enop_t enop;
+    x86_64_instr_t *instr;
+
+    /* Check the size */
+    if ( opsize < 0 ) {
+        return -EUNKNOWN;
+    }
+
+    /* Allocaate for the instruction */
+    instr = malloc(sizeof(x86_64_instr_t));
+    if ( NULL == instr ) {
+        return -EUNKNOWN;
+    }
+
+    /* Reset the encoded operands */
+    enop.opreg = -1;
+    enop.rex.r = REX_NONE;
+    enop.rex.x = REX_NONE;
+    enop.rex.b = REX_NONE;
+    enop.modrm = -1;
+    enop.sib = -1;
+    enop.disp.sz = 0;
+    enop.disp.val = 0;
+    enop.disp.expr = NULL;
+    enop.imm.sz = 0;
+    enop.imm.val = 0;
+    enop.imm.expr = NULL;
+    enop.rel.sz = 0;
+    enop.rel.val = 0;
+    enop.rel.expr = NULL;
+
+    /* Encode instruction */
+    ret = _encode_instr(instr, &enop, xstmt->tgt, xstmt->prefix, opsize, 0);
+    if ( ret < 0 ) {
+        /* Invalid operands */
+        free(instr);
+        return -EOPERAND;
+    }
+
+    /* Set the opcode */
+    instr->opcode1 = opc1;
+    instr->opcode2 = opc2;
+    instr->opcode3 = opc3;
+
+    /* Set the instruction and the size */
+    if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
+        free(instr);
+        return -EUNKNOWN;
+    }
+
+    /* Success */
+    return 1;
+}
+
+/*
  * Build instruction for the I type Op/En
  */
 static int
-_binstr2_i(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
+_binstr2_i(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
            const x86_64_eval_t *eval, size_t immsz)
 {
     int ret;
@@ -3694,7 +3755,7 @@ _binstr2_i(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
  */
 static int
 _binstr2_mi(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, int preg,
-            size_t opsize, const x86_64_eval_t *evalm,
+            ssize_t opsize, const x86_64_eval_t *evalm,
             const x86_64_eval_t *evali, size_t immsz)
 {
     int ret;
@@ -3756,7 +3817,7 @@ _binstr2_mi(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, int preg,
  * Build instruction for the MR type Op/En
  */
 static int
-_binstr2_mr(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
+_binstr2_mr(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
             const x86_64_eval_t *evalm, const x86_64_eval_t *evalr)
 {
     int ret;
@@ -3809,7 +3870,7 @@ _binstr2_mr(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
  * Build instruction for the O type Op/En
  */
 static int
-_binstr2_o(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
+_binstr2_o(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
            const x86_64_eval_t *evalr)
 {
     int ret;
@@ -3863,7 +3924,7 @@ _binstr2_o(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
  * Build instruction for the RM type Op/En
  */
 static int
-_binstr2_rm(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
+_binstr2_rm(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
             const x86_64_eval_t *evalr, const x86_64_eval_t *evalm)
 {
     int ret;
@@ -3916,8 +3977,8 @@ _binstr2_rm(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
  * Build instruction and return a success/error code
  */
 int
-binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
-        int opc2, int opc3, x86_64_enc_t enc, int preg)
+binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
+        int opc1, int opc2, int opc3, x86_64_enc_t enc, int preg)
 {
     int ret;
     int stat;
@@ -3933,6 +3994,14 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
 
     stat = 0;
     switch ( enc ) {
+    case ENC_NP:
+        /* Check the number of operands and the format */
+        if ( 0 == mvector_size(xstmt->evals) ) {
+            /* Build the instruction */
+            stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
+        }
+        break;
+
     case ENC_I_AL_IMM8:
         /* Check the number of operands and the format */
         if ( 2 == mvector_size(xstmt->evals)

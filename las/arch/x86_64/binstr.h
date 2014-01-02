@@ -126,7 +126,7 @@ extern "C" {
            const operand_vector_t *, x86_64_enc_t);
 
     int
-    binstr2(x86_64_assembler_t *, x86_64_stmt_t *, int, int, int, int,
+    binstr2(x86_64_assembler_t *, x86_64_stmt_t *, ssize_t, int, int, int,
             x86_64_enc_t, int);
 
 #ifdef __cplusplus

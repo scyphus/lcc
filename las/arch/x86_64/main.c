@@ -550,53 +550,26 @@ _bts(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
  *      Op/En   Operand1        Operand2        Operand3        Operand4
  *      NP      NA              NA              NA              NA
  */
-int
+static int
 _cbw(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
-    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
-    opt->tgt = X86_64_O64;
-    opt->ltbl = &asmblr->lbtbl;
-    opt->pos = 0;
-    opt->prefix = xstmt->prefix;
-    opt->suffix = xstmt->suffix;
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x98, -1, -1, ENC_NP, -1));
 
-    PASS0(binstr(instr, opt, SIZE16, 0x98, -1, -1, -1, ops, ENC_NP));
-
-    return -EOPERAND;
+    return 0;
 }
-int
+static int
 _cwde(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
-    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
-    opt->tgt = X86_64_O64;
-    opt->ltbl = &asmblr->lbtbl;
-    opt->pos = 0;
-    opt->prefix = xstmt->prefix;
-    opt->suffix = xstmt->suffix;
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x98, -1, -1, ENC_NP, -1));
 
-    PASS0(binstr(instr, opt, SIZE32, 0x98, -1, -1, -1, ops, ENC_NP));
-
-    return -EOPERAND;
+    return 0;
 }
-int
+static int
 _cdqe(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
-    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
-    opt->tgt = X86_64_O64;
-    opt->ltbl = &asmblr->lbtbl;
-    opt->pos = 0;
-    opt->prefix = xstmt->prefix;
-    opt->suffix = xstmt->suffix;
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x98, -1, -1, ENC_NP, -1));
 
-    PASS0(binstr(instr, opt, SIZE64, 0x98, -1, -1, -1, ops, ENC_NP));
-
-    return -EOPERAND;
+    return 0;
 }
 
 /*
