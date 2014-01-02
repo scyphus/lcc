@@ -375,6 +375,13 @@ label34:
 	popcnt	ecx,[rbp]
 	popcnt	rcx,[rbp]
 
+label35:
+	ret
+	ret far
+
+	ret	1
+	ret far	2
+
 
 
 start:

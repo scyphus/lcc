@@ -1365,28 +1365,17 @@ _popcnt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 static int
 _ret(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
-    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
-    opt->tgt = X86_64_O64;
-    opt->ltbl = &asmblr->lbtbl;
-    opt->pos = 0;
-    opt->prefix = xstmt->prefix;
-    opt->suffix = xstmt->suffix;
-
-    if ( OPCODE_SUFFIX_FAR & opt->suffix ) {
+    if ( OPCODE_SUFFIX_FAR & xstmt->suffix ) {
         /* w/ far */
-        PASS0(binstr(instr, opt, 0, 0xcb, -1, -1, -1, ops, ENC_NP));
-        PASS0(binstr(instr, opt, 0, 0xca, -1, -1, -1, ops, ENC_I_FIMM16));
-        PASS0(binstr(instr, opt, 0, 0xca, -1, -1, -1, ops, ENC_I_EIMM16));
+        EC(binstr2(asmblr, xstmt, 0, 0xcb, -1, -1, ENC_NP, -1));
+        EC(binstr2(asmblr, xstmt, 0, 0xca, -1, -1, ENC_I_IMM16, -1));
     } else {
         /* w/o far */
-        PASS0(binstr(instr, opt, 0, 0xc3, -1, -1, -1, ops, ENC_NP));
-        PASS0(binstr(instr, opt, 0, 0xc2, -1, -1, -1, ops, ENC_I_FIMM16));
-        PASS0(binstr(instr, opt, 0, 0xc2, -1, -1, -1, ops, ENC_I_EIMM16));
+        EC(binstr2(asmblr, xstmt, 0, 0xc3, -1, -1, ENC_NP, -1));
+        EC(binstr2(asmblr, xstmt, 0, 0xc2, -1, -1, ENC_I_IMM16, -1));
     }
 
-    return -EOPERAND;
+    return 0;
 }
 
 /*
@@ -1587,7 +1576,7 @@ _resolv_instr(x86_64_stmt_t *xstmt)
     for ( ; i < mvector_size(xstmt->stmt->u.instr->opcode); i++ ) {
         str = mvector_at(xstmt->stmt->u.instr->opcode, i);
         if ( 0 == strcasecmp(str, "far") ) {
-            tmpprefix |= OPCODE_SUFFIX_FAR;
+            tmpsuffix |= OPCODE_SUFFIX_FAR;
         } else {
             break;
         }
