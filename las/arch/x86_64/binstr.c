@@ -4101,6 +4101,61 @@ _binstr2_rmi(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
 }
 
 /*
+ * Build instruction for the OI type Op/En
+ */
+static int
+_binstr2_oi(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
+            const x86_64_eval_t *evalr, const x86_64_eval_t *evali,
+            size_t immsz)
+{
+    int ret;
+    x86_64_enop_t enop;
+    x86_64_instr_t *instr;
+
+    /* Allocaate for the instruction */
+    instr = malloc(sizeof(x86_64_instr_t));
+    if ( NULL == instr ) {
+        return -EUNKNOWN;
+    }
+
+    /* Encode and free the values */
+    ret = _encode_oi(evalr, evali, immsz, &enop);
+    if ( ret < 0 ) {
+        /* Invalid operand size */
+        free(instr);
+        return -ESIZE;
+    }
+    /* Encode instruction */
+    ret = _encode_instr(instr, &enop, xstmt->tgt, xstmt->prefix, opsize, 0);
+    if ( ret < 0 ) {
+        /* Invalid operands */
+        free(instr);
+        return -EOPERAND;
+    }
+    instr->opcode1 = opc1;
+    instr->opcode2 = opc2;
+    instr->opcode3 = opc3;
+
+    /* +rw/+rd */
+    if ( instr->opcode3 >= 0 ) {
+        instr->opcode3 += enop.opreg;
+    } else if ( instr->opcode2 >= 0 ) {
+        instr->opcode2 += enop.opreg;
+    } else {
+        instr->opcode1 += enop.opreg;
+    }
+
+    /* Set the instruction and the size */
+    if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
+        free(instr);
+        return -EUNKNOWN;
+    }
+
+    /* Success */
+    return 1;
+}
+
+/*
  * Build instruction and return a success/error code
  */
 int
@@ -4638,6 +4693,55 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
                                 mvector_at(xstmt->evals, 0),
                                 mvector_at(xstmt->evals, 1),
                                 mvector_at(xstmt->evals, 2), SIZE32);
+        }
+        break;
+
+    case ENC_OI_R8_IMM8:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_r8_imm8(mvector_at(xstmt->evals, 0),
+                            mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_oi(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1), SIZE8);
+        }
+        break;
+    case ENC_OI_R16_IMM16:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_r16_imm16(mvector_at(xstmt->evals, 0),
+                              mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_oi(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1), SIZE16);
+        }
+        break;
+    case ENC_OI_R32_IMM32:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_r32_imm32(mvector_at(xstmt->evals, 0),
+                              mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_oi(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1), SIZE32);
+        }
+        break;
+    case ENC_OI_R64_IMM64:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_r64_imm64(mvector_at(xstmt->evals, 0),
+                              mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_oi(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1), SIZE64);
         }
         break;
 

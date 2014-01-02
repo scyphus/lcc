@@ -332,7 +332,31 @@ label29:
 label31:
 	monitor
 
+label32:
+	mov	al,ah
+	mov	ax,cx
+	mov	eax,ecx
+	mov	rax,rcx
 
+	mov	[rbp],al
+	mov	[rbp],ax
+	mov	[rbp],eax
+	mov	[rbp],rax
+
+	mov	al,[rbp]
+	mov	ax,[rbp]
+	mov	eax,[rbp]
+	mov	rax,[rbp]
+
+	mov	al,1
+	mov	ax,2
+	mov	eax,3
+	mov	rax,0x4
+
+	mov	byte [rbp],1
+	mov	word [rbp],2
+	mov	dword [rbp],3
+	mov	qword [rbp],0x4
 
 
 start:

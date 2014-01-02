@@ -1246,7 +1246,7 @@ _monitor(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
  *      C7 /0 iw        MOV r/m16,imm16         MI      Valid   Valid
  *      C7 /0 id        MOV r/m32,imm32         MI      Valid   Valid
  *      REX.W + C7 /0 io
- *                      MOV r/m64,imm64         MI      Valid   N.E.
+ *                      MOV r/m64,imm32         MI      Valid   N.E.
  *
  *      *   The moffs8, moffs16, moffs32 and moffs64 operands specify a simple
  *          offset relative to the segment base, where 8, 16, 32 and 64 refer to
@@ -1268,40 +1268,29 @@ _monitor(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 static int
 _mov(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
-    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
-    opt->tgt = X86_64_O64;
-    opt->ltbl = &asmblr->lbtbl;
-    opt->pos = 0;
-    opt->prefix = xstmt->prefix;
-    opt->suffix = xstmt->suffix;
+    EC(binstr2(asmblr, xstmt, SIZE8, 0x88, -1, -1, ENC_MR_RM8_R8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x89, -1, -1, ENC_MR_RM16_R16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x89, -1, -1, ENC_MR_RM32_R32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x89, -1, -1, ENC_MR_RM64_R64, -1));
 
-    PASS0(binstr(instr, opt, SIZE8, 0x88, -1, -1, -1, ops, ENC_MR_RM8_R8));
-    PASS0(binstr(instr, opt, SIZE16, 0x89, -1, -1, -1, ops, ENC_MR_RM16_R16));
-    PASS0(binstr(instr, opt, SIZE32, 0x89, -1, -1, -1, ops, ENC_MR_RM32_R32));
-    PASS0(binstr(instr, opt, SIZE64, 0x89, -1, -1, -1, ops, ENC_MR_RM64_R64));
+    EC(binstr2(asmblr, xstmt, SIZE8, 0x8a, -1, -1, ENC_RM_R8_RM8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x8b, -1, -1, ENC_RM_R16_RM16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x8b, -1, -1, ENC_RM_R32_RM32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x8b, -1, -1, ENC_RM_R64_RM64, -1));
 
-    PASS0(binstr(instr, opt, SIZE8, 0x8a, -1, -1, -1, ops, ENC_RM_R8_RM8));
-    PASS0(binstr(instr, opt, SIZE16, 0x8b, -1, -1, -1, ops, ENC_RM_R16_RM16));
-    PASS0(binstr(instr, opt, SIZE32, 0x8b, -1, -1, -1, ops, ENC_RM_R32_RM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x8b, -1, -1, -1, ops, ENC_RM_R64_RM64));
+    EC(binstr2(asmblr, xstmt, SIZE8, 0xb0, -1, -1, ENC_OI_R8_IMM8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0xb8, -1, -1, ENC_OI_R16_IMM16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0xb8, -1, -1, ENC_OI_R32_IMM32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0xb8, -1, -1, ENC_OI_R64_IMM64, -1));
 
-    PASS0(binstr(instr, opt, SIZE8, 0xb0, -1, -1, -1, ops, ENC_OI_R8_FIMM8));
-    PASS0(binstr(instr, opt, SIZE16, 0xb8, -1, -1, -1, ops, ENC_OI_R16_FIMM16));
-    PASS0(binstr(instr, opt, SIZE32, 0xb8, -1, -1, -1, ops, ENC_OI_R32_FIMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0xb8, -1, -1, -1, ops, ENC_OI_R64_FIMM64));
+    /* FIXME: Support moffs */
 
-    PASS0(binstr(instr, opt, SIZE8, 0xc6, -1, -1, 0, ops, ENC_MI_RM8_FIMM8));
-    PASS0(binstr(instr, opt, SIZE8, 0xc6, -1, -1, 0, ops, ENC_MI_RM8_EIMM8));
-    PASS0(binstr(instr, opt, SIZE16, 0xc7, -1, -1, 0, ops, ENC_MI_RM16_FIMM16));
-    PASS0(binstr(instr, opt, SIZE16, 0xc7, -1, -1, 0, ops, ENC_MI_RM16_EIMM16));
-    PASS0(binstr(instr, opt, SIZE32, 0xc7, -1, -1, 0, ops, ENC_MI_RM32_FIMM32));
-    PASS0(binstr(instr, opt, SIZE32, 0xc7, -1, -1, 0, ops, ENC_MI_RM32_EIMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0xc7, -1, -1, 0, ops, ENC_MI_RM64_FIMM64));
-    PASS0(binstr(instr, opt, SIZE64, 0xc7, -1, -1, 0, ops, ENC_MI_RM64_EIMM64));
+    EC(binstr2(asmblr, xstmt, SIZE8, 0xc6, -1, -1, ENC_MI_RM8_IMM8, 0));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0xc7, -1, -1, ENC_MI_RM16_IMM16, 0));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0xc7, -1, -1, ENC_MI_RM32_IMM32, 0));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0xc7, -1, -1, ENC_MI_RM64_IMM32, 0));
 
-    return -EOPERAND;
+    return 0;
 }
 
 /*
