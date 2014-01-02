@@ -238,6 +238,17 @@ label20:
 label21:
 	das
 
+label22:
+	dec	al
+	dec	ax
+	dec	eax
+	dec	rax
+
+	dec	byte [rbp]
+	dec	word [rbp]
+	dec	dword [rbp]
+	dec	qword [rbp]
+
 
 
 

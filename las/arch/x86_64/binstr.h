@@ -88,6 +88,7 @@ typedef enum _x86_64_enc {
     ENC_RM_R32_RM32,
     ENC_RM_R64_RM8,
     ENC_RM_R64_RM64,
+    ENC_O_R16,
     ENC_O_R32,
     ENC_O_R64,
     ENC_OI_R8_FIMM8,
