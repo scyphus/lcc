@@ -157,6 +157,11 @@ label10:
 	cwde
 	cdqe
 
+label11:
+	clc
+
+label12:
+	cld
 
 
 

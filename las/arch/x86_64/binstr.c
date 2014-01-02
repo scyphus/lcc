@@ -3472,7 +3472,7 @@ binstr(x86_64_instr_t *instr, const x86_64_asm_opt_t *opt, int opsize, int opc1,
  */
 static int
 _encode_instr(x86_64_instr_t *instr, const x86_64_enop_t *enop,
-              x86_64_target_t tgt, int prefix, size_t opsize, size_t addrsize)
+              x86_64_target_t tgt, int prefix, ssize_t opsize, size_t addrsize)
 {
     int rex;
     int p66 = 0;
