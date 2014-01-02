@@ -144,10 +144,6 @@ extern "C" {
 #endif
 
     int
-    binstr(x86_64_instr_t *, const x86_64_asm_opt_t *, int, int, int, int, int,
-           const operand_vector_t *, x86_64_enc_t);
-
-    int
     binstr2(x86_64_assembler_t *, x86_64_stmt_t *, ssize_t, int, int, int,
             x86_64_enc_t, int);
 

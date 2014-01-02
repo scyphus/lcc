@@ -19,12 +19,6 @@
 #include <assert.h>
 
 
-#define PASS0(f) do {                                                   \
-        int ret = (f);                                                  \
-        if ( ret < 0 ) { return ret; }                                  \
-        else if ( ret > 0 ) { return 0; }                               \
-    } while ( 0 )
-
 #define EC(f) do {                                                      \
         int ret = (f);                                                  \
         if ( ret < 0 ) { return ret; }                                  \
@@ -1161,21 +1155,13 @@ _iretq(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 static int
 _jmp(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
-    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
-    opt->tgt = X86_64_O64;
-    opt->ltbl = &asmblr->lbtbl;
-    opt->pos = 0;
-    opt->prefix = xstmt->prefix;
-    opt->suffix = xstmt->suffix;
-
-    if ( OPCODE_SUFFIX_FAR & opt->suffix ) {
+    if ( OPCODE_SUFFIX_FAR & xstmt->suffix ) {
         /* w/ far */
 
         /* To be implemented */
         return -EUNKNOWN;
     } else {
+#if 0
         /* w/o far */
         PASS0(binstr(instr, opt, SIZE8, 0xeb, -1, -1, -1, ops, ENC_D_REL8));
         PASS0(binstr(instr, opt, SIZE16, 0xe9, -1, -1, -1, ops, ENC_D_REL16));
@@ -1183,7 +1169,7 @@ _jmp(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         PASS0(binstr(instr, opt, SIZE16, 0xff, -1, -1, 4, ops, ENC_M_RM16));
         PASS0(binstr(instr, opt, SIZE32, 0xff, -1, -1, 4, ops, ENC_M_RM32));
         PASS0(binstr(instr, opt, SIZE64, 0xff, -1, -1, 4, ops, ENC_M_RM64));
-
+#endif
         return -EOPERAND;
     }
 }
