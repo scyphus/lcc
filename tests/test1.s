@@ -263,6 +263,17 @@ label23:
 label24:
 	hlt
 
+label25:
+	idiv	bl
+	idiv	bx
+	idiv	ebx
+	idiv	rbx
+
+	idiv	byte [rbp]
+	idiv	word [rbp]
+	idiv	dword [rbp]
+	idiv	qword [rbp]
+
 
 
 
