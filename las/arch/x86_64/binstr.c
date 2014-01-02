@@ -369,6 +369,23 @@ _is_r64(const x86_64_eval_t *eval)
 }
 
 /*
+ * Is the value type memory with the specified size?
+ */
+static __inline__ int
+_is_m8(const x86_64_eval_t *eval)
+{
+    if ( X86_64_EVAL_ADDR == eval->type ) {
+        if ( SIZE8 == eval->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+
+/*
  * Is the estimated value register or memory operand with the specified size?
  */
 static __inline__ int
@@ -3974,6 +3991,51 @@ _binstr2_rm(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
 }
 
 /*
+ * Build instruction for the M type Op/En
+ */
+static int
+_binstr2_m(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, int preg,
+           ssize_t opsize, const x86_64_eval_t *evalm)
+{
+    int ret;
+    x86_64_enop_t enop;
+    x86_64_instr_t *instr;
+
+    /* Allocaate for the instruction */
+    instr = malloc(sizeof(x86_64_instr_t));
+    if ( NULL == instr ) {
+        return -EUNKNOWN;
+    }
+
+    /* Encode and free the values */
+    ret = _encode_m(evalm, preg, &enop);
+    if ( ret < 0 ) {
+        /* Invalid operand size */
+        free(instr);
+        return -ESIZE;
+    }
+    /* Encode instruction */
+    ret = _encode_instr(instr, &enop, xstmt->tgt, xstmt->prefix, opsize, 0);
+    if ( ret < 0 ) {
+        /* Invalid operands */
+        free(instr);
+        return -EOPERAND;
+    }
+    instr->opcode1 = opc1;
+    instr->opcode2 = opc2;
+    instr->opcode3 = opc3;
+
+    /* Set the instruction and the size */
+    if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
+        free(instr);
+        return -EUNKNOWN;
+    }
+
+    /* Success */
+    return 1;
+}
+
+/*
  * Build instruction and return a success/error code
  */
 int
@@ -4246,6 +4308,17 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
 
             /* Build the instruction */
             stat = _binstr2_o(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0));
+        }
+        break;
+
+    case ENC_M_M8:
+        /* Check the number of operands and format */
+        if ( 1 == mvector_size(xstmt->evals)
+             && _is_m8(mvector_at(xstmt->evals, 0)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_m(xstmt, opc1, opc2, opc3, preg, opsize,
                                mvector_at(xstmt->evals, 0));
         }
         break;

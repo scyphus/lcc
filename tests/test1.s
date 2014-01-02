@@ -163,7 +163,11 @@ label11:
 label12:
 	cld
 
+label13:
+	clflush	byte [r8]
 
+label14:
+	cli
 
 
 
