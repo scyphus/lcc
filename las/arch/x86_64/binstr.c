@@ -2124,8 +2124,6 @@ _encode_rmi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
         if ( ret < 0 ) {
             return -1;
         }
-
-        return 0;
     } else if ( X86_64_EVAL_ADDR == eval2->type ) {
         /* Encode the second operand with the addr type */
         ret = _encode_rm_addr(reg, rexr, eval2, enop);
@@ -4049,6 +4047,60 @@ _binstr2_m(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, int preg,
 }
 
 /*
+ * Build instruction for the RMI type Op/En
+ */
+static int
+_binstr2_rmi(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
+             const x86_64_eval_t *evalr, const x86_64_eval_t *evalm,
+             const x86_64_eval_t *evali, size_t immsz)
+{
+    int ret;
+    x86_64_enop_t enop;
+    ssize_t addrsize;
+    x86_64_instr_t *instr;
+
+    /* Allocaate for the instruction */
+    instr = malloc(sizeof(x86_64_instr_t));
+    if ( NULL == instr ) {
+        return -EUNKNOWN;
+    }
+
+    /* Encode and free the values */
+    ret = _encode_rmi(evalr, evalm, evali, immsz, &enop);
+    if ( ret < 0 ) {
+        /* Invalid operand size */
+        free(instr);
+        return -ESIZE;
+    }
+    /* Obtain address size */
+    addrsize = _resolve_address_size1(evalm);
+    if ( addrsize < 0 ) {
+        free(instr);
+        return -ESIZE;
+    }
+    /* Encode instruction */
+    ret = _encode_instr(instr, &enop, xstmt->tgt, xstmt->prefix, opsize,
+                        addrsize);
+    if ( ret < 0 ) {
+        /* Invalid operands */
+        free(instr);
+        return -EOPERAND;
+    }
+    instr->opcode1 = opc1;
+    instr->opcode2 = opc2;
+    instr->opcode3 = opc3;
+
+    /* Set the instruction and the size */
+    if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
+        free(instr);
+        return -EUNKNOWN;
+    }
+
+    /* Success */
+    return 1;
+}
+
+/*
  * Build instruction and return a success/error code
  */
 int
@@ -4419,6 +4471,91 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
             /* Build the instruction */
             stat = _binstr2_m(xstmt, opc1, opc2, opc3, preg, opsize,
                               mvector_at(xstmt->evals, 0));
+        }
+        break;
+
+    case ENC_RMI_R16_RM16_IMM8:
+        /* Check the number of operands and format */
+        if ( 3 == mvector_size(xstmt->evals)
+             && _is_r16_rm16_imm8(mvector_at(xstmt->evals, 0),
+                                  mvector_at(xstmt->evals, 1),
+                                  mvector_at(xstmt->evals, 2)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_rmi(xstmt, opc1, opc2, opc3, opsize,
+                                mvector_at(xstmt->evals, 0),
+                                mvector_at(xstmt->evals, 1),
+                                mvector_at(xstmt->evals, 2), SIZE8);
+        }
+        break;
+    case ENC_RMI_R16_RM16_IMM16:
+        /* Check the number of operands and format */
+        if ( 3 == mvector_size(xstmt->evals)
+             && _is_r16_rm16_imm16(mvector_at(xstmt->evals, 0),
+                                   mvector_at(xstmt->evals, 1),
+                                   mvector_at(xstmt->evals, 2)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_rmi(xstmt, opc1, opc2, opc3, opsize,
+                                mvector_at(xstmt->evals, 0),
+                                mvector_at(xstmt->evals, 1),
+                                mvector_at(xstmt->evals, 2), SIZE16);
+        }
+        break;
+    case ENC_RMI_R32_RM32_IMM8:
+        /* Check the number of operands and format */
+        if ( 3 == mvector_size(xstmt->evals)
+             && _is_r32_rm32_imm8(mvector_at(xstmt->evals, 0),
+                                  mvector_at(xstmt->evals, 1),
+                                  mvector_at(xstmt->evals, 2)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_rmi(xstmt, opc1, opc2, opc3, opsize,
+                                mvector_at(xstmt->evals, 0),
+                                mvector_at(xstmt->evals, 1),
+                                mvector_at(xstmt->evals, 2), SIZE8);
+        }
+        break;
+    case ENC_RMI_R32_RM32_IMM32:
+        /* Check the number of operands and format */
+        if ( 3 == mvector_size(xstmt->evals)
+             && _is_r32_rm32_imm32(mvector_at(xstmt->evals, 0),
+                                   mvector_at(xstmt->evals, 1),
+                                   mvector_at(xstmt->evals, 2)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_rmi(xstmt, opc1, opc2, opc3, opsize,
+                                mvector_at(xstmt->evals, 0),
+                                mvector_at(xstmt->evals, 1),
+                                mvector_at(xstmt->evals, 2), SIZE32);
+        }
+        break;
+    case ENC_RMI_R64_RM64_IMM8:
+        /* Check the number of operands and format */
+        if ( 3 == mvector_size(xstmt->evals)
+             && _is_r64_rm64_imm8(mvector_at(xstmt->evals, 0),
+                                  mvector_at(xstmt->evals, 1),
+                                  mvector_at(xstmt->evals, 2)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_rmi(xstmt, opc1, opc2, opc3, opsize,
+                                mvector_at(xstmt->evals, 0),
+                                mvector_at(xstmt->evals, 1),
+                                mvector_at(xstmt->evals, 2), SIZE8);
+        }
+        break;
+    case ENC_RMI_R64_RM64_IMM32:
+        /* Check the number of operands and format */
+        if ( 3 == mvector_size(xstmt->evals)
+             && _is_r64_rm64_imm32(mvector_at(xstmt->evals, 0),
+                                   mvector_at(xstmt->evals, 1),
+                                   mvector_at(xstmt->evals, 2)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_rmi(xstmt, opc1, opc2, opc3, opsize,
+                                mvector_at(xstmt->evals, 0),
+                                mvector_at(xstmt->evals, 1),
+                                mvector_at(xstmt->evals, 2), SIZE32);
         }
         break;
 

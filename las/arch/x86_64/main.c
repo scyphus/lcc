@@ -1013,42 +1013,30 @@ _idiv(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 static int
 _imul(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
-    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
-    opt->tgt = X86_64_O64;
-    opt->ltbl = &asmblr->lbtbl;
-    opt->pos = 0;
-    opt->prefix = xstmt->prefix;
-    opt->suffix = xstmt->suffix;
+    EC(binstr2(asmblr, xstmt, SIZE8, 0xf6, -1, -1, ENC_M_RM8, 5));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0xf7, -1, -1, ENC_M_RM16, 5));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0xf7, -1, -1, ENC_M_RM32, 5));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0xf7, -1, -1, ENC_M_RM64, 5));
 
-    PASS0(binstr(instr, opt, SIZE8, 0xf6, -1, -1, 5, ops, ENC_M_RM8));
-    PASS0(binstr(instr, opt, SIZE16, 0xf7, -1, -1, 5, ops, ENC_M_RM16));
-    PASS0(binstr(instr, opt, SIZE32, 0xf7, -1, -1, 5, ops, ENC_M_RM32));
-    PASS0(binstr(instr, opt, SIZE64, 0xf7, -1, -1, 5, ops, ENC_M_RM64));
-    PASS0(binstr(instr, opt, SIZE16, 0x0f, 0xaf, -1, -1, ops, ENC_RM_R16_RM16));
-    PASS0(binstr(instr, opt, SIZE32, 0x0f, 0xaf, -1, -1, ops, ENC_RM_R32_RM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x0f, 0xaf, -1, -1, ops, ENC_RM_R64_RM64));
-    PASS0(binstr(instr, opt, SIZE16, 0x6b, -1, -1, -1, ops,
-                 ENC_RMI_R16_RM16_FIMM8));
-    PASS0(binstr(instr, opt, SIZE32, 0x6b, -1, -1, -1, ops,
-                 ENC_RMI_R32_RM32_FIMM8));
-    PASS0(binstr(instr, opt, SIZE64, 0x6b, -1, -1, -1, ops,
-                 ENC_RMI_R64_RM64_FIMM8));
-    PASS0(binstr(instr, opt, SIZE16, 0x69, -1, -1, -1, ops,
-                 ENC_RMI_R16_RM16_FIMM16));
-    PASS0(binstr(instr, opt, SIZE16, 0x69, -1, -1, -1, ops,
-                 ENC_RMI_R16_RM16_EIMM16));
-    PASS0(binstr(instr, opt, SIZE32, 0x69, -1, -1, -1, ops,
-                 ENC_RMI_R32_RM32_FIMM32));
-    PASS0(binstr(instr, opt, SIZE32, 0x69, -1, -1, -1, ops,
-                 ENC_RMI_R32_RM32_EIMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x69, -1, -1, -1, ops,
-                 ENC_RMI_R64_RM64_FIMM32));
-    PASS0(binstr(instr, opt, SIZE64, 0x69, -1, -1, -1, ops,
-                 ENC_RMI_R64_RM64_EIMM32));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x0f, 0xaf, -1, ENC_RM_R16_RM16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x0f, 0xaf, -1, ENC_RM_R32_RM32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x0f, 0xaf, -1, ENC_RM_R64_RM64, -1));
 
-    return -EOPERAND;
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x6b, -1, -1, ENC_RMI_R16_RM16_IMM8,
+               -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x6b, -1, -1, ENC_RMI_R32_RM32_IMM8,
+               -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x6b, -1, -1, ENC_RMI_R64_RM64_IMM8,
+               -1));
+
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x69, -1, -1, ENC_RMI_R16_RM16_IMM16,
+               -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x69, -1, -1, ENC_RMI_R32_RM32_IMM32,
+               -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x69, -1, -1, ENC_RMI_R64_RM64_IMM32,
+               -1));
+
+    return 0;
 }
 
 /*

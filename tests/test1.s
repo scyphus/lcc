@@ -274,6 +274,31 @@ label25:
 	idiv	dword [rbp]
 	idiv	qword [rbp]
 
+label26:
+	imul	bl
+	imul	bx
+	imul	ebx
+	imul	rbx
+
+	imul	byte [rbp]
+	imul	word [rbp]
+	imul	dword [rbp]
+	imul	qword [rbp]
+
+	imul	ax,cx
+	imul	eax,ecx
+	imul	rax,rcx
+
+	imul	ax,[rbp]
+	imul	eax,[rbp]
+	imul	rax,[rbp]
+
+	imul	r8w,r9w,1
+	imul	r8d,r9d,2
+	imul	r8,r9,3
+	imul	r8d,r9d,0x7ff4
+	imul	r8,r9,0x7ff5
+
 
 
 
