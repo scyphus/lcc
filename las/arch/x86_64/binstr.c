@@ -1586,23 +1586,19 @@ _encode_disp(const x86_64_eval_t *eval, int64_t *disp, size_t *dispsz)
 
     if ( eval->u.eaddr.flags & X86_64_ADDR_DISP ) {
         /* Displacement is specified */
-        if ( NULL == eval->u.eaddr.disp_expr ) {
-            if ( eval->u.eaddr.disp_min != eval->u.eaddr.disp_max ) {
-                /* Assertion */
-                return -1;
-            }
+        if ( X86_64_IMM_FIXED == eval->u.eaddr.disp.type ) {
             /* Get the value of displacement */
-            *disp = eval->u.eaddr.disp_min;
+            *disp = eval->u.eaddr.disp.u.fixed;
             if ( 0 == *disp ) {
                 *dispsz = 0;
             } else if ( *disp >= -128 && *disp <= 127 ) {
-                *dispsz = 1;
+                *dispsz = SIZE8;
             } else {
-                *dispsz = 4;
+                *dispsz = SIZE32;
             }
         } else {
             /* Relocatable displacement */
-            *dispsz = 4;
+            *dispsz = SIZE32;
             *disp = 0;
         }
     } else {
@@ -1919,6 +1915,8 @@ _encode_rm_addr(int reg, int rexr, const x86_64_eval_t *eval,
     int ret;
 
     assert( X86_64_EVAL_ADDR == eval->type );
+
+    fprintf(stderr, "[%d]\n", eval->u.eaddr.base);
 
     if ( X86_64_ADDR_BASE & eval->u.eaddr.flags ) {
         /* With base register */

@@ -159,21 +159,42 @@ _eval_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
                 val->u.addr.disp = lval->u.imm;
                 val->u.addr.saddrsize = 0;
                 val->sopsize = 0;
+            } else if ( X86_64_VAL_REG == lval->type
+                        && X86_64_VAL_REG == rval->type ) {
+                /* Base register + Displacement */
+                val->type = X86_64_VAL_ADDR;
+                val->u.addr.flags = X86_64_ADDR_BASE | X86_64_ADDR_OFFSET
+                    | X86_64_ADDR_SCALE;
+                val->u.addr.base = lval->u.reg;
+                val->u.addr.offset = rval->u.reg;
+                val->u.addr.scale = 1;
+                val->u.addr.saddrsize = 0;
+                val->sopsize = 0;
             } else if ( X86_64_VAL_ADDR == lval->type ) {
                 if ( X86_64_VAL_REG == rval->type ) {
                     /* Base register */
-                    if ( X86_64_ADDR_BASE & lval->u.addr.flags ) {
+                    if ( !(X86_64_ADDR_OFFSET & lval->u.addr.flags) ) {
+                        val->type = X86_64_VAL_ADDR;
+                        val->u.addr.flags = X86_64_ADDR_BASE
+                            | lval->u.addr.flags;
+                        val->u.addr.base = rval->u.reg;
+                        val->u.addr.saddrsize = 0;
+                        val->sopsize = 0;
+                    } else if ( !(X86_64_ADDR_OFFSET & lval->u.addr.flags) ) {
+                        val->type = X86_64_VAL_ADDR;
+                        val->u.addr.flags = X86_64_ADDR_OFFSET
+                            | lval->u.addr.flags;
+                        val->u.addr.offset = rval->u.reg;
+                        val->u.addr.scale = 1;
+                        val->u.addr.saddrsize = 0;
+                        val->sopsize = 0;
+                    } else {
                         /* Invalid syntax */
                         free(val);
                         free(lval);
                         free(rval);
                         return NULL;
                     }
-                    val->type = X86_64_VAL_ADDR;
-                    val->u.addr.flags = X86_64_ADDR_BASE | lval->u.addr.flags;
-                    val->u.addr.base = rval->u.reg;
-                    val->u.addr.saddrsize = 0;
-                    val->sopsize = 0;
                 } else if ( X86_64_VAL_IMM == rval->type ) {
                     /* Displacement */
                     if ( X86_64_ADDR_DISP & lval->u.addr.flags ) {
@@ -186,6 +207,42 @@ _eval_expr_op(const x86_64_label_table_t *ltbl, expr_t *expr)
                     val->type = X86_64_VAL_ADDR;
                     val->u.addr.flags = X86_64_ADDR_DISP | lval->u.addr.flags;
                     val->u.addr.disp = rval->u.imm;
+                    val->u.addr.saddrsize = 0;
+                    val->sopsize = 0;
+                } else if ( X86_64_VAL_ADDR == rval->type ) {
+                    if ( lval->u.addr.flags & rval->u.addr.flags ) {
+                        /* Invalid syntax */
+                        free(val);
+                        free(lval);
+                        free(rval);
+                        return NULL;
+                    }
+                    val->type = X86_64_VAL_ADDR;
+                    val->u.addr.flags = lval->u.addr.flags | lval->u.addr.flags;
+                    if ( X86_64_ADDR_BASE & lval->u.addr.flags ) {
+                        val->u.addr.base = lval->u.addr.base;
+                    }
+                    if ( X86_64_ADDR_DISP & lval->u.addr.flags ) {
+                        val->u.addr.disp = lval->u.addr.disp;
+                    }
+                    if ( X86_64_ADDR_OFFSET & lval->u.addr.flags ) {
+                        val->u.addr.offset = lval->u.addr.offset;
+                    }
+                    if ( X86_64_ADDR_SCALE & lval->u.addr.flags ) {
+                        val->u.addr.scale = lval->u.addr.scale;
+                    }
+                    if ( X86_64_ADDR_BASE & rval->u.addr.flags ) {
+                        val->u.addr.base = rval->u.addr.base;
+                    }
+                    if ( X86_64_ADDR_DISP & rval->u.addr.flags ) {
+                        val->u.addr.disp = rval->u.addr.disp;
+                    }
+                    if ( X86_64_ADDR_OFFSET & rval->u.addr.flags ) {
+                        val->u.addr.offset = rval->u.addr.offset;
+                    }
+                    if ( X86_64_ADDR_SCALE & rval->u.addr.flags ) {
+                        val->u.addr.scale = rval->u.addr.scale;
+                    }
                     val->u.addr.saddrsize = 0;
                     val->sopsize = 0;
                 }
@@ -704,6 +761,17 @@ _estimate_expr_op(expr_t *expr)
                              sizeof(x86_64_imm_t));
                 eval->u.eaddr.saddrsize = 0;
                 eval->sopsize = 0;
+            } else if ( X86_64_EVAL_REG == leval->type
+                        && X86_64_EVAL_REG == reval->type ) {
+                /* Base register + Offset register */
+                eval->type = X86_64_EVAL_ADDR;
+                eval->u.eaddr.flags = X86_64_ADDR_BASE | X86_64_ADDR_OFFSET
+                    | X86_64_ADDR_SCALE;
+                eval->u.eaddr.base = leval->u.reg;
+                eval->u.eaddr.offset = reval->u.reg;
+                eval->u.eaddr.scale = 1;
+                eval->u.eaddr.saddrsize = 0;
+                eval->sopsize = 0;
             } else if ( X86_64_EVAL_ADDR == leval->type ) {
                 if ( X86_64_EVAL_REG == reval->type ) {
                     /* Base register */
@@ -718,6 +786,10 @@ _estimate_expr_op(expr_t *expr)
                     eval->u.eaddr.flags = X86_64_ADDR_BASE
                         | leval->u.eaddr.flags;
                     eval->u.eaddr.base = reval->u.reg;
+                    eval->u.eaddr.offset = leval->u.eaddr.offset;
+                    eval->u.eaddr.scale = leval->u.eaddr.scale;
+                    (void)memcpy(&eval->u.eaddr.disp, &leval->u.eaddr.disp,
+                                 sizeof(x86_64_imm_t));
                     eval->u.eaddr.saddrsize = 0;
                     eval->sopsize = 0;
                 } else if ( X86_64_EVAL_IMM == reval->type ) {
@@ -734,6 +806,9 @@ _estimate_expr_op(expr_t *expr)
                         | leval->u.eaddr.flags;
                     (void)memcpy(&eval->u.eaddr.disp, &reval->u.imm,
                                  sizeof(x86_64_imm_t));
+                    eval->u.eaddr.base = leval->u.eaddr.base;
+                    eval->u.eaddr.offset = leval->u.eaddr.offset;
+                    eval->u.eaddr.scale = leval->u.eaddr.scale;
                     eval->u.eaddr.saddrsize = 0;
                     eval->sopsize = 0;
                 } else {
