@@ -3706,7 +3706,7 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
 
     case ENC_D_REL8:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
+        if ( 1 == mvector_size(xstmt->evals)
              && _is_imm(mvector_at(xstmt->evals, 0), SIZE8) ) {
 
             /* Build the instruction */
@@ -3716,7 +3716,7 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
         break;
     case ENC_D_REL16:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
+        if ( 1 == mvector_size(xstmt->evals)
              && _is_imm(mvector_at(xstmt->evals, 0), SIZE16) ) {
 
             /* Build the instruction */
@@ -3726,7 +3726,7 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
         break;
     case ENC_D_REL32:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
+        if ( 1 == mvector_size(xstmt->evals)
              && _is_imm(mvector_at(xstmt->evals, 0), SIZE32) ) {
 
             /* Build the instruction */

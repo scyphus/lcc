@@ -331,6 +331,8 @@ label29:
 
 label30:
 	jmp	start
+	jmp	label29
+	jmp	label31
 	jmp	rax
 
 label31:
