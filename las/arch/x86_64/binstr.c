@@ -338,6 +338,35 @@ _eq_reg(const x86_64_eval_t *eval, x86_64_reg_t reg)
     }
 }
 
+/*
+ * Is the register with the specified size?
+ */
+static __inline__ int
+_is_r32(const x86_64_eval_t *eval)
+{
+    if ( X86_64_EVAL_REG == eval->type ) {
+        if ( SIZE32 == eval->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+static __inline__ int
+_is_r64(const x86_64_eval_t *eval)
+{
+    if ( X86_64_EVAL_REG == eval->type ) {
+        if ( SIZE64 == eval->sopsize ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
 
 /*
  * Is the estimated value register or memory operand with the specified size?
@@ -3777,6 +3806,60 @@ _binstr2_mr(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
 }
 
 /*
+ * Build instruction for the O type Op/En
+ */
+static int
+_binstr2_o(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
+           const x86_64_eval_t *evalr)
+{
+    int ret;
+    x86_64_enop_t enop;
+    x86_64_instr_t *instr;
+
+    /* Allocaate for the instruction */
+    instr = malloc(sizeof(x86_64_instr_t));
+    if ( NULL == instr ) {
+        return -EUNKNOWN;
+    }
+
+    /* Encode and free the values */
+    ret = _encode_o(evalr, &enop);
+    if ( ret < 0 ) {
+        /* Invalid operand size */
+        free(instr);
+        return -ESIZE;
+    }
+    /* Encode instruction */
+    ret = _encode_instr(instr, &enop, xstmt->tgt, xstmt->prefix, opsize, 0);
+    if ( ret < 0 ) {
+        /* Invalid operands */
+        free(instr);
+        return -EOPERAND;
+    }
+    instr->opcode1 = opc1;
+    instr->opcode2 = opc2;
+    instr->opcode3 = opc3;
+
+    /* +rw/+rd */
+    if ( instr->opcode3 >= 0 ) {
+        instr->opcode3 += enop.opreg;
+    } else if ( instr->opcode2 >= 0 ) {
+        instr->opcode2 += enop.opreg;
+    } else {
+        instr->opcode1 += enop.opreg;
+    }
+
+    /* Set the instruction and the size */
+    if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
+        free(instr);
+        return -EUNKNOWN;
+    }
+
+    /* Success */
+    return 1;
+}
+
+/*
  * Build instruction for the RM type Op/En
  */
 static int
@@ -4074,6 +4157,27 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
             stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
                                mvector_at(xstmt->evals, 0),
                                mvector_at(xstmt->evals, 1));
+        }
+        break;
+
+    case ENC_O_R32:
+        /* Check the number of operands and format */
+        if ( 1 == mvector_size(xstmt->evals)
+             && _is_r32(mvector_at(xstmt->evals, 0)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_o(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0));
+        }
+        break;
+    case ENC_O_R64:
+        /* Check the number of operands and format */
+        if ( 1 == mvector_size(xstmt->evals)
+             && _is_r64(mvector_at(xstmt->evals, 0)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_o(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0));
         }
         break;
 
