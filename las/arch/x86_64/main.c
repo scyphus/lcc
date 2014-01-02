@@ -1201,18 +1201,9 @@ _jmp(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 static int
 _monitor(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
-    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
-    opt->tgt = X86_64_O64;
-    opt->ltbl = &asmblr->lbtbl;
-    opt->pos = 0;
-    opt->prefix = xstmt->prefix;
-    opt->suffix = xstmt->suffix;
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x01, 0xc8, ENC_NP, -1));
 
-    PASS0(binstr(instr, opt, 0, 0x0f, 0x01, 0xc8, -1, ops, ENC_NP));
-
-    return -EOPERAND;
+    return 0;
 }
 
 
