@@ -228,6 +228,7 @@ _is_imm64(x86_64_eval_t *eval)
 /*
  * Is the estimated value an X-bit relative address?
  */
+#if 0
 static __inline__ int
 _is_rel8(x86_64_eval_t *eval, off_t pos)
 {
@@ -256,7 +257,6 @@ _is_rel8(x86_64_eval_t *eval, off_t pos)
         return 0;
     }
 }
-#if 0
 static __inline__ int
 _is_imm16(x86_64_eval_t *eval)
 {
@@ -1675,10 +1675,17 @@ _encode_rm_addr_with_base(int reg, int rexr, const x86_64_eval_t *eval,
         enop->disp.sz = dispsz;
         enop->disp.val = disp;
         enop->disp.eval = eval;
+        /* FIXME */
+        enop->disp.expr = NULL;
         /* No immediate value */
         enop->imm.sz = 0;
         enop->imm.val = 0;
         enop->imm.eval = NULL;
+        enop->imm.expr = NULL;
+        /* No relative value */
+        enop->rel.sz = 0;
+        enop->rel.val = 0;
+        enop->rel.expr = NULL;
 
         return 0;
     } else {
@@ -1819,10 +1826,17 @@ _encode_rm_addr_with_base(int reg, int rexr, const x86_64_eval_t *eval,
         enop->disp.sz = dispsz;
         enop->disp.val = disp;
         enop->disp.eval = eval;
+        /* FIXME */
+        enop->disp.expr = NULL;
         /* No immediate value */
         enop->imm.sz = 0;
         enop->imm.val = 0;
         enop->imm.eval = NULL;
+        enop->imm.expr = NULL;
+        /* No relative value */
+        enop->rel.sz = 0;
+        enop->rel.val = 0;
+        enop->rel.expr = NULL;
 
         return 0;
     }
@@ -1882,10 +1896,17 @@ _encode_rm_addr_without_base(int reg, int rexr, const x86_64_eval_t *eval,
     enop->disp.sz = dispsz;
     enop->disp.val = disp;
     enop->disp.eval = eval;
+    /* FIXME */
+    enop->disp.expr = NULL;
     /* No immediate value */
     enop->imm.sz = 0;
     enop->imm.val = 0;
     enop->imm.eval = NULL;
+    enop->imm.expr = NULL;
+    /* No relative value */
+    enop->rel.sz = 0;
+    enop->rel.val = 0;
+    enop->rel.expr = NULL;
 
     return 0;
 }
@@ -1953,10 +1974,16 @@ _encode_rm_reg(int reg, int rexr, const x86_64_eval_t *eval,
     enop->disp.sz = 0;
     enop->disp.val = 0;
     enop->disp.eval = NULL;
+    enop->disp.expr = NULL;
     /* No immediate value */
     enop->imm.sz = 0;
     enop->imm.val = 0;
     enop->imm.eval = NULL;
+    enop->imm.expr = NULL;
+    /* No relative value */
+    enop->rel.sz = 0;
+    enop->rel.val = 0;
+    enop->rel.expr = NULL;
 
     return 0;
 }
@@ -2122,9 +2149,14 @@ _encode_oi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, size_t immsz,
         enop->disp.sz = 0;
         enop->disp.val = 0;
         enop->disp.eval = NULL;
+        enop->disp.expr = NULL;
         enop->imm.sz = immsz;
         enop->imm.val = eval2->u.imm.u.fixed;
         enop->imm.eval = NULL;
+        enop->imm.expr = NULL;
+        enop->rel.sz = 0;
+        enop->rel.val = 0;
+        enop->rel.expr = NULL;
 
         return 0;
     } else if ( X86_64_EVAL_IMM == eval2->type
@@ -2139,9 +2171,15 @@ _encode_oi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, size_t immsz,
         enop->disp.sz = 0;
         enop->disp.val = 0;
         enop->disp.eval = NULL;
+        enop->disp.expr = NULL;
         enop->imm.sz = immsz;
         enop->imm.val = 0;
         enop->imm.eval = eval2;
+        /* FIXME */
+        enop->imm.expr = NULL;
+        enop->rel.sz = 0;
+        enop->rel.val = 0;
+        enop->rel.expr = NULL;
 
         return 0;
     } else {
@@ -2250,9 +2288,14 @@ _encode_o(const x86_64_eval_t *eval, x86_64_enop_t *enop)
     enop->disp.sz = 0;
     enop->disp.val = 0;
     enop->disp.eval = NULL;
+    enop->disp.expr = NULL;
     enop->imm.sz = 0;
     enop->imm.val = 0;
     enop->imm.eval = NULL;
+    enop->imm.expr = NULL;
+    enop->rel.sz = 0;
+    enop->rel.val = 0;
+    enop->rel.expr = NULL;
 
     return 0;
 }
@@ -2275,6 +2318,7 @@ _encode_i(const x86_64_eval_t *eval, size_t immsz, x86_64_enop_t *enop)
             enop->disp.sz = 0;
             enop->disp.val = 0;
             enop->disp.eval = NULL;
+            enop->disp.expr = NULL;
             enop->imm.sz = immsz;
             enop->imm.val = eval->u.imm.u.fixed;
             enop->imm.expr = NULL;
@@ -2292,6 +2336,7 @@ _encode_i(const x86_64_eval_t *eval, size_t immsz, x86_64_enop_t *enop)
             enop->disp.sz = 0;
             enop->disp.val = 0;
             enop->disp.eval = NULL;
+            enop->disp.expr = NULL;
             enop->imm.sz = immsz;
             enop->imm.val = 0;
             enop->imm.expr = eval->u.imm.u.rexpr;
@@ -3398,48 +3443,6 @@ binstr(x86_64_instr_t *instr, const x86_64_asm_opt_t *opt, int opsize, int opc1,
 
 
 
-static size_t
-_instr_size(const x86_64_instr_t *instr)
-{
-    size_t sz;
-
-    sz = 0;
-    if ( instr->prefix1 >= 0 ) {
-        sz++;
-    }
-    if ( instr->prefix2 >= 0 ) {
-        sz++;
-    }
-    if ( instr->prefix3 >= 0 ) {
-        sz++;
-    }
-    if ( instr->prefix4 >= 0 ) {
-        sz++;
-    }
-    if ( instr->rex >= 0 ) {
-        sz++;
-    }
-    if ( instr->opcode1 >= 0 ) {
-        sz++;
-    }
-    if ( instr->opcode2 >= 0 ) {
-        sz++;
-    }
-    if ( instr->opcode3 >= 0 ) {
-        sz++;
-    }
-    if ( instr->modrm >= 0 ) {
-        sz++;
-    }
-    if ( instr->sib >= 0 ) {
-        sz++;
-    }
-    sz += instr->disp.sz;
-    sz += instr->imm.sz;
-    sz += instr->rel.sz;
-
-    return 0;
-}
 
 /*
  * Encode instruction from encoded operands
@@ -3547,9 +3550,14 @@ _encode_instr(x86_64_instr_t *instr, const x86_64_enop_t *enop,
     instr->disp.sz = enop->disp.sz;
     instr->disp.val = enop->disp.val;
     instr->disp.eval = enop->disp.eval;
+    instr->disp.expr = enop->disp.expr;
     instr->imm.sz = enop->imm.sz;
     instr->imm.val = enop->imm.val;
     instr->imm.eval = enop->imm.eval;
+    instr->imm.expr = enop->imm.expr;
+    instr->rel.sz = enop->rel.sz;
+    instr->rel.val = enop->rel.val;
+    instr->rel.expr = enop->rel.expr;
 
     /* Opcode prefixes */
     if ( OPCODE_PREFIX_LOCK & prefix ) {
@@ -3615,22 +3623,31 @@ _encode_instr(x86_64_instr_t *instr, const x86_64_enop_t *enop,
  * Build instruction for the I type Op/En
  */
 static int
-_binstr2_i(x86_64_instr_t *instr, x86_64_stmt_t *xstmt, int opc1, int opc2,
-           int opc3, size_t opsize, const x86_64_eval_t *eval, size_t immsz)
+_binstr2_i(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
+           const x86_64_eval_t *eval, size_t immsz)
 {
     int ret;
     x86_64_enop_t enop;
+    x86_64_instr_t *instr;
+
+    /* Allocaate for the instruction */
+    instr = malloc(sizeof(x86_64_instr_t));
+    if ( NULL == instr ) {
+        return -EUNKNOWN;
+    }
 
     /* Encode the operand values */
     ret = _encode_i(eval, immsz, &enop);
     if ( ret < 0 ) {
         /* Invalid operand size */
+        free(instr);
         return -ESIZE;
     }
     /* Encode instruction */
     ret = _encode_instr(instr, &enop, xstmt->tgt, xstmt->prefix, opsize, 0);
     if ( ret < 0 ) {
         /* Invalid operands */
+        free(instr);
         return -EOPERAND;
     }
 
@@ -3638,6 +3655,75 @@ _binstr2_i(x86_64_instr_t *instr, x86_64_stmt_t *xstmt, int opc1, int opc2,
     instr->opcode1 = opc1;
     instr->opcode2 = opc2;
     instr->opcode3 = opc3;
+
+    /* Set the instruction and the size */
+    if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
+        free(instr);
+        return -EUNKNOWN;
+    }
+
+    /* Success */
+    return 1;
+}
+
+/*
+ * Build instruction for the MI type Op/En
+ */
+static int
+_binstr2_mi(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, int preg,
+            size_t opsize, const x86_64_eval_t *evalm,
+            const x86_64_eval_t *evali, size_t immsz)
+{
+    int ret;
+    x86_64_enop_t enop;
+    ssize_t addrsize;
+    x86_64_instr_t *instr;
+
+    /* Check pseudo register */
+    if ( preg < 0 ) {
+        return -EUNKNOWN;
+    }
+
+    /* Allocaate for the instruction */
+    instr = malloc(sizeof(x86_64_instr_t));
+    if ( NULL == instr ) {
+        return -EUNKNOWN;
+    }
+
+    /* Encode and free the values */
+    ret = _encode_mi(evalm, evali, preg, immsz, &enop);
+    if ( ret < 0 ) {
+        /* Invalid operand size */
+        free(instr);
+        return -ESIZE;
+    }
+
+    /* Obtain address size */
+    addrsize = _resolve_address_size1(evalm);
+    if ( addrsize < 0 ) {
+        free(instr);
+        return -ESIZE;
+    }
+
+    /* Encode instruction */
+    ret = _encode_instr(instr, &enop, xstmt->tgt, xstmt->prefix, opsize,
+                        addrsize);
+    if ( ret < 0 ) {
+        /* Invalid operands */
+        free(instr);
+        return -EOPERAND;
+    }
+
+    /* Set the opcode */
+    instr->opcode1 = opc1;
+    instr->opcode2 = opc2;
+    instr->opcode3 = opc3;
+
+    /* Set the instruction and the size */
+    if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
+        free(instr);
+        return -EUNKNOWN;
+    }
 
     /* Success */
     return 1;
@@ -3652,7 +3738,6 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
 {
     int ret;
     int stat;
-    x86_64_instr_t *instr;
 
     assert( STMT_INSTR == xstmt->stmt->type );
 
@@ -3670,21 +3755,10 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
         if ( 2 == mvector_size(xstmt->evals)
              && _eq_reg(mvector_at(xstmt->evals, 0), REG_AL)
              && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
-            /* Allocaate for the instruction */
-            instr = malloc(sizeof(x86_64_instr_t));
-            if ( NULL == instr ) {
-                return -EUNKNOWN;
-            }
 
             /* Build the instruction */
-            stat = _binstr2_i(instr, xstmt, opc1, opc2, opc3, opsize,
+            stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
                               mvector_at(xstmt->evals, 1), SIZE8);
-
-            /* Set the instruction and the size */
-            if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
-                free(instr);
-                return -EUNKNOWN;
-            }
         }
         break;
     case ENC_I_AX_IMM16:
@@ -3692,21 +3766,10 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
         if ( 2 == mvector_size(xstmt->evals)
              && _eq_reg(mvector_at(xstmt->evals, 0), REG_AX)
              && _is_imm(mvector_at(xstmt->evals, 1), SIZE16) ) {
-            /* Allocaate for the instruction */
-            instr = malloc(sizeof(x86_64_instr_t));
-            if ( NULL == instr ) {
-                return -EUNKNOWN;
-            }
 
             /* Build the instruction */
-            stat = _binstr2_i(instr, xstmt, opc1, opc2, opc3, opsize,
+            stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
                               mvector_at(xstmt->evals, 1), SIZE16);
-
-            /* Set the instruction and the size */
-            if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
-                free(instr);
-                return -EUNKNOWN;
-            }
         }
         break;
     case ENC_I_EAX_IMM32:
@@ -3714,21 +3777,10 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
         if ( 2 == mvector_size(xstmt->evals)
              && _eq_reg(mvector_at(xstmt->evals, 0), REG_EAX)
              && _is_imm(mvector_at(xstmt->evals, 1), SIZE32) ) {
-            /* Allocaate for the instruction */
-            instr = malloc(sizeof(x86_64_instr_t));
-            if ( NULL == instr ) {
-                return -EUNKNOWN;
-            }
 
             /* Build the instruction */
-            stat = _binstr2_i(instr, xstmt, opc1, opc2, opc3, opsize,
+            stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
                               mvector_at(xstmt->evals, 1), SIZE32);
-
-            /* Set the instruction and the size */
-            if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
-                free(instr);
-                return -EUNKNOWN;
-            }
         }
         break;
     case ENC_I_RAX_IMM32:
@@ -3736,24 +3788,97 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, int opsize, int opc1,
         if ( 2 == mvector_size(xstmt->evals)
              && _eq_reg(mvector_at(xstmt->evals, 0), REG_RAX)
              && _is_imm(mvector_at(xstmt->evals, 1), SIZE32) ) {
-            /* Allocaate for the instruction */
-            instr = malloc(sizeof(x86_64_instr_t));
-            if ( NULL == instr ) {
-                return -EUNKNOWN;
-            }
 
             /* Build the instruction */
-            stat = _binstr2_i(instr, xstmt, opc1, opc2, opc3, opsize,
+            stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
                               mvector_at(xstmt->evals, 1), SIZE32);
-
-            /* Set the instruction and the size */
-            if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
-                free(instr);
-                return -EUNKNOWN;
-            }
         }
         break;
 
+    case ENC_MI_RM8_IMM8:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_rm8(mvector_at(xstmt->evals, 0))
+             && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1), SIZE8);
+        }
+        break;
+    case ENC_MI_RM16_IMM16:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_rm16(mvector_at(xstmt->evals, 0))
+             && _is_imm(mvector_at(xstmt->evals, 1), SIZE16) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1), SIZE16);
+        }
+        break;
+    case ENC_MI_RM32_IMM32:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_rm32(mvector_at(xstmt->evals, 0))
+             && _is_imm(mvector_at(xstmt->evals, 1), SIZE32) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1), SIZE32);
+        }
+        break;
+    case ENC_MI_RM64_IMM32:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_rm64(mvector_at(xstmt->evals, 0))
+             && _is_imm(mvector_at(xstmt->evals, 1), SIZE32) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1), SIZE32);
+        }
+        break;
+    case ENC_MI_RM16_IMM8:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_rm16(mvector_at(xstmt->evals, 0))
+             && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1), SIZE8);
+        }
+        break;
+    case ENC_MI_RM32_IMM8:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_rm32(mvector_at(xstmt->evals, 0))
+             && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1), SIZE8);
+        }
+        break;
+    case ENC_MI_RM64_IMM8:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_rm64(mvector_at(xstmt->evals, 0))
+             && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1), SIZE8);
+        }
+        break;
 
     default:
         stat = 0;

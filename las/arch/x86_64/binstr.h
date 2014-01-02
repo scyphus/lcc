@@ -43,6 +43,13 @@ typedef enum _x86_64_enc {
     ENC_I_RAX_IMM32,
 
     ENC_MI_RM8_IMM8,
+    ENC_MI_RM16_IMM16,
+    ENC_MI_RM32_IMM32,
+    ENC_MI_RM64_IMM32,
+
+    ENC_MI_RM16_IMM8,
+    ENC_MI_RM32_IMM8,
+    ENC_MI_RM64_IMM8,
 
     ENC_I_AL_FIMM8,
     ENC_I_AL_EIMM8,

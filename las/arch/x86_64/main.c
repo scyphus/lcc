@@ -41,6 +41,9 @@ _instr_imm_offset(const x86_64_instr_t *instr)
 #endif
 
 
+/*
+ * Obtain the size of the instruction
+ */
 static size_t
 _instr_size(const x86_64_instr_t *instr)
 {
@@ -83,6 +86,7 @@ _instr_size(const x86_64_instr_t *instr)
 
     return sz;
 }
+
 
 /*
  * Print assembled code
@@ -252,10 +256,19 @@ _add(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
     EC(binstr2(asmblr, xstmt, SIZE32, 0x05, -1, -1, ENC_I_EAX_IMM32, -1));
     EC(binstr2(asmblr, xstmt, SIZE64, 0x05, -1, -1, ENC_I_RAX_IMM32, -1));
 
+    EC(binstr2(asmblr, xstmt, SIZE8, 0x80, -1, -1, ENC_MI_RM8_IMM8, 0));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x81, -1, -1, ENC_MI_RM16_IMM16, 0));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x81, -1, -1, ENC_MI_RM32_IMM32, 0));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x81, -1, -1, ENC_MI_RM64_IMM32, 0));
+
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x83, -1, -1, ENC_MI_RM16_IMM8, 0));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x83, -1, -1, ENC_MI_RM32_IMM8, 0));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x83, -1, -1, ENC_MI_RM64_IMM8, 0));
+
     return 0;
 
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -337,7 +350,7 @@ static int
 _and(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -393,7 +406,7 @@ static int
 _bsf(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -425,7 +438,7 @@ static int
 _bsr(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -456,7 +469,7 @@ static int
 _bswap(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -492,7 +505,7 @@ static int
 _bt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -533,7 +546,7 @@ static int
 _btc(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -573,7 +586,7 @@ static int
 _btr(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -613,7 +626,7 @@ static int
 _bts(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -647,7 +660,7 @@ int
 _cbw(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -663,7 +676,7 @@ int
 _cwde(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -679,7 +692,7 @@ int
 _cdqe(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -706,7 +719,7 @@ int
 _clc(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -733,7 +746,7 @@ static int
 _cld(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -760,7 +773,7 @@ static int
 _clflush(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -787,7 +800,7 @@ static int
 _cli(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -843,7 +856,7 @@ static int
 _cmp(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -905,7 +918,7 @@ static int
 _cmpxchg(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -935,7 +948,7 @@ static int
 _cpuid(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -973,7 +986,7 @@ static int
 _crc32(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1016,7 +1029,7 @@ static int
 _cwd(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1032,7 +1045,7 @@ static int
 _cdq(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1048,7 +1061,7 @@ static int
 _cqo(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1075,7 +1088,7 @@ static int
 _daa(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1102,7 +1115,7 @@ static int
 _das(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1139,7 +1152,7 @@ static int
 _dec(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1176,7 +1189,7 @@ static int
 _div(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1206,7 +1219,7 @@ static int
 _hlt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1240,7 +1253,7 @@ static int
 _idiv(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1290,7 +1303,7 @@ static int
 _imul(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1347,7 +1360,7 @@ static int
 _in(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1389,7 +1402,7 @@ static int
 _inc(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1421,7 +1434,7 @@ static int
 _iret(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1437,7 +1450,7 @@ static int
 _iretd(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1453,7 +1466,7 @@ static int
 _iretq(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1491,7 +1504,7 @@ static int
 _jmp(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1531,7 +1544,7 @@ static int
 _monitor(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1607,7 +1620,7 @@ static int
 _mov(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1662,7 +1675,7 @@ static int
 _out(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1697,7 +1710,7 @@ static int
 _popcnt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1733,7 +1746,7 @@ static int
 _ret(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1798,7 +1811,7 @@ static int
 _xor(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->instr = malloc(sizeof(x86_64_instr_t));
+    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
     x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
     opt->tgt = X86_64_O64;
     opt->ltbl = &asmblr->lbtbl;
@@ -1972,6 +1985,98 @@ _resolv_instr(x86_64_stmt_t *xstmt)
     return 0;
 }
 
+static int
+_check_size(size_t sz, int64_t val)
+{
+    switch ( sz ) {
+    case SIZE8:
+        if ( val >= -128 && val <= 127 ) {
+            return 1;
+        }
+        break;
+    case SIZE16:
+        if ( val >= -32768 && val <= 32767 ) {
+            return 1;
+        }
+        break;
+    case SIZE32:
+        if ( val >= -2147483648 && val <= 2147483647 ) {
+            return 1;
+        }
+        break;
+    case SIZE64:
+        return 1;
+    default:
+        if ( 0 == val ) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+/*
+ * Fix instructions
+ */
+static int
+_fix_instr(x86_64_stmt_t *xstmt)
+{
+    int i;
+    size_t imin;
+    size_t imax;
+    size_t sz;
+    x86_64_instr_t *instr;
+    x86_64_instr_t *minstr;
+    int fixed;
+
+    /* Fix the optimal instruction if possible */
+    imin = 0;
+    imax = 0;
+    instr = NULL;
+    minstr = NULL;
+    fixed = 1;
+    for ( i = 0; i < mvector_size(xstmt->instrs); i++ ) {
+        instr = mvector_at(xstmt->instrs, i);
+        if ( NULL != instr->disp.expr || NULL != instr->imm.expr
+             || 0 != instr->rel.sz ) {
+            /* Not fixed */
+            fixed = 0;
+        }
+
+        /* Check whether available value */
+        if ( !_check_size(instr->disp.sz, instr->disp.val)
+             || !_check_size(instr->imm.sz, instr->imm.val)
+             || !_check_size(instr->rel.sz, instr->rel.val) ) {
+            continue;
+        }
+
+        sz = _instr_size(instr);
+        if ( 0 == imin || sz < imin ) {
+            /* Update minimum */
+            imin = sz;
+            minstr = instr;
+        }
+        if ( sz > imax ) {
+            imax = sz;
+        }
+    }
+    if ( 0 == imin ) {
+        return -EOPERAND;
+    }
+
+    if ( fixed ) {
+        /* Fixed */
+        xstmt->sinstr = minstr;
+        xstmt->esize.min = imin;
+        xstmt->esize.max = imin;
+    } else {
+        /* Not fixed yet */
+        xstmt->esize.min = imin;
+        xstmt->esize.max = imax;
+    }
+
+    return 0;
+}
 
 /*
  * Assemble an instruction
@@ -1981,10 +2086,6 @@ _assemble_instr(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     int ret;
     int j;
-    size_t imin;
-    size_t imax;
-    size_t sz;
-    x86_64_instr_t *instr;
 
     assert( STMT_INSTR == xstmt->stmt->type );
 
@@ -2002,22 +2103,9 @@ _assemble_instr(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
             /* FIXME */
             return 0;
         } else {
-            /* FIXME: Optimize if possible */
-            imin = 0;
-            imax = 0;
-            instr = NULL;
-            for ( j = 0; j < mvector_size(xstmt->instrs); j++ ) {
-                sz = _instr_size(mvector_at(xstmt->instrs, j));
-                if ( 0 == imin || sz < imin ) {
-                    imin = sz;
-                }
-                if ( sz > imax ) {
-                    imax = sz;
-                }
+            if ( 0 != _fix_instr(xstmt) ) {
+                /* FIXME: Error */
             }
-            xstmt->esize.min = imin;
-            xstmt->esize.max = imax;
-
             return 0;
         }
     } else {
@@ -2128,7 +2216,7 @@ _set_label_global(x86_64_label_table_t *tbl, const char *lstr)
 /*
  * Stage 1: Assemble all the candidates
  * State 2: Estimate label offsets
- * Stage 3: Assemble non-fixed-size operands
+ * Stage 3: Complete the assembling procedure
  */
 static int
 _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
@@ -2165,7 +2253,7 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
         xstmt->state = X86_64_STMT_INIT;
         xstmt->tgt = tgt;
         xstmt->evals = NULL;
-        xstmt->instr = NULL;
+        xstmt->sinstr = NULL;
         xstmt->instrs = mvector_new();
         xstmt->esize.min = 0;
         xstmt->esize.max = 0;
@@ -2293,6 +2381,11 @@ _stage3(x86_64_assembler_t *asmblr)
 
         switch ( xstmt->stmt->type ) {
         case STMT_INSTR:
+            if ( NULL != xstmt->sinstr ) {
+                _print_instruction_bin(xstmt->sinstr);
+            }
+
+#if 0
             fprintf(stderr, "# = %zu\n", mvector_size(xstmt->instrs));
             if ( 1 == mvector_size(xstmt->instrs) ) {
                 _print_instruction_bin(mvector_at(xstmt->instrs, 0));
@@ -2301,6 +2394,7 @@ _stage3(x86_64_assembler_t *asmblr)
                 printf("\n");
 #endif
             }
+#endif
             break;
         default:
             /* Do nothing */
