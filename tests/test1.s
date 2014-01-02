@@ -211,6 +211,8 @@ label16:
 	cmpxchg	[rbp],eax
 	cmpxchg	[rbp],rax
 
+label17:
+	cpuid
 
 
 
