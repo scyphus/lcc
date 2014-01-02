@@ -24,6 +24,7 @@
 #define OPCODE_PREFIX_BRANCH_TAKEN      (1<<6)
 #define OPCODE_PREFIX_BRANCH_NOT_TAKEN  (1<<7)
 #define OPCODE_PREFIX_CRC32             (1<<8)
+#define OPCODE_PREFIX_POPCNT            (1<<9)
 #define OPCODE_SUFFIX_FAR               (1)
 
 typedef enum _x86_64_enc {

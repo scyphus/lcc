@@ -3653,6 +3653,12 @@ _encode_instr(x86_64_instr_t *instr, const x86_64_enop_t *enop,
         }
         instr->prefix1 = 0xf3;
     }
+    if ( OPCODE_PREFIX_POPCNT & prefix ) {
+        if ( instr->prefix1 >= 0 ) {
+            return -EPREFIX;
+        }
+        instr->prefix1 = 0xf3;
+    }
     if ( OPCODE_PREFIX_BRANCH_NOT_TAKEN & prefix ) {
         if ( instr->prefix3 >= 0 ) {
             return -EPREFIX;

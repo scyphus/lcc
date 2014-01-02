@@ -1338,23 +1338,14 @@ _out(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 static int
 _popcnt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
-    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
-    opt->tgt = X86_64_O64;
-    opt->ltbl = &asmblr->lbtbl;
-    opt->pos = 0;
-    opt->prefix = xstmt->prefix;
-    opt->suffix = xstmt->suffix;
+    /* FIXME */
+    xstmt->prefix |= OPCODE_PREFIX_POPCNT;
 
-    PASS0(binstr(instr, opt, SIZE16, 0xf3, 0x0f, 0xb8, -1, ops,
-                 ENC_RM_R16_RM16));
-    PASS0(binstr(instr, opt, SIZE32, 0xf3, 0x0f, 0xb8, -1, ops,
-                 ENC_RM_R32_RM32));
-    PASS0(binstr(instr, opt, SIZE64, 0xf3, 0x0f, 0xb8, -1, ops,
-                 ENC_RM_R64_RM64));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x0f, 0xb8, -1, ENC_RM_R16_RM16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x0f, 0xb8, -1, ENC_RM_R32_RM32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x0f, 0xb8, -1, ENC_RM_R64_RM64, -1));
 
-    return -EOPERAND;
+    return 0;
 }
 
 /*

@@ -366,6 +366,15 @@ label33:
 	out	dx,ax
 	out	dx,eax
 
+label34:
+	popcnt	cx,r10w
+	popcnt	ecx,r10d
+	popcnt	rcx,r10
+
+	popcnt	cx,[rbp]
+	popcnt	ecx,[rbp]
+	popcnt	rcx,[rbp]
+
 
 
 start:
