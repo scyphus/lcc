@@ -200,7 +200,16 @@ label15:
 	cmp	[rbp],eax
 	cmp	[rbp],rax
 
+label16:
+	cmpxchg	al,ah
+	cmpxchg	ax,cx
+	cmpxchg	eax,ecx
+	cmpxchg	rax,rcx
 
+	cmpxchg	[rbp],al
+	cmpxchg	[rbp],ax
+	cmpxchg	[rbp],eax
+	cmpxchg	[rbp],rax
 
 
 
