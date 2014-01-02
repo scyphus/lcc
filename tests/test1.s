@@ -227,6 +227,11 @@ label18:
 	crc32	rax,byte [rbp]
 	crc32	rax,qword [rbp]
 
+label19:
+	cwd
+	cdq
+	cqo
+
 
 
 
