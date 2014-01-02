@@ -232,6 +232,12 @@ label19:
 	cdq
 	cqo
 
+label20:
+	daa
+
+label21:
+	das
+
 
 
 
