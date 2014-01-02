@@ -358,6 +358,15 @@ label32:
 	mov	dword [rbp],3
 	mov	qword [rbp],0x4
 
+label33:
+	out	1,al
+	out	2,ax
+	out	3,eax
+	out	dx,al
+	out	dx,ax
+	out	dx,eax
+
+
 
 start:
 
