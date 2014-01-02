@@ -214,6 +214,19 @@ label16:
 label17:
 	cpuid
 
+label18:
+	crc32	eax,cl
+	crc32	eax,cx
+	crc32	eax,ecx
+	crc32	rax,cl
+	crc32	rax,rcx
+
+	crc32	eax,byte [rbp]
+	crc32	eax,word [rbp]
+	crc32	eax,dword [rbp]
+	crc32	rax,byte [rbp]
+	crc32	rax,qword [rbp]
+
 
 
 

@@ -785,31 +785,17 @@ _cpuid(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 static int
 _crc32(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
-    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
-    opt->tgt = X86_64_O64;
-    opt->ltbl = &asmblr->lbtbl;
-    opt->pos = 0;
-    opt->prefix = xstmt->prefix;
-    opt->suffix = xstmt->suffix;
-
     /* FIXME */
-    x86_64_asm_opt_t o;
+    xstmt->prefix |= OPCODE_PREFIX_CRC32;
 
-    (void)memcpy(&o, opt, sizeof(x86_64_asm_opt_t));
-    o.prefix |= OPCODE_PREFIX_CRC32;
+    EC(binstr2(asmblr, xstmt, SIZE8, 0x0f, 0x38, 0xf0, ENC_RM_R32_RM8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x0f, 0x38, 0xf1, ENC_RM_R32_RM16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x0f, 0x38, 0xf1, ENC_RM_R32_RM32, -1));
 
-    PASS0(binstr(instr, &o, SIZE8, 0x0f, 0x38, 0xf0, -1, ops, ENC_RM_R32_RM8));
-    PASS0(binstr(instr, &o, SIZE16, 0x0f, 0x38, 0xf1, -1, ops,
-                 ENC_RM_R32_RM16));
-    PASS0(binstr(instr, &o, SIZE32, 0x0f, 0x38, 0xf1, -1, ops,
-                 ENC_RM_R32_RM32));
-    PASS0(binstr(instr, &o, SIZE64, 0x0f, 0x38, 0xf0, -1, ops, ENC_RM_R64_RM8));
-    PASS0(binstr(instr, &o, SIZE64, 0x0f, 0x38, 0xf1, -1, ops,
-                 ENC_RM_R64_RM64));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x0f, 0x38, 0xf0, ENC_RM_R64_RM8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x0f, 0x38, 0xf1, ENC_RM_R64_RM64, -1));
 
-    return -EOPERAND;
+    return 0;
 
 }
 

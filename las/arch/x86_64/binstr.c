@@ -4266,11 +4266,47 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
                                mvector_at(xstmt->evals, 1));
         }
         break;
+    case ENC_RM_R32_RM8:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_r32_rm8(mvector_at(xstmt->evals, 0),
+                            mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1));
+        }
+        break;
+    case ENC_RM_R32_RM16:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_r32_rm16(mvector_at(xstmt->evals, 0),
+                             mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1));
+        }
+        break;
     case ENC_RM_R32_RM32:
         /* Check the number of operands and format */
         if ( 2 == mvector_size(xstmt->evals)
              && _is_r32_rm32(mvector_at(xstmt->evals, 0),
                              mvector_at(xstmt->evals, 1)) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
+                               mvector_at(xstmt->evals, 0),
+                               mvector_at(xstmt->evals, 1));
+        }
+        break;
+    case ENC_RM_R64_RM8:
+        /* Check the number of operands and format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _is_r64_rm8(mvector_at(xstmt->evals, 0),
+                            mvector_at(xstmt->evals, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
