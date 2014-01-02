@@ -926,28 +926,19 @@ _dec(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 static int
 _div(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
-    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
-    opt->tgt = X86_64_O64;
-    opt->ltbl = &asmblr->lbtbl;
-    opt->pos = 0;
-    opt->prefix = xstmt->prefix;
-    opt->suffix = xstmt->suffix;
+    EC(binstr2(asmblr, xstmt, SIZE8, 0xf6, -1, -1, ENC_M_RM8, 6));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0xf7, -1, -1, ENC_M_RM16, 6));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0xf7, -1, -1, ENC_M_RM32, 6));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0xf7, -1, -1, ENC_M_RM64, 6));
 
-    PASS0(binstr(instr, opt, SIZE8, 0xf6, -1, -1, 6, ops, ENC_M_RM8));
-    PASS0(binstr(instr, opt, SIZE16, 0xf7, -1, -1, 6, ops, ENC_M_RM16));
-    PASS0(binstr(instr, opt, SIZE32, 0xf7, -1, -1, 6, ops, ENC_M_RM32));
-    PASS0(binstr(instr, opt, SIZE64, 0xf7, -1, -1, 6, ops, ENC_M_RM64));
-
-    return -EOPERAND;
+    return 0;
 }
 
 /*
  * HLT (Vol. 2A 3-368)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
- *      F4              HLT                     NP      Valid  Valid
+ *      F4              HLT                     NP      Valid   Valid
  *
  *
  *      Op/En   Operand1        Operand2        Operand3        Operand4
@@ -956,18 +947,9 @@ _div(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 static int
 _hlt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
-    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
-    opt->tgt = X86_64_O64;
-    opt->ltbl = &asmblr->lbtbl;
-    opt->pos = 0;
-    opt->prefix = xstmt->prefix;
-    opt->suffix = xstmt->suffix;
+    EC(binstr2(asmblr, xstmt, 0, 0xf4, -1, -1, ENC_NP, -1));
 
-    PASS0(binstr(instr, opt, 0, 0xf4, -1, -1, -1, ops, ENC_NP));
-
-    return -EOPERAND;
+    return 0;
 }
 
 /*

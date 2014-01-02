@@ -249,6 +249,19 @@ label22:
 	dec	dword [rbp]
 	dec	qword [rbp]
 
+label23:
+	div	bl
+	div	bx
+	div	ebx
+	div	rbx
+
+	div	byte [rbp]
+	div	word [rbp]
+	div	dword [rbp]
+	div	qword [rbp]
+
+label24:
+	hlt
 
 
 
