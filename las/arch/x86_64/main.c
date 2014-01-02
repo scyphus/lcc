@@ -1161,15 +1161,15 @@ _jmp(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         /* To be implemented */
         return -EUNKNOWN;
     } else {
-#if 0
         /* w/o far */
-        PASS0(binstr(instr, opt, SIZE8, 0xeb, -1, -1, -1, ops, ENC_D_REL8));
-        PASS0(binstr(instr, opt, SIZE16, 0xe9, -1, -1, -1, ops, ENC_D_REL16));
-        PASS0(binstr(instr, opt, SIZE32, 0xe9, -1, -1, -1, ops, ENC_D_REL32));
-        PASS0(binstr(instr, opt, SIZE16, 0xff, -1, -1, 4, ops, ENC_M_RM16));
-        PASS0(binstr(instr, opt, SIZE32, 0xff, -1, -1, 4, ops, ENC_M_RM32));
-        PASS0(binstr(instr, opt, SIZE64, 0xff, -1, -1, 4, ops, ENC_M_RM64));
-#endif
+        EC(binstr2(asmblr, xstmt, SIZE8, 0xeb, -1, -1, ENC_D_REL8, -1));
+        EC(binstr2(asmblr, xstmt, SIZE32, 0xe9, -1, -1, ENC_D_REL32, -1));
+        EC(binstr2(asmblr, xstmt, SIZE64, 0xff, -1, -1, ENC_M_RM64, 4));
+        /* Invalid for 64-bit mode */
+        /*EC(binstr2(asmblr, xstmt, SIZE16, 0xe9, -1, -1, ENC_D_REL16, -1));*/
+        /*EC(binstr2(asmblr, xstmt, SIZE16, 0xff, -1, -1, ENC_M_RM16, 4));*/
+        /*EC(binstr2(asmblr, xstmt, SIZE32, 0xff, -1, -1, ENC_M_RM32, 4));*/
+
         return -EOPERAND;
     }
 }

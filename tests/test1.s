@@ -329,6 +329,10 @@ label29:
 	iretd
 	iretq
 
+label30:
+	jmp	start
+	jmp	rax
+
 label31:
 	monitor
 
