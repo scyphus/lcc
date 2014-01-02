@@ -3781,7 +3781,7 @@ _binstr2_mr(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
  */
 static int
 _binstr2_rm(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
-            const x86_64_eval_t *evalm, const x86_64_eval_t *evalr)
+            const x86_64_eval_t *evalr, const x86_64_eval_t *evalm)
 {
     int ret;
     x86_64_enop_t enop;
@@ -3795,7 +3795,7 @@ _binstr2_rm(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, size_t opsize,
     }
 
     /* Encode and free the values */
-    ret = _encode_rm(evalm, evalr, &enop);
+    ret = _encode_rm(evalr, evalm, &enop);
     if ( ret < 0 ) {
         /* Invalid operand size */
         free(instr);
