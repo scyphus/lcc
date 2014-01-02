@@ -1058,23 +1058,14 @@ _imul(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 static int
 _in(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    const operand_vector_t *ops = xstmt->stmt->u.instr->operands;
-    x86_64_instr_t *instr = xstmt->sinstr = malloc(sizeof(x86_64_instr_t));
-    x86_64_asm_opt_t *opt = alloca(sizeof(x86_64_asm_opt_t));
-    opt->tgt = X86_64_O64;
-    opt->ltbl = &asmblr->lbtbl;
-    opt->pos = 0;
-    opt->prefix = xstmt->prefix;
-    opt->suffix = xstmt->suffix;
+    EC(binstr2(asmblr, xstmt, SIZE8, 0xe4, -1, -1, ENC_I_AL_IMM8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0xe5, -1, -1, ENC_I_AX_IMM8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0xe5, -1, -1, ENC_I_EAX_IMM8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE8, 0xec, -1, -1, ENC_NP_AL_DX, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0xed, -1, -1, ENC_NP_AX_DX, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0xed, -1, -1, ENC_NP_EAX_DX, -1));
 
-    PASS0(binstr(instr, opt, SIZE8, 0xe4, -1, -1, -1, ops, ENC_I_AL_FIMM8));
-    PASS0(binstr(instr, opt, SIZE16, 0xe5, -1, -1, -1, ops, ENC_I_AX_FIMM8));
-    PASS0(binstr(instr, opt, SIZE32, 0xe5, -1, -1, -1, ops, ENC_I_EAX_FIMM8));
-    PASS0(binstr(instr, opt, SIZE8, 0xec, -1, -1, -1, ops, ENC_NP_AL_DX));
-    PASS0(binstr(instr, opt, SIZE16, 0xed, -1, -1, -1, ops, ENC_NP_AX_DX));
-    PASS0(binstr(instr, opt, SIZE32, 0xed, -1, -1, -1, ops, ENC_NP_EAX_DX));
-
-    return -EOPERAND;
+    return 0;
 }
 
 /*

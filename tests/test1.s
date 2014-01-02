@@ -305,6 +305,14 @@ label26:
 	imul	r8d,[rbp],0x7ff4
 	imul	r8,[rbp],0x7ff5
 
+label27:
+	in	al,1
+	in	ax,2
+	in	eax,3
+	in	al,dx
+	in	ax,dx
+	in	eax,dx
+
 
 
 start:

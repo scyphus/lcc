@@ -4128,11 +4128,82 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
             stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
         }
         break;
+    case ENC_NP_AL_DX:
+        /* Check the number of operands and the format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _eq_reg(mvector_at(xstmt->evals, 0), REG_AL)
+             && _eq_reg(mvector_at(xstmt->evals, 1), REG_DX) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_NP_DX_AL:
+        /* Check the number of operands and the format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _eq_reg(mvector_at(xstmt->evals, 0), REG_DX)
+             && _eq_reg(mvector_at(xstmt->evals, 1), REG_AL) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_NP_AX_DX:
+        /* Check the number of operands and the format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _eq_reg(mvector_at(xstmt->evals, 0), REG_AX)
+             && _eq_reg(mvector_at(xstmt->evals, 1), REG_DX) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_NP_DX_AX:
+        /* Check the number of operands and the format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _eq_reg(mvector_at(xstmt->evals, 0), REG_DX)
+             && _eq_reg(mvector_at(xstmt->evals, 1), REG_AX) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_NP_EAX_DX:
+        /* Check the number of operands and the format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _eq_reg(mvector_at(xstmt->evals, 0), REG_EAX)
+             && _eq_reg(mvector_at(xstmt->evals, 1), REG_DX) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_NP_DX_EAX:
+        /* Check the number of operands and the format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _eq_reg(mvector_at(xstmt->evals, 0), REG_DX)
+             && _eq_reg(mvector_at(xstmt->evals, 1), REG_EAX) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
+        }
+        break;
 
     case ENC_I_AL_IMM8:
         /* Check the number of operands and the format */
         if ( 2 == mvector_size(xstmt->evals)
              && _eq_reg(mvector_at(xstmt->evals, 0), REG_AL)
+             && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
+                              mvector_at(xstmt->evals, 1), SIZE8);
+        }
+        break;
+    case ENC_I_AX_IMM8:
+        /* Check the number of operands and the format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _eq_reg(mvector_at(xstmt->evals, 0), REG_AX)
              && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
 
             /* Build the instruction */
@@ -4149,6 +4220,17 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
             /* Build the instruction */
             stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
                               mvector_at(xstmt->evals, 1), SIZE16);
+        }
+        break;
+    case ENC_I_EAX_IMM8:
+        /* Check the number of operands and the format */
+        if ( 2 == mvector_size(xstmt->evals)
+             && _eq_reg(mvector_at(xstmt->evals, 0), REG_EAX)
+             && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
+                              mvector_at(xstmt->evals, 1), SIZE8);
         }
         break;
     case ENC_I_EAX_IMM32:

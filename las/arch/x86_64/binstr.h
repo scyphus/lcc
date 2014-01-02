@@ -38,7 +38,9 @@ typedef enum _x86_64_enc {
     ENC_I_EIMM16,
 
     ENC_I_AL_IMM8,
+    ENC_I_AX_IMM8,
     ENC_I_AX_IMM16,
+    ENC_I_EAX_IMM8,
     ENC_I_EAX_IMM32,
     ENC_I_RAX_IMM32,
 
