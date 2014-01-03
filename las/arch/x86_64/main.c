@@ -1381,6 +1381,34 @@ _pop(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * POPA/POPAD (Vol. 2B 4-268)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      61              POPA                    NP      Inv.    Valid
+ *      61              POPAD                   NP      Inv.    Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_popa(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, SIZE16, 0x61, -1, -1, ENC_NP, -1));*/
+
+    return 0;
+}
+static int
+_popad(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, SIZE32, 0x61, -1, -1, ENC_NP, -1));*/
+
+    return 0;
+}
+
+/*
  * POPCNT (Vol. 2B 4-270)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -1602,6 +1630,8 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, mov);
        REGISTER_INSTR(ifunc, str, out);
        REGISTER_INSTR(ifunc, str, pop);
+       REGISTER_INSTR(ifunc, str, popa);
+       REGISTER_INSTR(ifunc, str, popad);
        REGISTER_INSTR(ifunc, str, popcnt);
        REGISTER_INSTR(ifunc, str, ret);
        REGISTER_INSTR(ifunc, str, xor);
