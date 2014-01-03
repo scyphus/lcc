@@ -482,22 +482,22 @@ label43:
 	test	[rbp],rax
 
 label44:
-	lodsb
-	lodsw
-	lodsd
-	lodsq
+	rep lodsb
+	rep lodsw
+	rep lodsd
+	rep lodsq
 
 label45:
-	stosb
-	stosw
-	stosd
-	stosq
+	rep stosb
+	rep stosw
+	rep stosd
+	rep stosq
 
 label46:
-	movsb
-	movsw
-	movsd
-	movsq
+	rep movsb
+	rep movsw
+	rep movsd
+	rep movsq
 
 label47:
 	sub	al,1
