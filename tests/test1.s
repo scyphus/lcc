@@ -487,6 +487,18 @@ label44:
 	lodsd
 	lodsq
 
+label45:
+	stosb
+	stosw
+	stosd
+	stosq
+
+label46:
+	movsb
+	movsw
+	movsd
+	movsq
+
 
 start:
 

@@ -1847,6 +1847,52 @@ _mov(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * MOVS/MOVSB/MOVSW/MOVSD/MOVSQ (Vol. 2B 4-85)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      A4              MOVS m8,m8              NP      Valid   Valid
+ *      A5              MOVS m16,m16            NP      Valid   Valid
+ *      A5              MOVS m32,m32            NP      Valid   Valid
+ *      REX.W + A5      MOVS m64,m64            NP      Valid   N.E.
+ *      A4              MOVSB                   NP      Valid   Valid
+ *      A5              MOVSW                   NP      Valid   Valid
+ *      A5              MOVSD                   NP      Valid   Valid
+ *      REX.W + A5      MOVSQ                   NP      Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_movsb(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE8, 0xa4, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+static int
+_movsw(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE16, 0xa5, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+static int
+_movsd(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE32, 0xa5, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+static int
+_movsq(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE64, 0xa5, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+
+/*
  * OUT (Vol. 2B 4-131)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -2096,6 +2142,52 @@ static int
 _sti(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     EC(binstr2(asmblr, xstmt, 0, 0xfb, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+
+/*
+ * STOS/STOSB/STOSW/STOSD/STOSQ (Vol. 2A 3-458)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      AA              STOS m8                 NP      Valid   Valid
+ *      AB              STOS m16                NP      Valid   Valid
+ *      AB              STOS m32                NP      Valid   Valid
+ *      REX.W + AB      STOS m64                NP      Valid   N.E.
+ *      AA              STOSB                   NP      Valid   Valid
+ *      AB              STOSW                   NP      Valid   Valid
+ *      AB              STOSD                   NP      Valid   Valid
+ *      REX.W + AB      STOSQ                   NP      Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_stosb(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE8, 0xaa, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+static int
+_stosw(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE16, 0xab, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+static int
+_stosd(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE32, 0xab, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+static int
+_stosq(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE64, 0xab, -1, -1, ENC_NP, -1));
 
     return 0;
 }
@@ -2353,6 +2445,10 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, lodsq);
        REGISTER_INSTR(ifunc, str, monitor);
        REGISTER_INSTR(ifunc, str, mov);
+       REGISTER_INSTR(ifunc, str, movsb);
+       REGISTER_INSTR(ifunc, str, movsw);
+       REGISTER_INSTR(ifunc, str, movsd);
+       REGISTER_INSTR(ifunc, str, movsq);
        REGISTER_INSTR(ifunc, str, out);
        REGISTER_INSTR(ifunc, str, pop);
        REGISTER_INSTR(ifunc, str, popa);
@@ -2363,6 +2459,10 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, pushad);
        REGISTER_INSTR(ifunc, str, ret);
        REGISTER_INSTR(ifunc, str, sti);
+       REGISTER_INSTR(ifunc, str, stosb);
+       REGISTER_INSTR(ifunc, str, stosw);
+       REGISTER_INSTR(ifunc, str, stosd);
+       REGISTER_INSTR(ifunc, str, stosq);
        REGISTER_INSTR(ifunc, str, test);
        REGISTER_INSTR(ifunc, str, xor);
    } else {
