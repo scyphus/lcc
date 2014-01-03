@@ -124,6 +124,11 @@ _expr_range_op(const x86_64_label_table_t *ltbl, const expr_t *expr,
         ret = _expr_range(ltbl, expr0, &lmin, &lmax);
         if ( ret < 0 ) {
             return -1;
+        } else if ( 0 == ret ) {
+            /* Just copy */
+            *min = lmin;
+            *max = lmax;
+            return 0;
         }
         switch ( expr->u.op.type ) {
         case OP_PLUS:
@@ -146,10 +151,20 @@ _expr_range_op(const x86_64_label_table_t *ltbl, const expr_t *expr,
         ret = _expr_range(ltbl, expr0, &lmin, &lmax);
         if ( ret < 0 ) {
             return -1;
+        } else if ( 0 == ret ) {
+            /* Just copy */
+            *min = lmin;
+            *max = lmax;
+            return 0;
         }
         ret = _expr_range(ltbl, expr1, &rmin, &rmax);
         if ( ret < 0 ) {
             return -1;
+        } else if ( 0 == ret ) {
+            /* Just copy */
+            *min = lmin;
+            *max = lmax;
+            return 0;
         }
         switch ( expr->u.op.type ) {
         case OP_PLUS:

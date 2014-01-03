@@ -1656,9 +1656,12 @@ _fix_instr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
     int i;
     size_t imin;
     size_t imax;
+    int64_t loff;
+    int64_t roff;
     size_t sz;
     x86_64_instr_t *instr;
     x86_64_instr_t *minstr;
+    int ret;
 
     /* Fix the optimal instruction if possible */
     imin = 0;
@@ -1681,24 +1684,50 @@ _fix_instr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         /* Check whether they are capable values */
         if ( NULL != instr->disp.expr ) {
             /* Displacement is relocatable */
-            continue;
+            ret = x86_64_expr_range(&asmblr->lbtbl, instr->disp.expr, &loff,
+                                    &roff);
+            if ( ret < 0 ) {
+                return -1;
+            }
+            if ( !_check_size(instr->disp.sz, loff)
+                 || !_check_size(instr->disp.sz, roff) ) {
+                continue;
+            }
         }
         if ( NULL != instr->imm.expr ) {
             /* Immediate value is relocatable */
-            continue;
+            ret = x86_64_expr_range(&asmblr->lbtbl, instr->imm.expr, &loff,
+                                    &roff);
+            if ( ret < 0 ) {
+                return -1;
+            }
+            if ( !_check_size(instr->imm.sz, loff)
+                 || !_check_size(instr->imm.sz, roff) ) {
+                continue;
+            }
         }
         if ( 0 != instr->rel.sz ) {
             /* Relative value */
             if ( NULL == instr->rel.expr ) {
-                if ( !_check_size(instr->rel.sz,
-                                  instr->rel.val - xstmt->epos.min - sz)
-                     || !_check_size(instr->rel.sz,
-                                     instr->rel.val - xstmt->epos.max - sz) ) {
+                loff = instr->rel.val - xstmt->epos.max - sz;
+                roff = instr->rel.val - xstmt->epos.min - sz;
+                if ( !_check_size(instr->rel.sz, loff)
+                     || !_check_size(instr->rel.sz, roff) ) {
                     continue;
                 }
                 //instr->rel.val = instr->rel.val - xstmt->epos.max - sz;
             } else {
-                continue;
+                ret = x86_64_expr_range(&asmblr->lbtbl, instr->rel.expr, &loff,
+                                        &roff);
+                if ( ret < 0 ) {
+                    return -1;
+                }
+                loff = loff - xstmt->epos.max - sz;
+                roff = roff - xstmt->epos.min - sz;
+                if ( !_check_size(instr->rel.sz, loff)
+                     || !_check_size(instr->rel.sz, roff) ) {
+                    continue;
+                }
             }
         }
 
@@ -1849,6 +1878,27 @@ _set_label_global(x86_64_label_table_t *tbl, const char *lstr)
         if ( 0 == strcmp(ent->c->label, lstr) ) {
             /* Set the scope as global */
             ent->c->scope |= 1;
+            return 0;
+        }
+        ent = ent->next;
+    }
+
+    return -1;
+}
+
+/*
+ * Fixed the label position
+ */
+static int
+_fix_label_position(x86_64_label_table_t *tbl, const char *lstr, off_t pos)
+{
+    x86_64_label_ent_t *ent;
+
+    ent = tbl->root;
+    while ( NULL != ent ) {
+        if ( 0 == strcmp(ent->c->label, lstr) ) {
+            ent->c->min = pos;
+            ent->c->max = pos;
             return 0;
         }
         ent = ent->next;
@@ -2008,6 +2058,7 @@ _stage3(x86_64_assembler_t *asmblr)
 {
     size_t i;
     x86_64_stmt_t *xstmt;
+    off_t pos;
 
     assert( 2 == asmblr->stage );
 
@@ -2017,7 +2068,51 @@ _stage3(x86_64_assembler_t *asmblr)
         switch ( xstmt->stmt->type ) {
         case STMT_INSTR:
             _fix_instr2(asmblr, xstmt);
+            break;
+        default:
+            /* Do nothing */
+            ;
+        }
+    }
 
+    pos = 0;
+    for ( i = 0; i < mvector_size(asmblr->xvec); i++ ) {
+        xstmt = mvector_at(asmblr->xvec, i);
+
+        switch ( xstmt->stmt->type ) {
+        case STMT_INSTR:
+            pos += xstmt->esize.min;
+            break;
+        case STMT_LABEL:
+            /* Update the position */
+            _fix_label_position(&asmblr->lbtbl, xstmt->stmt->u.label, pos);
+            /*fprintf(stderr, "Label %s: %lld\n", xstmt->stmt->u.label, pos);*/
+            break;
+        default:
+            /* Do nothing */
+            ;
+        }
+    }
+
+    /* Completed stage 3 */
+    asmblr->stage = 3;
+
+    return 0;
+}
+
+static int
+_output(x86_64_assembler_t *asmblr)
+{
+    size_t i;
+    x86_64_stmt_t *xstmt;
+
+    assert( 3 == asmblr->stage );
+
+    for ( i = 0; i < mvector_size(asmblr->xvec); i++ ) {
+        xstmt = mvector_at(asmblr->xvec, i);
+
+        switch ( xstmt->stmt->type ) {
+        case STMT_INSTR:
             if ( NULL != xstmt->sinstr ) {
                 _print_instruction_bin(xstmt->sinstr);
             } else {
@@ -2041,9 +2136,6 @@ _stage3(x86_64_assembler_t *asmblr)
             ;
         }
     }
-
-    /* Completed stage 3 */
-    asmblr->stage = 3;
 
     return 0;
 }
@@ -2073,6 +2165,12 @@ _assemble(x86_64_assembler_t *asmblr, stmt_vector_t *vec)
 
     /* Stage 3 */
     ret = _stage3(asmblr);
+    if ( ret < 0 ) {
+        return -1;
+    }
+
+    /* Output */
+    ret = _output(asmblr);
     if ( ret < 0 ) {
         return -1;
     }
