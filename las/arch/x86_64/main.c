@@ -523,6 +523,47 @@ _bts(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * CALL (Vol. 2A 3-87)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      E8 cw           CALL rel16              D       N.S.    Valid
+ *      E8 cd           CALL rel32              D       Valid   Valid
+ *      FF /2           CALL r/m16              M       N.S.    Valid
+ *      FF /2           CALL r/m32              M       N.S.    Valid
+ *      FF /2           CALL r/m64              M       Valid   N.E.
+ *      9A cd           CALL ptr16:16           D       Inv.    Valid
+ *      9A cp           CALL ptr16:32           D       Inv.    Valid
+ *      FF /3           CALL m16:16             D       Valid   Valid
+ *      FF /3           CALL m16:32             D       Valid   Valid
+ *      REX.W + FF /3   CALL m16:64             D       Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      D       Offset          NA              NA              NA
+ *      M       ModR/M(r)       NA              NA              NA
+ */
+static int
+_call(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    if ( OPCODE_SUFFIX_FAR & xstmt->suffix ) {
+        /* w/ far */
+
+        /* To be implemented */
+        return -EUNKNOWN;
+    } else {
+        /* w/o far */
+        EC(binstr2(asmblr, xstmt, 0, 0xe8, -1, -1, ENC_D_REL32, -1));
+        EC(binstr2(asmblr, xstmt, 0, 0xff, -1, -1, ENC_M_RM64, 2));
+        /* Invalid for 64-bit mode */
+        /*EC(binstr2(asmblr, xstmt, SIZE16, 0xe8, -1, -1, ENC_D_REL16, -1));*/
+        /*EC(binstr2(asmblr, xstmt, SIZE16, 0xff, -1, -1, ENC_M_RM16, 2));*/
+        /*EC(binstr2(asmblr, xstmt, SIZE32, 0xff, -1, -1, ENC_M_RM32, 2));*/
+
+        return 0;
+    }
+}
+
+/*
  * CBW/CWDE/CDQE (Vol. 2A 3-100)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -1488,6 +1529,7 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, btc);
        REGISTER_INSTR(ifunc, str, btr);
        REGISTER_INSTR(ifunc, str, bts);
+       REGISTER_INSTR(ifunc, str, call);
        REGISTER_INSTR(ifunc, str, cbw);
        REGISTER_INSTR(ifunc, str, cwde);
        REGISTER_INSTR(ifunc, str, cdqe);

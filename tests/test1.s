@@ -420,6 +420,14 @@ label36:
 	xor	[rbp],eax
 	xor	[rbp],rax
 
+label37:
+	call	0x1
+	call	label1
+	call	label36
+	call	label38
+	call	rax
+
+label38:
 
 
 
