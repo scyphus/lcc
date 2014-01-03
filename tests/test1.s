@@ -499,6 +499,38 @@ label46:
 	movsd
 	movsq
 
+label47:
+	sub	al,1
+	sub	ax,2
+	sub	eax,3
+        sub	rax,4
+
+	sub	cl,1
+	sub	ch,2
+	sub	cx,3
+	sub	ecx,4
+	sub	rcx,5
+
+	sub	cx,0x7f01
+	sub	ecx,0x7f02
+	sub	rcx,0x7f03
+
+	sub	al,ah
+	sub	ax,cx
+	sub	eax,ecx
+	sub	rax,rcx
+
+	sub	al,[rbp]
+	sub	ax,[rbp]
+	sub	eax,[rbp]
+	sub	rax,[rbp]
+
+	sub	[rbp],al
+	sub	[rbp],ax
+	sub	[rbp],eax
+	sub	[rbp],rax
+
+
 
 start:
 

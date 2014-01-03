@@ -2193,6 +2193,75 @@ _stosq(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * SUB (Vol. 2B 4-450)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      2C ib           SUB AL,imm8             I       Valid   Valid
+ *      2D iw           SUB AX,imm16            I       Valid   Valid
+ *      2D ib           SUB EAX,imm32           I       Valid   Valid
+ *      REX.W + 2D id   SUB RAX,imm32           I       Valid   N.E.
+ *      80 /5 ib        SUB r/m8,imm8           MI      Valid   Valid
+ *      REX + 80 /5 ib  SUB r/m8*,imm8          MI      Valid   N.E.
+ *      81 /5 iw        SUB r/m16,imm16         MI      Valid   Valid
+ *      81 /5 id        SUB r/m32,imm32         MI      Valid   Valid
+ *      REX.W + 81 /5 id
+ *                      SUB r/m64,imm32         MI      Valid   N.E.
+ *      83 /5 ib        SUB r/m16,imm8          MI      Valid   Valid
+ *      83 /5 ib        SUB r/m32,imm8          MI      Valid   Valid
+ *      REX.W + 83 /5 ib
+ *                      SUB r/m64,imm8          MI      Valid   N.E.
+ *      28 /r           SUB r/m8,r8             MR      Valid   Valid
+ *      REX + 28 /r     SUB r/m8*,r8*           NR      Valid   N.E.
+ *      29 /r           SUB r/m16,r16           MR      Valid   Valid
+ *      29 /r           SUB r/m32,r32           MR      Valid   Valid
+ *      REX.W + 29 /r   SUB r/m64,r64           MR      Valid   N.E.
+ *      2A /r           SUB r8,r/m8             RM      Valid   Valid
+ *      REX + 2A /r     SUB r8*,r/m8*           RM      Valid   Valid
+ *      2B /r           SUB r16,r/m16           RM      Valid   Valid
+ *      2B /r           SUB r32,r/m32           RM      Valid   Valid
+ *      REX.W + 2B /r   SUB r64,r/m64           RM      Valid   N.E.
+ *
+ *      * In 64-bit mode, AH, BH, CH, DH cannot be accessed if a REX prefix is
+ *        used
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      I       AL/AX/EAX/RAX   imm8/16/32      NA              NA
+ *      MI      ModRM:r/m(r,w)  imm8/16/32      NA              NA
+ *      MR      ModRM:r/m(r,w)  ModRM:reg(r)    NA              NA
+ *      RM      ModRM:reg(r,w)  ModRM:r/m(r)    NA              NA
+ */
+static int
+_sub(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE8, 0x2c, -1, -1, ENC_I_AL_IMM8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x2d, -1, -1, ENC_I_AX_IMM16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x2d, -1, -1, ENC_I_EAX_IMM32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x2d, -1, -1, ENC_I_RAX_IMM32, -1));
+
+    EC(binstr2(asmblr, xstmt, SIZE8, 0x80, -1, -1, ENC_MI_RM8_IMM8, 5));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x81, -1, -1, ENC_MI_RM16_IMM16, 5));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x81, -1, -1, ENC_MI_RM32_IMM32, 5));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x81, -1, -1, ENC_MI_RM64_IMM32, 5));
+
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x83, -1, -1, ENC_MI_RM16_IMM8, 5));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x83, -1, -1, ENC_MI_RM32_IMM8, 5));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x83, -1, -1, ENC_MI_RM64_IMM8, 5));
+
+    EC(binstr2(asmblr, xstmt, SIZE8, 0x28, -1, -1, ENC_MR_RM8_R8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x29, -1, -1, ENC_MR_RM16_R16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x29, -1, -1, ENC_MR_RM32_R32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x29, -1, -1, ENC_MR_RM64_R64, -1));
+
+    EC(binstr2(asmblr, xstmt, SIZE8, 0x2a, -1, -1, ENC_RM_R8_RM8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x2b, -1, -1, ENC_RM_R16_RM16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x2b, -1, -1, ENC_RM_R32_RM32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x2b, -1, -1, ENC_RM_R64_RM64, -1));
+
+    return 0;
+}
+
+/*
  * TEST (Vol. 2B 4-471)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -2463,6 +2532,7 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, stosw);
        REGISTER_INSTR(ifunc, str, stosd);
        REGISTER_INSTR(ifunc, str, stosq);
+       REGISTER_INSTR(ifunc, str, sub);
        REGISTER_INSTR(ifunc, str, test);
        REGISTER_INSTR(ifunc, str, xor);
    } else {
