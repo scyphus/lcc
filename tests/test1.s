@@ -330,6 +330,7 @@ label29:
 	iretq
 
 label30:
+	jmp	0x1
 	jmp	start
 	jmp	label29
 	jmp	label31

@@ -25,16 +25,6 @@
     } while ( 0 )
 
 
-
-#if 0
-off_t
-_instr_imm_offset(const x86_64_instr_t *instr)
-{
-    return _instr_size(instr) - instr->imm.sz;
-}
-#endif
-
-
 /*
  * Obtain the size of the instruction
  */
@@ -1658,6 +1648,82 @@ _fix_instr(x86_64_stmt_t *xstmt)
 }
 
 /*
+ * Fix instructions
+ */
+static int
+_fix_instr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    int i;
+    size_t imin;
+    size_t imax;
+    size_t sz;
+    x86_64_instr_t *instr;
+    x86_64_instr_t *minstr;
+
+    /* Fix the optimal instruction if possible */
+    imin = 0;
+    imax = 0;
+    instr = NULL;
+    minstr = NULL;
+    for ( i = 0; i < mvector_size(xstmt->instrs); i++ ) {
+        /* Check if the optimal instruction is fixed */
+        if ( NULL != xstmt->sinstr ) {
+            /* Already fixed */
+            continue;
+        }
+
+        /* Obtain a candidate instruction */
+        instr = mvector_at(xstmt->instrs, i);
+
+        /* Obtain the size of the instruction */
+        sz = _instr_size(instr);
+
+        /* Check whether they are capable values */
+        if ( NULL != instr->disp.expr ) {
+            /* Displacement is relocatable */
+            continue;
+        }
+        if ( NULL != instr->imm.expr ) {
+            /* Immediate value is relocatable */
+            continue;
+        }
+        if ( 0 != instr->rel.sz ) {
+            /* Relative value */
+            if ( NULL == instr->rel.expr ) {
+                if ( !_check_size(instr->rel.sz,
+                                  instr->rel.val - xstmt->epos.min - sz)
+                     || !_check_size(instr->rel.sz,
+                                     instr->rel.val - xstmt->epos.max - sz) ) {
+                    continue;
+                }
+                //instr->rel.val = instr->rel.val - xstmt->epos.max - sz;
+            } else {
+                continue;
+            }
+        }
+
+        if ( 0 == imin || sz < imin ) {
+            /* Update minimum */
+            imin = sz;
+            minstr = instr;
+        }
+        if ( sz > imax ) {
+            imax = sz;
+        }
+    }
+    if ( 0 == imin ) {
+        return -EOPERAND;
+    }
+
+    /* Fix */
+    xstmt->sinstr = minstr;
+    xstmt->esize.min = imin;
+    xstmt->esize.max = imin;
+
+    return 0;
+}
+
+/*
  * Assemble an instruction
  */
 static int
@@ -1873,19 +1939,6 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
             }
             pos++;
             break;
-        case STMT_LABEL:
-#if 0
-            /* Add it to the label table */
-            ret = _add_label(&asmblr->lbtbl, stmt->u.label, pos);
-            if ( ret < 0 ) {
-                if ( -EDUP == ret ) {
-                    fprintf(stderr, "A duplicate label: %s\n", stmt->u.label);
-                }
-                _label_table_clear(&asmblr->lbtbl);
-                return -1;
-            }
-#endif
-            break;
         default:
             /* Do nothing */
             ;
@@ -1915,6 +1968,10 @@ _stage2(x86_64_assembler_t *asmblr)
         /* Get a statement at i-th position */
         xstmt = mvector_at(asmblr->xvec, i);
 
+        /* Set the estimated position */
+        xstmt->epos.min = imin;
+        xstmt->epos.max = imax;
+
         switch ( xstmt->stmt->type ) {
         case STMT_INSTR:
             /* Estimate the label position */
@@ -1924,11 +1981,10 @@ _stage2(x86_64_assembler_t *asmblr)
         case STMT_LABEL:
             /* Add it to the label table */
             ret = _add_label(&asmblr->lbtbl, xstmt->stmt->u.label, imin, imax);
-            fprintf(stderr, "Label position of %s: %lld, %lld\n",
-                    xstmt->stmt->u.label, imin, imax);
             if ( ret < 0 ) {
                 if ( -EDUP == ret ) {
-                    fprintf(stderr, "A duplicate label: %s\n", xstmt->stmt->u.label);
+                    fprintf(stderr, "A duplicate label: %s\n",
+                            xstmt->stmt->u.label);
                 }
                 _label_table_clear(&asmblr->lbtbl);
                 return -1;
@@ -1960,6 +2016,8 @@ _stage3(x86_64_assembler_t *asmblr)
 
         switch ( xstmt->stmt->type ) {
         case STMT_INSTR:
+            _fix_instr2(asmblr, xstmt);
+
             if ( NULL != xstmt->sinstr ) {
                 _print_instruction_bin(xstmt->sinstr);
             } else {

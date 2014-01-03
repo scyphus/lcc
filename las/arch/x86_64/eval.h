@@ -13,6 +13,10 @@
 #include "main.h"
 #include <stdint.h>
 
+#define X86_64_VAR_MIN  -2147483648
+#define X86_64_VAR_MAX  2147483647
+
+
 typedef enum _x86_64_val_type {
     X86_64_VAL_IMM,
     X86_64_VAL_REG,
@@ -61,6 +65,10 @@ extern "C" {
 
     x86_64_val_t *
     x86_64_eval_operand(const x86_64_label_table_t *, operand_t *);
+
+    int
+    x86_64_expr_range(const x86_64_label_table_t *, const expr_t *, int64_t *,
+                      int64_t *);
 
     x86_64_eval_t *
     x86_64_estimate_operand(operand_t *);
