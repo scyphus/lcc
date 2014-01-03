@@ -1709,13 +1709,14 @@ _fix_instr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         if ( 0 != instr->rel.sz ) {
             /* Relative value */
             if ( NULL == instr->rel.expr ) {
-                loff = instr->rel.val - xstmt->epos.max - sz;
-                roff = instr->rel.val - xstmt->epos.min - sz;
+                //loff = instr->rel.val - xstmt->epos.max - sz;
+                //roff = instr->rel.val - xstmt->epos.min - sz;
+                loff = X86_64_VAR_MIN;
+                roff = X86_64_VAR_MAX;
                 if ( !_check_size(instr->rel.sz, loff)
                      || !_check_size(instr->rel.sz, roff) ) {
                     continue;
                 }
-                //instr->rel.val = instr->rel.val - xstmt->epos.max - sz;
             } else {
                 ret = x86_64_expr_range(&asmblr->lbtbl, instr->rel.expr, &loff,
                                         &roff);
@@ -1748,6 +1749,119 @@ _fix_instr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
     xstmt->sinstr = minstr;
     xstmt->esize.min = imin;
     xstmt->esize.max = imin;
+
+    return 0;
+}
+
+/*
+ * Fix instructions
+ */
+static int
+_fix_instr3(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    x86_64_instr_t *instr;
+    x86_64_rval_t *rval;
+    x86_64_rela_t *rela;
+    size_t sz;
+
+    /* Selected instruction */
+    instr = xstmt->sinstr;
+
+    /* Obtain the size of the instruction */
+    sz = _instr_size(instr);
+
+    /* Check whether they are capable values */
+    if ( NULL != instr->disp.expr ) {
+        /* Displacement is relocatable */
+        rval = x86_64_expr_fix(&asmblr->lbtbl, instr->disp.expr);
+        if ( NULL == rval ) {
+            return -1;
+        }
+        fprintf(stderr, "DEBUG: %d %s %lld\n", rval->nsym,
+                rval->symname ? rval->symname : "-",
+                rval->addend);
+    }
+    if ( NULL != instr->imm.expr ) {
+        /* Immediate value is relocatable */
+        rval = x86_64_expr_fix(&asmblr->lbtbl, instr->imm.expr);
+        if ( NULL == rval ) {
+            return -1;
+        }
+        fprintf(stderr, "DEBUG: %d %s %lld\n", rval->nsym,
+                rval->symname ? rval->symname : "-",
+                rval->addend);
+    }
+    if ( 0 != instr->rel.sz ) {
+        /* Relative value */
+        if ( NULL == instr->rel.expr ) {
+            rela = malloc(sizeof(x86_64_rela_t));
+            if ( NULL == rela ) {
+                return -1;
+            }
+            /* FIXME: Replace with the fixed position */
+            rela->offset = xstmt->epos.min + sz - instr->rel.sz;
+            rela->type = X86_64_RELA_PC32; /* FIXME */
+            rela->addend = instr->rel.val;
+            /* S = 0 */
+            rela->symname = NULL;
+
+            /* Reset the value */
+            instr->rel.val = 0;
+        } else {
+            rval = x86_64_expr_fix(&asmblr->lbtbl, instr->rel.expr);
+            if ( NULL == rval ) {
+                return -1;
+            }
+            fprintf(stderr, "DEBUG: %d %s %lld\n", rval->nsym,
+                    rval->symname ? rval->symname : "-",
+                    rval->addend);
+
+            /* To relocatable value */
+            rela = malloc(sizeof(x86_64_rela_t));
+            if ( NULL == rela ) {
+                if ( NULL != rval->symname ) {
+                    free(rval->symname);
+                }
+                free(rval);
+                return -1;
+            }
+            if ( 1 == rval->nsym ) {
+                /* FIXME: Replace with the fixed position */
+                rela->offset = xstmt->epos.min + sz - instr->rel.sz;
+                rela->type = X86_64_RELA_PC32; /* FIXME */
+                rela->addend = rval->addend - (xstmt->epos.min + sz);
+                /* S = 0 */
+                if ( NULL != rval->symname ) {
+                    rela->symname = strdup(rval->symname);
+                    if ( NULL == rela->symname ) {
+                        free(rval->symname);
+                        free(rval);
+                        return -1;
+                    }
+                    /* Reset the value */
+                    instr->rel.val = 0;
+
+                } else {
+                    free(rela);
+                    /* Reset the value */
+                    instr->rel.val = rval->addend - (xstmt->epos.min + sz);
+                }
+            } else {
+                /* FIXME */
+                if ( NULL != rval->symname ) {
+                    free(rval->symname);
+                }
+                free(rval);
+                return -1;
+            }
+
+            /* Free */
+            if ( NULL != rval->symname ) {
+                free(rval->symname);
+            }
+            free(rval);
+        }
+    }
 
     return 0;
 }
@@ -2082,12 +2196,27 @@ _stage3(x86_64_assembler_t *asmblr)
 
         switch ( xstmt->stmt->type ) {
         case STMT_INSTR:
+            xstmt->epos.min = pos;
+            xstmt->epos.max = pos;
             pos += xstmt->esize.min;
             break;
         case STMT_LABEL:
             /* Update the position */
             _fix_label_position(&asmblr->lbtbl, xstmt->stmt->u.label, pos);
             /*fprintf(stderr, "Label %s: %lld\n", xstmt->stmt->u.label, pos);*/
+            break;
+        default:
+            /* Do nothing */
+            ;
+        }
+    }
+
+    for ( i = 0; i < mvector_size(asmblr->xvec); i++ ) {
+        xstmt = mvector_at(asmblr->xvec, i);
+
+        switch ( xstmt->stmt->type ) {
+        case STMT_INSTR:
+            _fix_instr3(asmblr, xstmt);
             break;
         default:
             /* Do nothing */

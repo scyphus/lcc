@@ -63,8 +63,8 @@ typedef struct _x86_64_val {
 extern "C" {
 #endif
 
-    x86_64_val_t *
-    x86_64_eval_operand(const x86_64_label_table_t *, operand_t *);
+    x86_64_rval_t *
+    x86_64_expr_fix(const x86_64_label_table_t *, const expr_t *);
 
     int
     x86_64_expr_range(const x86_64_label_table_t *, const expr_t *, int64_t *,

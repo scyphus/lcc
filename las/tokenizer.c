@@ -21,7 +21,7 @@
 static __inline__ int
 IS_SYMBOL_CHAR(int c)
 {
-    return (isalnum(c) || '_' == c) ? 1 : 0;
+    return (isalnum(c) || '_' == c || '.' == c) ? 1 : 0;
 }
 static __inline__ int
 IS_BININT_CHAR(int c)
