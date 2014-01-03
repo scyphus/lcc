@@ -567,6 +567,15 @@ label52:
 	sfence
 	mfence
 
+label53:
+	lgdt	[0x100]
+	lidt	[0x100]
+	lldt	ax
+	sgdt	[0x100]
+	sidt	[0x100]
+	sldt	ax
+	sldt	rax
+
 start:
 
 

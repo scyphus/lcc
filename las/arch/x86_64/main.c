@@ -1756,6 +1756,52 @@ _lfence(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * LGDT/LIDT (Vol. 2A 3-449)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F 01 /2        LGDT m16&32             M       N.E.    Valid
+ *      0F 01 /3        LIDT m16&32             M       N.E.    Valid
+ *      0F 01 /2        LGDT m16&64             M       Valid   N.E.
+ *      0F 01 /3        LIDT m16&64             M       Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      M       ModRM:r/m(r)    NA              NA              NA
+ */
+static int
+_lgdt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x01, -1, ENC_M_MUNSPEC, 2));
+
+    return 0;
+}
+static int
+_lidt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x01, -1, ENC_M_MUNSPEC, 3));
+
+    return 0;
+}
+
+/*
+ * LLDT (Vol. 2A 3-452)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F 00 /2        LLDT r/m16              M       Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      M       ModRM:r/m(r)    NA              NA              NA
+ */
+static int
+_lldt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x00, -1, ENC_M_RM16, 2));
+
+    return 0;
+}
+
+/*
  * LODS/LODSB/LODSW/LODSD/LODSQ (Vol. 2A 3-458)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -2220,6 +2266,63 @@ static int
 _sfence(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     EC(binstr2(asmblr, xstmt, 0, 0x0f, 0xae, -1, ENC_NP_PREG, 7));
+
+    return 0;
+}
+
+/*
+ * SGDT (Vol. 2B 4-413)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F 01 /0        SGDT m                  M       Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      M       ModRM:r/m(r)    NA              NA              NA
+ */
+static int
+_sgdt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x01, -1, ENC_M_MUNSPEC, 0));
+
+    return 0;
+}
+
+/*
+ * SIDT (Vol. 2B 4-427)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F 01 /1        SIDT m                  M       Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      M       ModRM:r/m(r)    NA              NA              NA
+ */
+static int
+_sidt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x01, -1, ENC_M_MUNSPEC, 1));
+
+    return 0;
+}
+
+/*
+ * SLDT (Vol. 2B 4-429)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F 00 /0        SIDT r/m16              M       Valid   Valid
+ *      REX.W + 0F 00 /0
+ *                      SIDT r64/m16            M       Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      M       ModRM:r/m(r)    NA              NA              NA
+ */
+static int
+_sldt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x0f, 0x00, -1, ENC_M_RM16, 0));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x0f, 0x00, -1, ENC_M_R64, 0));
 
     return 0;
 }
@@ -2733,6 +2836,9 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, lea);
        REGISTER_INSTR(ifunc, str, leave);
        REGISTER_INSTR(ifunc, str, lfence);
+       REGISTER_INSTR(ifunc, str, lgdt);
+       REGISTER_INSTR(ifunc, str, lidt);
+       REGISTER_INSTR(ifunc, str, lldt);
        REGISTER_INSTR(ifunc, str, lodsb);
        REGISTER_INSTR(ifunc, str, lodsw);
        REGISTER_INSTR(ifunc, str, lodsd);
@@ -2754,6 +2860,9 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, pushad);
        REGISTER_INSTR(ifunc, str, ret);
        REGISTER_INSTR(ifunc, str, sfence);
+       REGISTER_INSTR(ifunc, str, sgdt);
+       REGISTER_INSTR(ifunc, str, sidt);
+       REGISTER_INSTR(ifunc, str, sldt);
        REGISTER_INSTR(ifunc, str, sti);
        REGISTER_INSTR(ifunc, str, stosb);
        REGISTER_INSTR(ifunc, str, stosw);

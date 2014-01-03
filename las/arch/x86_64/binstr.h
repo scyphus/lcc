@@ -100,7 +100,12 @@ typedef enum _x86_64_enc {
     ENC_O_R32_EAX,
     ENC_O_R64_RAX,
 
+    ENC_M_MUNSPEC,
     ENC_M_M8,
+    ENC_M_M16,
+    ENC_M_M32,
+    ENC_M_M64,
+    ENC_M_R64,
     ENC_M_RM8,
     ENC_M_RM16,
     ENC_M_RM32,
