@@ -1548,6 +1548,24 @@ _ret(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * STI (Vol. 2B 4-441)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      FB              STI                     NP      Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_sti(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0xfb, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+
+/*
  * XOR (Vol. 2B 4-531)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -1720,6 +1738,7 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, pusha);
        REGISTER_INSTR(ifunc, str, pushad);
        REGISTER_INSTR(ifunc, str, ret);
+       REGISTER_INSTR(ifunc, str, sti);
        REGISTER_INSTR(ifunc, str, xor);
    } else {
        return -1;

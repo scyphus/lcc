@@ -447,6 +447,9 @@ label39:
 	push	fs
 	push	gs
 
+label40:
+	sti
+
 
 
 
