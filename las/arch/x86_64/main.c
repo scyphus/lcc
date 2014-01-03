@@ -2075,6 +2075,7 @@ _stage3(x86_64_assembler_t *asmblr)
         }
     }
 
+    /* Fix the position */
     pos = 0;
     for ( i = 0; i < mvector_size(asmblr->xvec); i++ ) {
         xstmt = mvector_at(asmblr->xvec, i);

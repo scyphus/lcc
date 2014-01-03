@@ -255,21 +255,6 @@ _estimate_expr_var(expr_t *expr)
         eval->u.imm.type = X86_64_IMM_EXPR;
         eval->u.imm.u.rexpr = expr;
         eval->sopsize = 0;
-#if 0
-        lb = _search_label(expr->u.var);
-        if ( NULL == lb ) {
-            /* Not found */
-            eval->type = X86_64_EVAL_IMM;
-            eval->u.imm.type = X86_64_IMM_EXPR;
-            eval->u.imm.u.rexpr = expr;
-            eval->sopsize = 0;
-        } else {
-            eval->type = X86_64_EVAL_IMM;
-            eval->u.imm.type = X86_64_IMM_EXPR;
-            eval->u.imm.u.rexpr = expr;
-            eval->sopsize = 0;
-        }
-#endif
     } else {
         /* Register */
         eval->type = X86_64_EVAL_REG;
