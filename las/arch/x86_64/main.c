@@ -1340,6 +1340,47 @@ _out(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * POP (Vol. 2B 4-263)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      8F /0           POP r/m16               M       Valid   Valid
+ *      8F /0           POP r/m32               M       Valid   Valid
+ *      8F /0           POP r/m64               M       Valid   N.E.
+ *      58+ rw          POP r16                 O       Valid   Valid
+ *      58+ rd          POP r32                 O       N.E.    Valid
+ *      58+ rd          POP r64                 O       Valid   N.E.
+ *      1F              POP DS                  NP      Inv.    Valid
+ *      07              POP ES                  NP      Inv.    Valid
+ *      17              POP SS                  NP      Inv.    Valid
+ *      0F A1           POP FS                  NP      Valid   Valid
+ *      0F A1           POP FS                  NP      Inv.    Valid
+ *      0F A1           POP FS                  NP      N.E.    Valid
+ *      0F A9           POP GS                  NP      Valid   Valid
+ *      0F A9           POP GS                  NP      Inv.    Valid
+ *      0F A9           POP GS                  NP      N.E.    Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      M       ModR/M(r)       NA              NA              NA
+ *      O       opcode+rd(r,w)  NA              NA              NA
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_pop(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x8f, -1, -1, ENC_M_RM16, 0));
+    EC(binstr2(asmblr, xstmt, 0, 0x8f, -1, -1, ENC_M_RM64, 0));
+
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x58, -1, -1, ENC_O_R16, 0));
+    EC(binstr2(asmblr, xstmt, 0, 0x58, -1, -1, ENC_O_R64, 0));
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x8f, -1, -1, ENC_M_RM32, 0));*/
+    /*EC(binstr2(asmblr, xstmt, 0, 0x58, -1, -1, ENC_O_R32, 0));*/
+
+    return 0;
+}
+
+/*
  * POPCNT (Vol. 2B 4-270)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -1560,6 +1601,7 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, monitor);
        REGISTER_INSTR(ifunc, str, mov);
        REGISTER_INSTR(ifunc, str, out);
+       REGISTER_INSTR(ifunc, str, pop);
        REGISTER_INSTR(ifunc, str, popcnt);
        REGISTER_INSTR(ifunc, str, ret);
        REGISTER_INSTR(ifunc, str, xor);

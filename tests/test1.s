@@ -428,6 +428,11 @@ label37:
 	call	rax
 
 label38:
+	pop	word [rbp]
+	pop	qword [rbp]
+
+	pop	ax
+	pop	rax
 
 
 
