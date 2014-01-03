@@ -536,6 +536,24 @@ label48:
 	sysenter
 	sysexit
 
+label49:
+	xchg	ax,cx
+	xchg	cx,ax
+	xchg	eax,ecx
+	xchg	ecx,eax
+	xchg	rax,rcx
+	xchg	rcx,rax
+
+	xchg	r8l,[rbp]
+	xchg	r8w,[rbp]
+	xchg	r8d,[rbp]
+	xchg	r8,[rbp]
+
+	xchg	[rbp],r8l
+	xchg	[rbp],r8w
+	xchg	[rbp],r8d
+	xchg	[rbp],r8
+
 
 start:
 

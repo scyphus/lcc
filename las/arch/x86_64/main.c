@@ -2386,6 +2386,58 @@ _test(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * XCHG (Vol. 2B 4-525)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      90+rw           XCHG AX,r16             O       Valid   Valid
+ *      90+rw           XCHG r16,AX             O       Valid   Valid
+ *      90+rd           XCHG EAX,r32            O       Valid   Valid
+ *      REX.W + 90+rd   XCHG RAX,r64            O       Valid   N.E.
+ *      90+rd           XCHG r32,EAX            O       Valid   Valid
+ *      REX.W + 90+rd   XCHG r64,RAX            O       Valid   N.E.
+ *      86 /r           XCHG r/m8,r8            MR      Valid   Valid
+ *      REX + 86 /r     XCHG r/m8*,r8*          MR      Valid   N.E.
+ *      86 /r           XCHG r8,r/m8            RM      Valid   Valid
+ *      REX + 86 /r     XCHG r8*,r/m8*          RM      Valid   N.E.
+ *      87 /r           XCHG r/m16,r16          MR      Valid   Valid
+ *      87 /r           XCHG r16,r/m16          RM      Valid   Valid
+ *      87 /r           XCHG r/m32,r32          MR      Valid   Valid
+ *      REX.W + 87 /r   XCHG r/m64,r64          MR      Valid   N.E.
+ *      87 /r           XCHG r32,r/m32          RM      Valid   Valid
+ *      REX.W + 87 /r   XCHG r64,r/m64          RM      Valid   N.E.
+ *
+ *      * In 64-bit mode, AH, BH, CH, DH cannot be accessed
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      I       AL/AX/EAX/RAX   imm8/16/32      NA              NA
+ *      MI      ModRM:r/m(w)    imm8/16/32      NA              NA
+ *      MR      ModRM:r/m(r,w)  ModRM:reg(r)    NA              NA
+ *      RM      ModRM:reg(r,w)  ModRM:r/m(r)    NA              NA
+ */
+static int
+_xchg(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x90, -1, -1, ENC_O_AX_R16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x90, -1, -1, ENC_O_R16_AX, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x90, -1, -1, ENC_O_EAX_R32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x90, -1, -1, ENC_O_RAX_R64, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x90, -1, -1, ENC_O_R32_EAX, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x90, -1, -1, ENC_O_R64_RAX, -1));
+
+    EC(binstr2(asmblr, xstmt, SIZE8, 0x86, -1, -1, ENC_MR_RM8_R8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE8, 0x86, -1, -1, ENC_RM_R8_RM8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x87, -1, -1, ENC_MR_RM16_R16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x87, -1, -1, ENC_RM_R16_RM16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x87, -1, -1, ENC_MR_RM32_R32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x87, -1, -1, ENC_MR_RM64_R64, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x87, -1, -1, ENC_RM_R32_RM32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x87, -1, -1, ENC_RM_R64_RM64, -1));
+
+    return 0;
+}
+
+/*
  * XOR (Vol. 2B 4-531)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -2612,6 +2664,7 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, sysexit);
        REGISTER_INSTR(ifunc, str, sysret);
        REGISTER_INSTR(ifunc, str, test);
+       REGISTER_INSTR(ifunc, str, xchg);
        REGISTER_INSTR(ifunc, str, xor);
    } else {
        return -1;
