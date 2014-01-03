@@ -454,6 +454,11 @@ label41:
 	int	3
 	int	10
 
+label42:
+	ja	start
+	jb	start
+	// tests to be added
+
 
 
 start:

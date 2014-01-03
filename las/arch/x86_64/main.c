@@ -1194,6 +1194,465 @@ _iretq(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * JCC (Vol. 2A 3-419)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      77 cb           JA rel8                 D       Valid   Valid
+ *      73 cb           JAE rel8                D       Valid   Valid
+ *      72 cb           JB rel8                 D       Valid   Valid
+ *      76 cb           JBE rel8                D       Valid   Valid
+ *      72 cb           JC rel8                 D       Valid   Valid
+ *      E3 cb           JCXZ rel8               D       N.E.    Valid
+ *      E3 cb           JECXZ rel8              D       Valid   Valid
+ *      E3 cb           JRCXZ rel8              D       Valid   N.E.
+ *      74 cb           JE rel8                 D       Valid   Valid
+ *      7F cb           JG rel8                 D       Valid   Valid
+ *      7D cb           JGE rel8                D       Valid   Valid
+ *      7C cb           JL rel8                 D       Valid   Valid
+ *      7E cb           JLE rel8                D       Valid   Valid
+ *      76 cb           JNA rel8                D       Valid   Valid
+ *      72 cb           JNAE rel8               D       Valid   Valid
+ *      73 cb           JNB rel8                D       Valid   Valid
+ *      77 cb           JNBE rel8               D       Valid   Valid
+ *      73 cb           JNC rel8                D       Valid   Valid
+ *      75 cb           JNE rel8                D       Valid   Valid
+ *      7E cb           JNG rel8                D       Valid   Valid
+ *      7C cb           JNGE rel8               D       Valid   Valid
+ *      7D cb           JNL rel8                D       Valid   Valid
+ *      7F cb           JNLE rel8               D       Valid   Valid
+ *      71 cb           JNO rel8                D       Valid   Valid
+ *      7B cb           JNP rel8                D       Valid   Valid
+ *      79 cb           JNS rel8                D       Valid   Valid
+ *      75 cb           JNZ rel8                D       Valid   Valid
+ *      70 cb           JO rel8                 D       Valid   Valid
+ *      7A cb           JP rel8                 D       Valid   Valid
+ *      7A cb           JPE rel8                D       Valid   Valid
+ *      7B cb           JPO rel8                D       Valid   Valid
+ *      78 cb           JS rel8                 D       Valid   Valid
+ *      74 cb           JZ rel8                 D       Valid   Valid
+ *
+ *      0F 87 cw        JA rel16                D       N.S.    Valid
+ *      0F 87 cd        JA rel32                D       Valid   Valid
+ *      0F 83 cw        JAE rel16               D       N.S.    Valid
+ *      0F 83 cd        JAE rel32               D       Valid   Valid
+ *      0F 82 cw        JB rel16                D       N.S.    Valid
+ *      0F 82 cd        JB rel32                D       Valid   Valid
+ *      0F 86 cw        JBE rel16               D       N.S.    Valid
+ *      0F 86 cd        JBE rel32               D       Valid   Valid
+ *      0F 82 cw        JC rel16                D       N.S.    Valid
+ *      0F 82 cd        JC rel32                D       Valid   Valid
+ *      0F 84 cw        JE rel16                D       N.S.    Valid
+ *      0F 84 cd        JE rel32                D       Valid   Valid
+ *      0F 84 cw        JZ rel16                D       N.S.    Valid
+ *      0F 84 cd        JZ rel32                D       Valid   Valid
+ *      0F 8F cw        JG rel16                D       N.S.    Valid
+ *      0F 8F cd        JG rel32                D       Valid   Valid
+ *      0F 8D cw        JGE rel16               D       N.S.    Valid
+ *      0F 8D cd        JGE rel32               D       Valid   Valid
+ *      0F 8C cw        JL rel16                D       N.S.    Valid
+ *      0F 8C cd        JL rel32                D       Valid   Valid
+ *      0F 8E cw        JLE rel16               D       N.S.    Valid
+ *      0F 8E cd        JLE rel32               D       Valid   Valid
+ *      0F 86 cw        JNA rel16               D       N.S.    Valid
+ *      0F 86 cd        JNA rel32               D       Valid   Valid
+ *      0F 82 cw        JNAE rel16              D       N.S.    Valid
+ *      0F 82 cd        JNAE rel32              D       Valid   Valid
+ *      0F 83 cw        JNB rel16               D       N.S.    Valid
+ *      0F 83 cd        JNB rel32               D       Valid   Valid
+ *      0F 87 cw        JNBE rel16              D       N.S.    Valid
+ *      0F 87 cd        JNBE rel32              D       Valid   Valid
+ *      0F 83 cw        JNC rel16               D       N.S.    Valid
+ *      0F 83 cd        JNC rel32               D       Valid   Valid
+ *      0F 85 cw        JNE rel16               D       N.S.    Valid
+ *      0F 85 cd        JNE rel32               D       Valid   Valid
+ *      0F 8E cw        JNG rel16               D       N.S.    Valid
+ *      0F 8E cd        JNG rel32               D       Valid   Valid
+ *      0F 8C cw        JNGE rel16              D       N.S.    Valid
+ *      0F 8C cd        JNGE rel32              D       Valid   Valid
+ *      0F 8D cw        JNL rel16               D       N.S.    Valid
+ *      0F 8D cd        JNL rel32               D       Valid   Valid
+ *      0F 8F cw        JNLE rel16              D       N.S.    Valid
+ *      0F 8F cd        JNLE rel32              D       Valid   Valid
+ *      0F 81 cw        JNO rel16               D       N.S.    Valid
+ *      0F 81 cd        JNO rel32               D       Valid   Valid
+ *      0F 8B cw        JNP rel16               D       N.S.    Valid
+ *      0F 8B cd        JNP rel32               D       Valid   Valid
+ *      0F 89 cw        JNS rel16               D       N.S.    Valid
+ *      0F 89 cd        JNS rel32               D       Valid   Valid
+ *      0F 85 cw        JNZ rel16               D       N.S.    Valid
+ *      0F 85 cd        JNZ rel32               D       Valid   Valid
+ *      0F 80 cw        JO rel16                D       N.S.    Valid
+ *      0F 80 cd        JO rel32                D       Valid   Valid
+ *      0F 8A cw        JP rel16                D       N.S.    Valid
+ *      0F 8A cd        JP rel32                D       Valid   Valid
+ *      0F 8A cw        JPE rel16               D       N.S.    Valid
+ *      0F 8A cd        JPE rel32               D       Valid   Valid
+ *      0F 8B cw        JPO rel16               D       N.S.    Valid
+ *      0F 8B cd        JPO rel32               D       Valid   Valid
+ *      0F 88 cw        JS rel16                D       N.S.    Valid
+ *      0F 88 cd        JS rel32                D       Valid   Valid
+ *      0F 84 cw        JZ rel16                D       N.S.    Valid
+ *      0F 84 cd        JZ rel32                D       Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      D       Offset          NA              NA              NA
+ */
+static int
+_ja(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x77, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x87, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x87, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jae(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x73, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x83, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x83, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jb(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x72, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x82, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x82, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jbe(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x76, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x86, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x86, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jc(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x72, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x82, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x82, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jcxz(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0xe3, -1, -1, ENC_D_REL8, -1));*/
+
+    return 0;
+}
+static int
+_jecxz(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    /* FIXME: Specify address operand size 67H */
+    /*EC(binstr2(asmblr, xstmt, 0, 0xe3, -1, -1, ENC_D_REL8, -1));*/
+
+    return 0;
+}
+static int
+_jrcxz(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0xe3, -1, -1, ENC_D_REL8, -1));
+
+    return 0;
+}
+static int
+_je(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x74, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x84, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x84, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jg(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x7f, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8f, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8f, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jge(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x7d, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8d, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8d, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jl(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x7c, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8c, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8c, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jle(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x7e, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8e, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8e, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jna(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x76, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x86, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x86, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jnae(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x72, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x82, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x82, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jnb(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x73, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x83, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x83, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jnbe(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x77, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x87, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x87, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jnc(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x73, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x83, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x83, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jne(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x75, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x85, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x85, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jng(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x7e, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8e, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8e, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jnge(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x7c, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8c, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8c, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jnl(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x7d, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8d, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8d, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jnle(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x7f, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8f, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8f, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jno(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x71, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x81, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x81, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jnp(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x7b, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8b, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8b, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jns(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x79, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x89, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x89, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jnz(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x75, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x85, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x85, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jo(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x70, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x80, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x80, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jp(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x7a, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8a, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8a, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jpe(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x7a, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8a, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8a, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jpo(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x7b, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8b, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x8b, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_js(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x78, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x88, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x88, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+static int
+_jz(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x74, -1, -1, ENC_D_REL8, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x84, -1, ENC_D_REL32, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x84, -1, ENC_D_REL16, -1));*/
+
+    return 0;
+}
+
+/*
  * JMP (Vol. 2A 3-424)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -1758,6 +2217,39 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, iret);
        REGISTER_INSTR(ifunc, str, iretd);
        REGISTER_INSTR(ifunc, str, iretq);
+       REGISTER_INSTR(ifunc, str, ja);
+       REGISTER_INSTR(ifunc, str, jae);
+       REGISTER_INSTR(ifunc, str, jb);
+       REGISTER_INSTR(ifunc, str, jbe);
+       REGISTER_INSTR(ifunc, str, jc);
+       REGISTER_INSTR(ifunc, str, jcxz);
+       REGISTER_INSTR(ifunc, str, jecxz);
+       REGISTER_INSTR(ifunc, str, jrcxz);
+       REGISTER_INSTR(ifunc, str, je);
+       REGISTER_INSTR(ifunc, str, jg);
+       REGISTER_INSTR(ifunc, str, jge);
+       REGISTER_INSTR(ifunc, str, jl);
+       REGISTER_INSTR(ifunc, str, jle);
+       REGISTER_INSTR(ifunc, str, jna);
+       REGISTER_INSTR(ifunc, str, jnae);
+       REGISTER_INSTR(ifunc, str, jnb);
+       REGISTER_INSTR(ifunc, str, jnbe);
+       REGISTER_INSTR(ifunc, str, jnc);
+       REGISTER_INSTR(ifunc, str, jne);
+       REGISTER_INSTR(ifunc, str, jng);
+       REGISTER_INSTR(ifunc, str, jnge);
+       REGISTER_INSTR(ifunc, str, jnl);
+       REGISTER_INSTR(ifunc, str, jnle);
+       REGISTER_INSTR(ifunc, str, jno);
+       REGISTER_INSTR(ifunc, str, jnp);
+       REGISTER_INSTR(ifunc, str, jns);
+       REGISTER_INSTR(ifunc, str, jnz);
+       REGISTER_INSTR(ifunc, str, jo);
+       REGISTER_INSTR(ifunc, str, jp);
+       REGISTER_INSTR(ifunc, str, jpe);
+       REGISTER_INSTR(ifunc, str, jpo);
+       REGISTER_INSTR(ifunc, str, js);
+       REGISTER_INSTR(ifunc, str, jz);
        REGISTER_INSTR(ifunc, str, jmp);
        REGISTER_INSTR(ifunc, str, monitor);
        REGISTER_INSTR(ifunc, str, mov);
