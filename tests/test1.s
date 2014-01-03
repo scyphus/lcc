@@ -532,6 +532,7 @@ label47:
 
 label48:
 	syscall
+	sysret
 	sysenter
 	sysexit
 

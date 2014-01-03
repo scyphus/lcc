@@ -2317,6 +2317,25 @@ _sysexit(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * SYSRET (Vol. 2B 4-467)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F 07           SYSRET                  NP      Valid   Valid
+ *      REX.W + 0F 07   SYSRET                  NP      Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_sysret(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x07, -1, ENC_NP, -1));
+
+    return 0;
+}
+
+/*
  * TEST (Vol. 2B 4-471)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -2591,6 +2610,7 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, syscall);
        REGISTER_INSTR(ifunc, str, sysenter);
        REGISTER_INSTR(ifunc, str, sysexit);
+       REGISTER_INSTR(ifunc, str, sysret);
        REGISTER_INSTR(ifunc, str, test);
        REGISTER_INSTR(ifunc, str, xor);
    } else {
