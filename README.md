@@ -15,6 +15,9 @@ portable one.  Its output format has not yet been fixed at the current time.
 ### Command
     las <filename>
 
+### Supported architectures
+* x86-64 (not yet completed)
+
 ### Intel Syntax-based Assembly Language
     instruction ( operand ( "," operand )* )?
 
