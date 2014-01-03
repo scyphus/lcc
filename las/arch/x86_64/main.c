@@ -2262,6 +2262,43 @@ _sub(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * SYSENTER (Vol. 2B 4-462)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F 34           SYSENTER                NP      Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_sysenter(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x34, -1, ENC_NP, -1));
+
+    return 0;
+}
+
+/*
+ * SYSEXIT (Vol. 2B 4-464)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F 35           SYSEXIT                 NP      Valid   Valid
+ *      REX.W + 0F 35   SYSEXIT                 NP      Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_sysexit(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x35, -1, ENC_NP, -1));
+
+    return 0;
+}
+
+/*
  * TEST (Vol. 2B 4-471)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -2533,6 +2570,8 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, stosd);
        REGISTER_INSTR(ifunc, str, stosq);
        REGISTER_INSTR(ifunc, str, sub);
+       REGISTER_INSTR(ifunc, str, sysenter);
+       REGISTER_INSTR(ifunc, str, sysexit);
        REGISTER_INSTR(ifunc, str, test);
        REGISTER_INSTR(ifunc, str, xor);
    } else {

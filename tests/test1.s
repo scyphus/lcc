@@ -530,6 +530,9 @@ label47:
 	sub	[rbp],eax
 	sub	[rbp],rax
 
+label48:
+	sysenter
+	sysexit
 
 
 start:
