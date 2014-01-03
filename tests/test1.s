@@ -531,6 +531,7 @@ label47:
 	sub	[rbp],rax
 
 label48:
+	syscall
 	sysenter
 	sysexit
 

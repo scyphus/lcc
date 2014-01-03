@@ -2262,6 +2262,24 @@ _sub(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * SYSCALL (Vol. 2B 4-460)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F 05           SYSCALL                 NP      Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_syscall(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0x05, -1, ENC_NP, -1));
+
+    return 0;
+}
+
+/*
  * SYSENTER (Vol. 2B 4-462)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -2570,6 +2588,7 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, stosd);
        REGISTER_INSTR(ifunc, str, stosq);
        REGISTER_INSTR(ifunc, str, sub);
+       REGISTER_INSTR(ifunc, str, syscall);
        REGISTER_INSTR(ifunc, str, sysenter);
        REGISTER_INSTR(ifunc, str, sysexit);
        REGISTER_INSTR(ifunc, str, test);
