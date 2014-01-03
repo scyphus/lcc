@@ -481,6 +481,12 @@ label43:
 	test	[rbp],eax
 	test	[rbp],rax
 
+label44:
+	lodsb
+	lodsw
+	lodsd
+	lodsq
+
 
 start:
 

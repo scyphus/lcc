@@ -1696,6 +1696,52 @@ _jmp(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * LODS/LODSB/LODSW/LODSD/LODSQ (Vol. 2A 3-458)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      AC              LODS m8                 NP      Valid   Valid
+ *      AD              LODS m16                NP      Valid   Valid
+ *      AD              LODS m32                NP      Valid   Valid
+ *      REX.W + AD      LODS m64                NP      Valid   N.E.
+ *      AC              LODSB                   NP      Valid   Valid
+ *      AD              LODSW                   NP      Valid   Valid
+ *      AD              LODSD                   NP      Valid   Valid
+ *      REX.W + AD      LODSQ                   NP      Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_lodsb(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE8, 0xac, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+static int
+_lodsw(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE16, 0xad, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+static int
+_lodsd(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE32, 0xad, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+static int
+_lodsq(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE64, 0xad, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+
+/*
  * MONITOR (Vol. 2B 4-27)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -2301,6 +2347,10 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, js);
        REGISTER_INSTR(ifunc, str, jz);
        REGISTER_INSTR(ifunc, str, jmp);
+       REGISTER_INSTR(ifunc, str, lodsb);
+       REGISTER_INSTR(ifunc, str, lodsw);
+       REGISTER_INSTR(ifunc, str, lodsd);
+       REGISTER_INSTR(ifunc, str, lodsq);
        REGISTER_INSTR(ifunc, str, monitor);
        REGISTER_INSTR(ifunc, str, mov);
        REGISTER_INSTR(ifunc, str, out);
