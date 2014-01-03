@@ -223,6 +223,22 @@ _is_imm64(x86_64_eval_t *eval)
         return 0;
     }
 }
+static __inline__ int
+_is_3(x86_64_eval_t *eval)
+{
+    if ( X86_64_EVAL_IMM == eval->type ) {
+        switch ( eval->u.imm.type ) {
+        case X86_64_IMM_FIXED:
+            if ( 3 == eval->u.imm.u.fixed ) {
+                return 1;
+            }
+            break;
+        default:
+            ;
+        }
+    }
+    return 0;
+}
 
 
 /*
@@ -3095,6 +3111,15 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
     case ENC_NP:
         /* Check the number of operands and the format */
         if ( 0 == mvector_size(xstmt->evals) ) {
+            /* Build the instruction */
+            stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_NP_3:
+        /* Check the number of operands and the format */
+        if ( 1 == mvector_size(xstmt->evals)
+             && _is_3(mvector_at(xstmt->evals, 0)) ) {
+
             /* Build the instruction */
             stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
         }

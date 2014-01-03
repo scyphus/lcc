@@ -450,6 +450,9 @@ label39:
 label40:
 	sti
 
+label41:
+	int	3
+	int	10
 
 
 

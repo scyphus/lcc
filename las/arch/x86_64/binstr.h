@@ -29,6 +29,7 @@
 
 typedef enum _x86_64_enc {
     ENC_NP,
+    ENC_NP_3,
     ENC_NP_FS,
     ENC_NP_GS,
     ENC_NP_AL_DX,

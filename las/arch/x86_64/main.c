@@ -1130,6 +1130,36 @@ _inc(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * INT (Vol. 2A 3-392)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      CC              INT 3                   NP      Valid   Valid
+ *      CD              INT imm8                I       Valid   Valid
+ *      CE              INTO                    NP      Inv.    Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ *      I       imm8            NA              NA              NA
+ */
+static int
+_int(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0xcc, -1, -1, ENC_NP_3, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0xcd, -1, -1, ENC_I_IMM8, -1));
+
+    return 0;
+}
+static int
+_into(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0xce, -1, -1, ENC_NP, -1));*/
+
+    return 0;
+}
+
+/*
  * IRET (Vol. 2A 3-411)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -1723,6 +1753,8 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, imul);
        REGISTER_INSTR(ifunc, str, in);
        REGISTER_INSTR(ifunc, str, inc);
+       REGISTER_INSTR(ifunc, str, int);
+       REGISTER_INSTR(ifunc, str, into);
        REGISTER_INSTR(ifunc, str, iret);
        REGISTER_INSTR(ifunc, str, iretd);
        REGISTER_INSTR(ifunc, str, iretq);
