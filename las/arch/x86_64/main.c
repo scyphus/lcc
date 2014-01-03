@@ -1780,6 +1780,11 @@ _fix_instr3(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         fprintf(stderr, "DEBUG: %d %s %lld\n", rval->nsym,
                 rval->symname ? rval->symname : "-",
                 rval->addend);
+        /* Free */
+        if ( NULL != rval->symname ) {
+            free(rval->symname);
+        }
+        free(rval);
     }
     if ( NULL != instr->imm.expr ) {
         /* Immediate value is relocatable */
@@ -1790,6 +1795,11 @@ _fix_instr3(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         fprintf(stderr, "DEBUG: %d %s %lld\n", rval->nsym,
                 rval->symname ? rval->symname : "-",
                 rval->addend);
+        /* Free */
+        if ( NULL != rval->symname ) {
+            free(rval->symname);
+        }
+        free(rval);
     }
     if ( 0 != instr->rel.sz ) {
         /* Relative value */
