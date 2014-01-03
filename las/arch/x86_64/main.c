@@ -1718,6 +1718,26 @@ _lea(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * LEAVE (Vol. 2A 3-443)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      C9              LEAVE                   NP      Valid   Valid
+ *      C9              LEAVE                   NP      N.E.    Valid
+ *      C9              LEAVE                   NP      Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_leave(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0xc9, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+
+/*
  * LODS/LODSB/LODSW/LODSD/LODSQ (Vol. 2A 3-458)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -2657,6 +2677,7 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, jz);
        REGISTER_INSTR(ifunc, str, jmp);
        REGISTER_INSTR(ifunc, str, lea);
+       REGISTER_INSTR(ifunc, str, leave);
        REGISTER_INSTR(ifunc, str, lodsb);
        REGISTER_INSTR(ifunc, str, lodsw);
        REGISTER_INSTR(ifunc, str, lodsd);
