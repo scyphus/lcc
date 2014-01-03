@@ -459,6 +459,27 @@ label42:
 	jb	start
 	// tests to be added
 
+label43:
+	test	al,1
+	test	ax,2
+	test	eax,3
+        test	rax,4
+
+	test	cl,1
+	test	ch,2
+	test	cx,3
+	test	ecx,4
+	test	rcx,5
+
+	test	al,ah
+	test	ax,cx
+	test	eax,ecx
+	test	rax,rcx
+
+	test	[rbp],al
+	test	[rbp],ax
+	test	[rbp],eax
+	test	[rbp],rax
 
 
 start:
