@@ -2618,6 +2618,68 @@ _binstr2_np(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize)
 }
 
 /*
+ * Build instruction for the NP type Op/En with preg value
+ */
+static int
+_binstr2_np_preg(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3,
+                 ssize_t opsize, int preg)
+{
+    int ret;
+    x86_64_enop_t enop;
+    x86_64_instr_t *instr;
+
+    /* Check the size */
+    if ( opsize < 0 ) {
+        return -EUNKNOWN;
+    }
+
+    /* Allocaate for the instruction */
+    instr = malloc(sizeof(x86_64_instr_t));
+    if ( NULL == instr ) {
+        return -EUNKNOWN;
+    }
+
+    /* Reset the encoded operands */
+    enop.opreg = -1;
+    enop.rex.r = REX_NONE;
+    enop.rex.x = REX_NONE;
+    enop.rex.b = REX_NONE;
+    enop.modrm = _encode_modrm(preg, 3, 0);
+    enop.sib = -1;
+    enop.disp.sz = 0;
+    enop.disp.val = 0;
+    enop.disp.expr = NULL;
+    enop.imm.sz = 0;
+    enop.imm.val = 0;
+    enop.imm.expr = NULL;
+    enop.rel.sz = 0;
+    enop.rel.val = 0;
+    enop.rel.expr = NULL;
+
+    /* Encode instruction */
+    ret = _encode_instr(instr, &enop, xstmt->tgt, xstmt->prefix, opsize, 0);
+    if ( ret < 0 ) {
+        /* Invalid operands */
+        free(instr);
+        return -EOPERAND;
+    }
+
+    /* Set the opcode */
+    instr->opcode1 = opc1;
+    instr->opcode2 = opc2;
+    instr->opcode3 = opc3;
+
+    /* Set the instruction and the size */
+    if ( NULL == mvector_push_back(xstmt->instrs, instr) ) {
+        free(instr);
+        return -EUNKNOWN;
+    }
+
+    /* Success */
+    return 1;
+}
+
+/*
  * Build instruction for the I type Op/En
  */
 static int
@@ -3200,6 +3262,13 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
 
             /* Build the instruction */
             stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_NP_PREG:
+        /* Check the number of operands and the format */
+        if ( 0 == mvector_size(xstmt->evals) ) {
+            /* Build the instruction */
+            stat = _binstr2_np_preg(xstmt, opc1, opc2, opc3, opsize, preg);
         }
         break;
 

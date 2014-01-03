@@ -562,6 +562,11 @@ label50:
 label51:
 	leave
 
+label52:
+	lfence
+	sfence
+	mfence
+
 start:
 
 

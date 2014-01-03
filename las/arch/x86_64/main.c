@@ -1738,6 +1738,24 @@ _leave(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * LFENCE (Vol. 2A 3-448)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F AE /5        LFENCE                  NP      Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_lfence(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0xae, -1, ENC_NP_PREG, 5));
+
+    return 0;
+}
+
+/*
  * LODS/LODSB/LODSW/LODSD/LODSQ (Vol. 2A 3-458)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -1779,6 +1797,24 @@ static int
 _lodsq(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     EC(binstr2(asmblr, xstmt, SIZE64, 0xad, -1, -1, ENC_NP, -1));
+
+    return 0;
+}
+
+/*
+ * MFENCE (Vol. 2B 4-18)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F AE /6        MFENCE                  NP      Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_mfence(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0xae, -1, ENC_NP_PREG, 6));
 
     return 0;
 }
@@ -2166,6 +2202,24 @@ _ret(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         EC(binstr2(asmblr, xstmt, 0, 0xc3, -1, -1, ENC_NP, -1));
         EC(binstr2(asmblr, xstmt, 0, 0xc2, -1, -1, ENC_I_IMM16, -1));
     }
+
+    return 0;
+}
+
+/*
+ * SFENCE (Vol. 2B 4-412)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      0F AE /7        MFENCE                  NP      Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_sfence(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0xae, -1, ENC_NP_PREG, 7));
 
     return 0;
 }
@@ -2678,10 +2732,12 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, jmp);
        REGISTER_INSTR(ifunc, str, lea);
        REGISTER_INSTR(ifunc, str, leave);
+       REGISTER_INSTR(ifunc, str, lfence);
        REGISTER_INSTR(ifunc, str, lodsb);
        REGISTER_INSTR(ifunc, str, lodsw);
        REGISTER_INSTR(ifunc, str, lodsd);
        REGISTER_INSTR(ifunc, str, lodsq);
+       REGISTER_INSTR(ifunc, str, mfence);
        REGISTER_INSTR(ifunc, str, monitor);
        REGISTER_INSTR(ifunc, str, mov);
        REGISTER_INSTR(ifunc, str, movsb);
@@ -2697,6 +2753,7 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, pusha);
        REGISTER_INSTR(ifunc, str, pushad);
        REGISTER_INSTR(ifunc, str, ret);
+       REGISTER_INSTR(ifunc, str, sfence);
        REGISTER_INSTR(ifunc, str, sti);
        REGISTER_INSTR(ifunc, str, stosb);
        REGISTER_INSTR(ifunc, str, stosw);
