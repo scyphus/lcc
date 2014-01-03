@@ -1696,6 +1696,28 @@ _jmp(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 }
 
 /*
+ * LEA (Vol. 2A 3-443)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      8D /r           LEA r16,m               RM      Valid   Valid
+ *      8D /r           LEA r32,m               RM      Valid   Valid
+ *      REX.W + 8D /r   LEA r64,m               RM      Valid   N.E.
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      RM      ModR/M:reg(w)   ModR/M:r/m(r)   NA              NA
+ */
+static int
+_lea(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x8d, -1, -1, ENC_RM_R16_RM16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x8d, -1, -1, ENC_RM_R32_RM32, -1));
+    EC(binstr2(asmblr, xstmt, SIZE64, 0x8d, -1, -1, ENC_RM_R64_RM64, -1));
+
+    return 0;
+}
+
+/*
  * LODS/LODSB/LODSW/LODSD/LODSQ (Vol. 2A 3-458)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
@@ -2634,6 +2656,7 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, js);
        REGISTER_INSTR(ifunc, str, jz);
        REGISTER_INSTR(ifunc, str, jmp);
+       REGISTER_INSTR(ifunc, str, lea);
        REGISTER_INSTR(ifunc, str, lodsb);
        REGISTER_INSTR(ifunc, str, lodsw);
        REGISTER_INSTR(ifunc, str, lodsd);

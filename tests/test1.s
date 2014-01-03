@@ -554,6 +554,10 @@ label49:
 	xchg	[rbp],r8d
 	xchg	[rbp],r8
 
+label50:
+	lea	ax,[rbx + 1000]
+	lea	eax,[rbx + 1000]
+	lea	rax,[rbx + 1000]
 
 start:
 
