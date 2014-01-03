@@ -23,6 +23,15 @@ portable one.  Its output format has not yet been fixed at the current time.
 
 
 ### Grammar (Intel Syntax)
+    symbol ::=
+                 ( letter | "_" | "." ) ( letter | digit | "_" | "." )*
+
+    letter ::=
+                 ( "A"..."Z" | "a"..."z" )
+
+    digit ::=
+                 "0"..."9"
+
     atom ::=
                  symbol | literal | "(" expression ")"
     
