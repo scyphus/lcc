@@ -559,6 +559,9 @@ label50:
 	lea	eax,[rbx + 1000]
 	lea	rax,[rbx + 1000]
 
+label51:
+	leave
+
 start:
 
 
