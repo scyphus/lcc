@@ -1839,6 +1839,7 @@ _encode_rm_reg(int reg, int rexr, const x86_64_eval_t *eval,
     /* Resolve the register code of the second operand */
     ret = _reg_code(eval->u.reg, &rm, &rexb);
     if ( ret < 0 ) {
+        /* FIXME!!! */
         /* Cannot resolve the register code */
         return -1;
     }
@@ -2732,7 +2733,6 @@ _binstr2_mi(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, int preg,
         free(instr);
         return -ESIZE;
     }
-
     /* Encode instruction */
     ret = _encode_instr(instr, &enop, xstmt->tgt, xstmt->prefix, opsize,
                         addrsize);
@@ -3099,6 +3099,24 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
             stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
         }
         break;
+    case ENC_NP_FS:
+        /* Check the number of operands and the format */
+        if ( 1 == mvector_size(xstmt->evals)
+             && _eq_reg(mvector_at(xstmt->evals, 0), REG_FS) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
+        }
+        break;
+    case ENC_NP_GS:
+        /* Check the number of operands and the format */
+        if ( 1 == mvector_size(xstmt->evals)
+             && _eq_reg(mvector_at(xstmt->evals, 0), REG_GS) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
+        }
+        break;
     case ENC_NP_AL_DX:
         /* Check the number of operands and the format */
         if ( 2 == mvector_size(xstmt->evals)
@@ -3160,6 +3178,16 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
         }
         break;
 
+    case ENC_I_IMM8:
+        /* Check the number of operands and the format */
+        if ( 1 == mvector_size(xstmt->evals)
+             && _is_imm(mvector_at(xstmt->evals, 0), SIZE8) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
+                              mvector_at(xstmt->evals, 0), SIZE8);
+        }
+        break;
     case ENC_I_IMM16:
         /* Check the number of operands and the format */
         if ( 1 == mvector_size(xstmt->evals)
@@ -3168,6 +3196,16 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
             /* Build the instruction */
             stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
                               mvector_at(xstmt->evals, 0), SIZE16);
+        }
+        break;
+    case ENC_I_IMM32:
+        /* Check the number of operands and the format */
+        if ( 1 == mvector_size(xstmt->evals)
+             && _is_imm(mvector_at(xstmt->evals, 0), SIZE32) ) {
+
+            /* Build the instruction */
+            stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
+                              mvector_at(xstmt->evals, 0), SIZE32);
         }
         break;
     case ENC_I_AL_IMM8:

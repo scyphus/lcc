@@ -434,6 +434,19 @@ label38:
 	pop	ax
 	pop	rax
 
+	pop	fs
+	pop	gs
+
+label39:
+	push	word [rbp]
+	push	qword [rbp]
+
+	push	ax
+	push	rax
+
+	push	fs
+	push	gs
+
 
 
 

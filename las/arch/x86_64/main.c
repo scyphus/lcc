@@ -19,9 +19,10 @@
 #include <assert.h>
 
 
+/* FIXME: Fix the error handling */
 #define EC(f) do {                                                      \
         int ret = (f);                                                  \
-        if ( ret < 0 ) { return ret; }                                  \
+        if ( ret < 0 && ret != -ESIZE ) { return ret; }                 \
     } while ( 0 )
 
 
@@ -1344,7 +1345,7 @@ _out(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
  *
  *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
  *      8F /0           POP r/m16               M       Valid   Valid
- *      8F /0           POP r/m32               M       Valid   Valid
+ *      8F /0           POP r/m32               M       N.E.    Valid
  *      8F /0           POP r/m64               M       Valid   N.E.
  *      58+ rw          POP r16                 O       Valid   Valid
  *      58+ rd          POP r32                 O       N.E.    Valid
@@ -1371,11 +1372,15 @@ _pop(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
     EC(binstr2(asmblr, xstmt, SIZE16, 0x8f, -1, -1, ENC_M_RM16, 0));
     EC(binstr2(asmblr, xstmt, 0, 0x8f, -1, -1, ENC_M_RM64, 0));
 
-    EC(binstr2(asmblr, xstmt, SIZE16, 0x58, -1, -1, ENC_O_R16, 0));
-    EC(binstr2(asmblr, xstmt, 0, 0x58, -1, -1, ENC_O_R64, 0));
+    //EC(binstr2(asmblr, xstmt, SIZE16, 0x58, -1, -1, ENC_O_R16, -1));
+    //EC(binstr2(asmblr, xstmt, 0, 0x58, -1, -1, ENC_O_R64, -1));
+
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0xa1, -1, ENC_NP_FS, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0xa9, -1, ENC_NP_GS, -1));
+
     /* Invalid for 64-bit mode */
     /*EC(binstr2(asmblr, xstmt, 0, 0x8f, -1, -1, ENC_M_RM32, 0));*/
-    /*EC(binstr2(asmblr, xstmt, 0, 0x58, -1, -1, ENC_O_R32, 0));*/
+    /*EC(binstr2(asmblr, xstmt, 0, 0x58, -1, -1, ENC_O_R32, -1));*/
 
     return 0;
 }
@@ -1430,6 +1435,84 @@ _popcnt(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
     EC(binstr2(asmblr, xstmt, SIZE16, 0x0f, 0xb8, -1, ENC_RM_R16_RM16, -1));
     EC(binstr2(asmblr, xstmt, SIZE32, 0x0f, 0xb8, -1, ENC_RM_R32_RM32, -1));
     EC(binstr2(asmblr, xstmt, SIZE64, 0x0f, 0xb8, -1, ENC_RM_R64_RM64, -1));
+
+    return 0;
+}
+
+/*
+ * PUSH (Vol. 2B 4-333)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      FF /6           PUSH r/m16              M       Valid   Valid
+ *      FF /6           PUSH r/m32              M       N.E.    Valid
+ *      FF /6           PUSH r/m64              M       Valid   N.E.
+ *      50+ rw          PUSH r16                O       Valid   Valid
+ *      50+ rd          PUSH r32                O       N.E.    Valid
+ *      50+ rd          PUSH r64                O       Valid   N.E.
+ *      6A ib           PUSH imm8               I       Valid   Valid
+ *      6B iw           PUSH imm16              I       Valid   Valid
+ *      6B id           PUSH imm32              I       Valid   Valid
+ *      0E              PUSH CS                 NP      Inv.    Valid
+ *      16              PUSH SS                 NP      Inv.    Valid
+ *      1E              PUSH DS                 NP      Inv.    Valid
+ *      06              PUSH ES                 NP      Inv.    Valid
+ *      0F A0           PUSH FS                 NP      Valid   Valid
+ *      0F A8           PUSH GS                 NP      Valid   Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      M       ModR/M(r)       NA              NA              NA
+ *      O       opcode+rd(r,w)  NA              NA              NA
+ *      I       imm8/16/32      NA              NA              NA
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_push(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    EC(binstr2(asmblr, xstmt, SIZE16, 0xff, -1, -1, ENC_M_RM16, 6));
+    EC(binstr2(asmblr, xstmt, 0, 0xff, -1, -1, ENC_M_RM64, 6));
+
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x50, -1, -1, ENC_O_R16, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x50, -1, -1, ENC_O_R64, -1));
+
+    EC(binstr2(asmblr, xstmt, SIZE8, 0x6a, -1, -1, ENC_I_IMM8, -1));
+    EC(binstr2(asmblr, xstmt, SIZE16, 0x6b, -1, -1, ENC_I_IMM16, -1));
+    EC(binstr2(asmblr, xstmt, SIZE32, 0x6b, -1, -1, ENC_I_IMM32, -1));
+
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0xa0, -1, ENC_NP_FS, -1));
+    EC(binstr2(asmblr, xstmt, 0, 0x0f, 0xa8, -1, ENC_NP_GS, -1));
+
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, 0, 0xff, -1, -1, ENC_M_RM32, 6));*/
+    /*EC(binstr2(asmblr, xstmt, 0, 0x50, -1, -1, ENC_O_R32, -1));*/
+
+    return 0;
+}
+
+/*
+ * PUSHA/PUSHAD (Vol. 2B 4-337)
+ *
+ *      Opcode          Instruction             Op/En   64-bit  Compat/Leg
+ *      60              PUSHA                   NP      Inv.    Valid
+ *      60              PUSHAD                  NP      Inv.    Valid
+ *
+ *
+ *      Op/En   Operand1        Operand2        Operand3        Operand4
+ *      NP      NA              NA              NA              NA
+ */
+static int
+_pusha(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, SIZE16, 0x60, -1, -1, ENC_NP, -1));*/
+
+    return 0;
+}
+static int
+_pushad(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    /* Invalid for 64-bit mode */
+    /*EC(binstr2(asmblr, xstmt, SIZE32, 0x60, -1, -1, ENC_NP, -1));*/
 
     return 0;
 }
@@ -1633,6 +1716,9 @@ _resolv_instr(x86_64_stmt_t *xstmt)
        REGISTER_INSTR(ifunc, str, popa);
        REGISTER_INSTR(ifunc, str, popad);
        REGISTER_INSTR(ifunc, str, popcnt);
+       REGISTER_INSTR(ifunc, str, push);
+       REGISTER_INSTR(ifunc, str, pusha);
+       REGISTER_INSTR(ifunc, str, pushad);
        REGISTER_INSTR(ifunc, str, ret);
        REGISTER_INSTR(ifunc, str, xor);
    } else {
@@ -1880,6 +1966,10 @@ _fix_instr3(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 
     /* Selected instruction */
     instr = xstmt->sinstr;
+    if ( NULL == instr ) {
+        return -1;
+    }
+
 
     /* Obtain the size of the instruction */
     sz = _instr_size(instr);

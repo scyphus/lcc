@@ -29,6 +29,8 @@
 
 typedef enum _x86_64_enc {
     ENC_NP,
+    ENC_NP_FS,
+    ENC_NP_GS,
     ENC_NP_AL_DX,
     ENC_NP_AX_DX,
     ENC_NP_EAX_DX,
@@ -36,7 +38,9 @@ typedef enum _x86_64_enc {
     ENC_NP_DX_AX,
     ENC_NP_DX_EAX,
 
+    ENC_I_IMM8,
     ENC_I_IMM16,
+    ENC_I_IMM32,
 
     ENC_I_FIMM16,
     ENC_I_EIMM16,
