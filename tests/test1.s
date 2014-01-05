@@ -576,6 +576,9 @@ label53:
 	sldt	ax
 	sldt	rax
 
+label54:
+	jmp far	1:2
+
 start:
 
 

@@ -674,13 +674,14 @@ parse_prefixed_expr(pcode_t *pcode)
  * Parse an expr
  *
  * operand_expr ::=
- *              expression
+ *              expression ( ":" expression )?
  */
 operand_t *
 parse_operand_expr(pcode_t *pcode)
 {
     expr_t *expr;
     operand_t *op;
+    token_t *tok;
 
     /* Parse the expression */
     expr = parse_expr(pcode);
@@ -694,8 +695,26 @@ parse_operand_expr(pcode_t *pcode)
         expr_free(expr);
         return NULL;
     }
-    op->type = OPERAND_EXPR;
-    op->op.expr = expr;
+
+    /* Get the current token */
+    tok = token_queue_cur(pcode->token_queue);
+    if ( tok != NULL && TOK_COLON == tok->type ) {
+        op->type = OPERAND_PTR_EXPR;
+        op->op.ptr.expr0 = expr;
+
+        (void)token_queue_next(pcode->token_queue);
+        expr = parse_expr(pcode);
+        if ( NULL == expr ) {
+            /* Parse error */
+            expr_free(op->op.ptr.expr0);
+            free(op);
+            return NULL;
+        }
+        op->op.ptr.expr1 = expr;
+    } else {
+        op->type = OPERAND_EXPR;
+        op->op.expr = expr;
+    }
 
     return op;
 }

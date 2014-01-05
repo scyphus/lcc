@@ -163,6 +163,7 @@ typedef struct _prefixed_expr {
 typedef enum operand_type {
     OPERAND_ADDR_EXPR,
     OPERAND_EXPR,
+    OPERAND_PTR_EXPR,
 } operand_type_t;
 
 /*
@@ -173,6 +174,10 @@ typedef struct operand {
     size_prefix_t prefix;
     union {
         expr_t *expr;
+        struct {
+            expr_t *expr0;
+            expr_t *expr1;
+        } ptr;
         pexpr_t *pexpr;
     } op;
 } operand_t;

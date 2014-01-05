@@ -69,7 +69,7 @@ portable one.  Its output format has not yet been fixed at the current time.
                  ( size_prefix expression | expression )
     
     operand_expr ::=
-                 expression
+                 expression ( ":" expression )?
     
     operand_addr ::=
                  "[" prefixed_expr "]"

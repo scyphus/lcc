@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+int arch_x86_64_assemble(const char *);
+
 /*
  * Print the usage
  */
@@ -29,8 +31,6 @@ usage(const char *prog)
 int
 main(int argc, const char *const argv[])
 {
-    pcode_t *pcode;
-    stmt_vector_t *vec;
     const char *fname;
 
     /* Get the input file */
@@ -42,6 +42,9 @@ main(int argc, const char *const argv[])
     arch_x86_64_assemble(fname);
 
 #if 0
+    pcode_t *pcode;
+    stmt_vector_t *vec;
+
     /* Preprocess the code */
     pcode = preprocess(fname);
     if ( NULL == pcode ) {
