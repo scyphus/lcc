@@ -113,6 +113,8 @@ typedef enum _x86_64_enc {
     ENC_D_REL8,
     ENC_D_REL16,
     ENC_D_REL32,
+    ENC_D_PTR16_16,
+    ENC_D_PTR16_32,
 } x86_64_enc_t;
 
 #ifdef __cplusplus

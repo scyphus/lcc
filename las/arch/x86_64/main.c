@@ -18,6 +18,13 @@
 #include <string.h>
 #include <assert.h>
 
+#define INSTR_OFFSET_DISP       1
+#define INSTR_OFFSET_IMM        2
+#define INSTR_OFFSET_REL        3
+#define INSTR_OFFSET_PTR0       4
+#define INSTR_OFFSET_PTR1       5
+#define INSTR_OFFSET_EOI        0
+
 
 /* FIXME: Fix the error handling */
 #define EC(f) do {                                                      \
@@ -68,8 +75,67 @@ _instr_size(const x86_64_instr_t *instr)
     sz += instr->disp.sz;
     sz += instr->imm.sz;
     sz += instr->rel.sz;
+    sz += instr->ptr0.sz;
+    sz += instr->ptr1.sz;
 
     return sz;
+}
+
+static off_t
+_instr_offset(const x86_64_stmt_t *xstmt, int type)
+{
+    off_t off;
+
+    /* FIXME: Replace with the fixed position */
+    off = xstmt->epos.min;
+
+    if ( xstmt->sinstr->prefix1 >= 0 ) {
+        off++;
+    }
+    if ( xstmt->sinstr->prefix2 >= 0 ) {
+        off++;
+    }
+    if ( xstmt->sinstr->prefix3 >= 0 ) {
+        off++;
+    }
+    if ( xstmt->sinstr->prefix4 >= 0 ) {
+        off++;
+    }
+    if ( xstmt->sinstr->rex >= 0 ) {
+        off++;
+    }
+    if ( xstmt->sinstr->opcode1 >= 0 ) {
+        off++;
+    }
+    if ( xstmt->sinstr->opcode2 >= 0 ) {
+        off++;
+    }
+    if ( xstmt->sinstr->opcode3 >= 0 ) {
+        off++;
+    }
+    if ( xstmt->sinstr->modrm >= 0 ) {
+        off++;
+    }
+    if ( xstmt->sinstr->sib >= 0 ) {
+        off++;
+    }
+    switch ( type ) {
+    case INSTR_OFFSET_EOI:
+        off += xstmt->sinstr->ptr1.sz;
+    case INSTR_OFFSET_PTR1:
+        off += xstmt->sinstr->ptr0.sz;
+    case INSTR_OFFSET_PTR0:
+        off += xstmt->sinstr->rel.sz;
+    case INSTR_OFFSET_REL:
+        off += xstmt->sinstr->imm.sz;
+    case INSTR_OFFSET_IMM:
+        off += xstmt->sinstr->disp.sz;
+    case INSTR_OFFSET_DISP:
+        break;
+    default:
+        ;
+    }
+    return off;
 }
 
 
@@ -128,6 +194,16 @@ _print_instruction(const x86_64_instr_t *instr)
         printf("%.2llX", val & 0xff);
         val >>= 8;
     }
+    val = instr->ptr0.val;
+    for ( i = 0; i < instr->ptr0.sz; i++ ) {
+        printf("%.2llX", val & 0xff);
+        val >>= 8;
+    }
+    val = instr->ptr1.val;
+    for ( i = 0; i < instr->ptr1.sz; i++ ) {
+        printf("%.2llX", val & 0xff);
+        val >>= 8;
+    }
 
     return 0;
 }
@@ -180,6 +256,16 @@ _print_instruction_bin(const x86_64_instr_t *instr)
     }
     val = instr->rel.val;
     for ( i = 0; i < instr->rel.sz; i++ ) {
+        printf("%c", (unsigned char)val & 0xff);
+        val >>= 8;
+    }
+    val = instr->ptr0.val;
+    for ( i = 0; i < instr->ptr0.sz; i++ ) {
+        printf("%c", (unsigned char)val & 0xff);
+        val >>= 8;
+    }
+    val = instr->ptr1.val;
+    for ( i = 0; i < instr->ptr1.sz; i++ ) {
         printf("%c", (unsigned char)val & 0xff);
         val >>= 8;
     }
@@ -1664,9 +1750,9 @@ _jz(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
  *      FF /4           JMP r/m64               M       Valid   N.E.
  *      EA cd           JMP ptr16:16            D       Inv.    Valid
  *      EA cp           JMP ptr16:32            D       Inv.    Valid
- *      FF /5           JMP m16:16              D       Valid   Valid
- *      FF /5           JMP m16:32              D       Valid   Valid
- *      REX.W + FF /5   JMP m16:64              D       Valid   N.E.
+ *      FF /5           JMP m16:16              M       Valid   Valid
+ *      FF /5           JMP m16:32              M       Valid   Valid
+ *      REX.W + FF /5   JMP m16:64              M       Valid   N.E.
  *
  *
  *      Op/En   Operand1        Operand2        Operand3        Operand4
@@ -1678,6 +1764,7 @@ _jmp(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     if ( OPCODE_SUFFIX_FAR & xstmt->suffix ) {
         /* w/ far */
+        //EC(binstr2(asmblr, xstmt, SIZE16, 0xff, -1, -1, ENC_D_PTR16_16, -1));
 
         /* To be implemented */
         return -EUNKNOWN;
@@ -3168,7 +3255,7 @@ _fix_instr3(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
                 return -1;
             }
             /* FIXME: Replace with the fixed position */
-            rela->offset = xstmt->epos.min + sz - instr->rel.sz;
+            rela->offset = _instr_offset(xstmt, INSTR_OFFSET_REL);
             rela->type = X86_64_RELA_PC32; /* FIXME */
             rela->addend = instr->rel.val;
             /* S = 0 */
@@ -3196,9 +3283,10 @@ _fix_instr3(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
             }
             if ( 1 == rval->nsym ) {
                 /* FIXME: Replace with the fixed position */
-                rela->offset = xstmt->epos.min + sz - instr->rel.sz;
+                rela->offset = _instr_offset(xstmt, INSTR_OFFSET_REL);
                 rela->type = X86_64_RELA_PC32; /* FIXME */
-                rela->addend = rval->addend - (xstmt->epos.min + sz);
+                rela->addend = rval->addend
+                    - _instr_offset(xstmt, INSTR_OFFSET_EOI);
                 /* S = 0 */
                 if ( NULL != rval->symname ) {
                     rela->symname = strdup(rval->symname);
@@ -3213,7 +3301,8 @@ _fix_instr3(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
                 } else {
                     free(rela);
                     /* Reset the value */
-                    instr->rel.val = rval->addend - (xstmt->epos.min + sz);
+                    instr->rel.val = rval->addend
+                        - _instr_offset(xstmt, INSTR_OFFSET_EOI);
                 }
             } else {
                 /* FIXME */

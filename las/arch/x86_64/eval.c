@@ -945,6 +945,27 @@ _estimate_expr_imm_or_reg(expr_t *expr)
 }
 
 /*
+ * Estimate ptr value
+ */
+static x86_64_eval_t *
+_estimate_expr_ptr(expr_t *expr0, expr_t *expr1)
+{
+    x86_64_eval_t *eval;
+
+    eval = malloc(sizeof(x86_64_eval_t));
+    if ( NULL == eval ) {
+        return NULL;
+    }
+
+    eval->type = X86_64_EVAL_PTR;
+    eval->sopsize = 0;
+    eval->u.ptr.expr0 = expr0;
+    eval->u.ptr.expr1 = expr1;
+
+    return eval;
+}
+
+/*
  * Estimate the expression which is address operand type
  */
 static x86_64_eval_t *
@@ -1016,9 +1037,14 @@ x86_64_estimate_operand(operand_t *op)
     if ( OPERAND_EXPR == op->type ) {
         /* Immediate value or register */
         eval = _estimate_expr_imm_or_reg(op->op.expr);
-    } else {
+    } else if ( OPERAND_ADDR_EXPR == op->type ) {
         /* Address */
         eval = _estimate_expr_addr(op->op.pexpr);
+    } else if ( OPERAND_PTR_EXPR == op->type ) {
+        /* PTR */
+        eval = _estimate_expr_ptr(op->op.ptr.expr0, op->op.ptr.expr1);
+    } else {
+        return NULL;
     }
     /* Check the returned value */
     if ( NULL == eval ) {
@@ -1047,6 +1073,7 @@ x86_64_estimate_operand(operand_t *op)
     /* Complement and validate the operand size and address size */
     switch ( eval->type ) {
     case X86_64_EVAL_IMM:
+    case X86_64_EVAL_PTR:
         /* Check nothing */
         break;
     case X86_64_EVAL_REG:

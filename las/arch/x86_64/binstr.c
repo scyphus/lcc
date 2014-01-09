@@ -1641,6 +1641,13 @@ _encode_rm_addr_with_base(int reg, int rexr, const x86_64_eval_t *eval,
         enop->rel.sz = 0;
         enop->rel.val = 0;
         enop->rel.expr = NULL;
+        /* No ptr value */
+        enop->ptr0.sz = 0;
+        enop->ptr0.val = 0;
+        enop->ptr0.expr = NULL;
+        enop->ptr1.sz = 0;
+        enop->ptr1.val = 0;
+        enop->ptr1.expr = NULL;
 
         return 0;
     } else {
@@ -1790,6 +1797,13 @@ _encode_rm_addr_with_base(int reg, int rexr, const x86_64_eval_t *eval,
         enop->rel.sz = 0;
         enop->rel.val = 0;
         enop->rel.expr = NULL;
+        /* No ptr value */
+        enop->ptr0.sz = 0;
+        enop->ptr0.val = 0;
+        enop->ptr0.expr = NULL;
+        enop->ptr1.sz = 0;
+        enop->ptr1.val = 0;
+        enop->ptr1.expr = NULL;
 
         return 0;
     }
@@ -1860,6 +1874,13 @@ _encode_rm_addr_without_base(int reg, int rexr, const x86_64_eval_t *eval,
     enop->rel.sz = 0;
     enop->rel.val = 0;
     enop->rel.expr = NULL;
+    /* No ptr value */
+    enop->ptr0.sz = 0;
+    enop->ptr0.val = 0;
+    enop->ptr0.expr = NULL;
+    enop->ptr1.sz = 0;
+    enop->ptr1.val = 0;
+    enop->ptr1.expr = NULL;
 
     return 0;
 }
@@ -1938,6 +1959,13 @@ _encode_rm_reg(int reg, int rexr, const x86_64_eval_t *eval,
     enop->rel.sz = 0;
     enop->rel.val = 0;
     enop->rel.expr = NULL;
+    /* No ptr value */
+    enop->ptr0.sz = 0;
+    enop->ptr0.val = 0;
+    enop->ptr0.expr = NULL;
+    enop->ptr1.sz = 0;
+    enop->ptr1.val = 0;
+    enop->ptr1.expr = NULL;
 
     return 0;
 }
@@ -2109,6 +2137,12 @@ _encode_oi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, size_t immsz,
         enop->rel.sz = 0;
         enop->rel.val = 0;
         enop->rel.expr = NULL;
+        enop->ptr0.sz = 0;
+        enop->ptr0.val = 0;
+        enop->ptr0.expr = NULL;
+        enop->ptr1.sz = 0;
+        enop->ptr1.val = 0;
+        enop->ptr1.expr = NULL;
 
         return 0;
     } else if ( X86_64_EVAL_IMM == eval2->type
@@ -2132,6 +2166,12 @@ _encode_oi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, size_t immsz,
         enop->rel.sz = 0;
         enop->rel.val = 0;
         enop->rel.expr = NULL;
+        enop->ptr0.sz = 0;
+        enop->ptr0.val = 0;
+        enop->ptr0.expr = NULL;
+        enop->ptr1.sz = 0;
+        enop->ptr1.val = 0;
+        enop->ptr1.expr = NULL;
 
         return 0;
     } else {
@@ -2248,6 +2288,12 @@ _encode_o(const x86_64_eval_t *eval, x86_64_enop_t *enop)
     enop->rel.sz = 0;
     enop->rel.val = 0;
     enop->rel.expr = NULL;
+    enop->ptr0.sz = 0;
+    enop->ptr0.val = 0;
+    enop->ptr0.expr = NULL;
+    enop->ptr1.sz = 0;
+    enop->ptr1.val = 0;
+    enop->ptr1.expr = NULL;
 
     return 0;
 }
@@ -2277,6 +2323,13 @@ _encode_i(const x86_64_eval_t *eval, size_t immsz, x86_64_enop_t *enop)
             enop->rel.sz = 0;
             enop->rel.val = 0;
             enop->rel.expr = NULL;
+            enop->ptr0.sz = 0;
+            enop->ptr0.val = 0;
+            enop->ptr0.expr = NULL;
+            enop->ptr1.sz = 0;
+            enop->ptr1.val = 0;
+            enop->ptr1.expr = NULL;
+
             return 0;
         } else if ( X86_64_IMM_EXPR == eval->u.imm.type ) {
             enop->opreg = -1;
@@ -2295,6 +2348,13 @@ _encode_i(const x86_64_eval_t *eval, size_t immsz, x86_64_enop_t *enop)
             enop->rel.sz = 0;
             enop->rel.val = 0;
             enop->rel.expr = NULL;
+            enop->ptr0.sz = 0;
+            enop->ptr0.val = 0;
+            enop->ptr0.expr = NULL;
+            enop->ptr1.sz = 0;
+            enop->ptr1.val = 0;
+            enop->ptr1.expr = NULL;
+
             return 0;
         } else {
             return -1;
@@ -2329,6 +2389,13 @@ _encode_d(const x86_64_eval_t *eval, size_t immsz, x86_64_enop_t *enop)
             enop->rel.sz = immsz;
             enop->rel.val = eval->u.imm.u.fixed;
             enop->rel.expr = NULL;
+            enop->ptr0.sz = 0;
+            enop->ptr0.val = 0;
+            enop->ptr0.expr = NULL;
+            enop->ptr1.sz = 0;
+            enop->ptr1.val = 0;
+            enop->ptr1.expr = NULL;
+
             return 0;
         } else if ( X86_64_IMM_EXPR == eval->u.imm.type ) {
             enop->opreg = -1;
@@ -2347,6 +2414,13 @@ _encode_d(const x86_64_eval_t *eval, size_t immsz, x86_64_enop_t *enop)
             enop->rel.sz = immsz;
             enop->rel.val = 0;
             enop->rel.expr = eval->u.imm.u.rexpr;
+            enop->ptr0.sz = 0;
+            enop->ptr0.val = 0;
+            enop->ptr0.expr = NULL;
+            enop->ptr1.sz = 0;
+            enop->ptr1.val = 0;
+            enop->ptr1.expr = NULL;
+
             return 0;
         } else {
             return -1;
@@ -2541,6 +2615,12 @@ _encode_instr(x86_64_instr_t *instr, const x86_64_enop_t *enop,
     instr->rel.sz = enop->rel.sz;
     instr->rel.val = enop->rel.val;
     instr->rel.expr = enop->rel.expr;
+    instr->ptr0.sz = enop->ptr0.sz;
+    instr->ptr0.val = enop->ptr0.val;
+    instr->ptr0.expr = enop->ptr0.expr;
+    instr->ptr1.sz = enop->ptr1.sz;
+    instr->ptr1.val = enop->ptr1.val;
+    instr->ptr1.expr = enop->ptr1.expr;
 
     /* Opcode prefixes */
     if ( OPCODE_PREFIX_LOCK & prefix ) {
@@ -2645,6 +2725,12 @@ _binstr2_np(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize)
     enop.rel.sz = 0;
     enop.rel.val = 0;
     enop.rel.expr = NULL;
+    enop.ptr0.sz = 0;
+    enop.ptr0.val = 0;
+    enop.ptr0.expr = NULL;
+    enop.ptr1.sz = 0;
+    enop.ptr1.val = 0;
+    enop.ptr1.expr = NULL;
 
     /* Encode instruction */
     ret = _encode_instr(instr, &enop, xstmt->tgt, xstmt->prefix, opsize, 0);
@@ -2707,6 +2793,12 @@ _binstr2_np_preg(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3,
     enop.rel.sz = 0;
     enop.rel.val = 0;
     enop.rel.expr = NULL;
+    enop.ptr0.sz = 0;
+    enop.ptr0.val = 0;
+    enop.ptr0.expr = NULL;
+    enop.ptr1.sz = 0;
+    enop.ptr1.val = 0;
+    enop.ptr1.expr = NULL;
 
     /* Encode instruction */
     ret = _encode_instr(instr, &enop, xstmt->tgt, xstmt->prefix, opsize, 0);
