@@ -3504,7 +3504,7 @@ _eval(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         /* Obtain operands */
         op = mvector_at(xstmt->stmt->u.instr->operands, i);
         /* Evaluate operands */
-        opr = x86_64_estimate_operand(op);
+        opr = x86_64_convert_operand(op);
         if ( NULL == opr ) {
             /* FIXME: Free the contents of the vector */
             mvector_delete(oprs);

@@ -530,10 +530,10 @@ _estimate_expr_addr(pexpr_t *pexpr)
 }
 
 /*
- * Estimate the operand
+ * Covert the operand
  */
 x86_64_opr_t *
-x86_64_estimate_operand(operand_t *op)
+x86_64_convert_operand(operand_t *op)
 {
     x86_64_opr_t *opr;
     size_t sz;

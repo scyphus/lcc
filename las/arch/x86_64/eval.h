@@ -27,8 +27,6 @@ extern "C" {
     x86_64_expr_range(const x86_64_label_table_t *, const expr_t *, int64_t *,
                       int64_t *);
 
-    x86_64_opr_t *
-    x86_64_estimate_operand(operand_t *);
 
 #ifdef __cplusplus
 }
