@@ -19,18 +19,30 @@ pexpr_free(pexpr_t *pexpr)
 }
 
 /*
+ * Free an operand expression
+ */
+void
+oexpr_free(oexpr_t *oexpr)
+{
+    if ( OEXPR_ADDR == oexpr->type ) {
+        pexpr_free(oexpr->u.pexpr);
+    } else {
+        expr_free(oexpr->u.expr);
+    }
+    free(oexpr);
+}
+
+/*
  * Free an operand
  */
 void
 operand_free(operand_t *op)
 {
-    switch ( op->type ) {
-    case OPERAND_ADDR_EXPR:
-    case OPERAND_EXPR:
-        pexpr_free(op->op.pexpr);
-        break;
-    default:
-        ;
+    if ( NULL != op->oexpr0 ) {
+        oexpr_free(op->oexpr0);
+    }
+    if ( NULL != op->oexpr1 ) {
+        oexpr_free(op->oexpr1);
     }
 }
 

@@ -160,26 +160,30 @@ typedef struct _prefixed_expr {
 /*
  * Operand type
  */
-typedef enum operand_type {
-    OPERAND_ADDR_EXPR,
-    OPERAND_EXPR,
-    OPERAND_PTR_EXPR,
-} operand_type_t;
+typedef enum operand_expr_type {
+    OEXPR_ADDR,
+    OEXPR_EXPR,
+} oexpr_type_t;
+
+/*
+ * Operand expression
+ */
+typedef struct _operand_expr {
+    oexpr_type_t type;
+    union {
+        expr_t *expr;
+        pexpr_t *pexpr;
+    } u;
+} oexpr_t;
+
 
 /*
  * Operand
  */
 typedef struct operand {
-    operand_type_t type;
     size_prefix_t prefix;
-    union {
-        expr_t *expr;
-        struct {
-            expr_t *expr0;
-            expr_t *expr1;
-        } ptr;
-        pexpr_t *pexpr;
-    } op;
+    oexpr_t *oexpr0;
+    oexpr_t *oexpr1;
 } operand_t;
 typedef struct mvector operand_vector_t;
 

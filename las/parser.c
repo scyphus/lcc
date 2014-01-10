@@ -674,14 +674,13 @@ parse_prefixed_expr(pcode_t *pcode)
  * Parse an expr
  *
  * operand_expr ::=
- *              expression ( ":" expression )?
+ *              expression
  */
-operand_t *
+oexpr_t *
 parse_operand_expr(pcode_t *pcode)
 {
     expr_t *expr;
-    operand_t *op;
-    token_t *tok;
+    oexpr_t *oexpr;
 
     /* Parse the expression */
     expr = parse_expr(pcode);
@@ -689,34 +688,16 @@ parse_operand_expr(pcode_t *pcode)
         /* Parse error */
         return NULL;
     }
-    /* Allocate operand */
-    op = malloc(sizeof(operand_t));
-    if ( NULL == op ) {
+    /* Allocate operand expression */
+    oexpr = malloc(sizeof(oexpr_t));
+    if ( NULL == oexpr ) {
         expr_free(expr);
         return NULL;
     }
+    oexpr->type = OEXPR_EXPR;
+    oexpr->u.expr = expr;
 
-    /* Get the current token */
-    tok = token_queue_cur(pcode->token_queue);
-    if ( tok != NULL && TOK_COLON == tok->type ) {
-        op->type = OPERAND_PTR_EXPR;
-        op->op.ptr.expr0 = expr;
-
-        (void)token_queue_next(pcode->token_queue);
-        expr = parse_expr(pcode);
-        if ( NULL == expr ) {
-            /* Parse error */
-            expr_free(op->op.ptr.expr0);
-            free(op);
-            return NULL;
-        }
-        op->op.ptr.expr1 = expr;
-    } else {
-        op->type = OPERAND_EXPR;
-        op->op.expr = expr;
-    }
-
-    return op;
+    return oexpr;
 }
 
 /*
@@ -725,12 +706,12 @@ parse_operand_expr(pcode_t *pcode)
  * operand_addr ::=
  *              "[" prefixed_expr "]"
  */
-operand_t *
+oexpr_t *
 parse_operand_addr(pcode_t *pcode)
 {
     token_t *tok;
     pexpr_t *pexpr;
-    operand_t *op;
+    oexpr_t *oexpr;
 
     /* Skip lbracket */
     (void)token_queue_next(pcode->token_queue);
@@ -751,15 +732,15 @@ parse_operand_addr(pcode_t *pcode)
     (void)token_queue_next(pcode->token_queue);
 
     /* Expression to addr */
-    op = malloc(sizeof(operand_t));
-    if ( NULL == op ) {
+    oexpr = malloc(sizeof(oexpr_t));
+    if ( NULL == oexpr ) {
         pexpr_free(pexpr);
         return NULL;
     }
-    op->type = OPERAND_ADDR_EXPR;
-    op->op.pexpr = pexpr;
+    oexpr->type = OEXPR_ADDR;
+    oexpr->u.pexpr = pexpr;
 
-    return op;
+    return oexpr;
 }
 
 /*
@@ -771,9 +752,11 @@ parse_operand_addr(pcode_t *pcode)
 operand_t *
 parse_operand(pcode_t *pcode)
 {
-    operand_t *op;
+    oexpr_t *oexpr0;
+    oexpr_t *oexpr1;
     token_t *tok;
     size_prefix_t prefix;
+    operand_t *op;
 
     /* Get the current token */
     tok = token_queue_cur(pcode->token_queue);
@@ -804,14 +787,42 @@ parse_operand(pcode_t *pcode)
          || TOK_OP_PLUS == tok->type || TOK_OP_MINUS == tok->type
          || TOK_OP_TILDE == tok->type || TOK_SYMBOL == tok->type ) {
         /* Symbol, register, or immediate value */
-        op = parse_operand_expr(pcode);
+        oexpr0 = parse_operand_expr(pcode);
+        if ( NULL == oexpr0 ) {
+            return NULL;
+        }
+
+        /* Get the current token */
+        tok = token_queue_cur(pcode->token_queue);
+        if ( tok != NULL && TOK_COLON == tok->type ) {
+            (void)token_queue_next(pcode->token_queue);
+            oexpr1 = parse_operand_expr(pcode);
+            if ( NULL == oexpr1 ) {
+                /* Parse error */
+                oexpr_free(oexpr0);
+                return NULL;
+            }
+        } else {
+            oexpr1 = NULL;
+        }
+
     } else if ( TOK_LBRACKET == tok->type ) {
         /* Address or moffset */
-        op = parse_operand_addr(pcode);
+        oexpr0 = parse_operand_addr(pcode);
+        if ( NULL == oexpr0 ) {
+            return NULL;
+        }
     } else {
         /* Parse error */
         return NULL;
     }
+    op = malloc(sizeof(operand_t));
+    if ( NULL == op ) {
+        /* FIXME */
+        return NULL;
+    }
+    op->oexpr0 = oexpr0;
+    op->oexpr1 = oexpr1;
     op->prefix = prefix;
 
     return op;

@@ -14,6 +14,9 @@
 extern "C" {
 #endif
 
+    void pexpr_free(pexpr_t *);
+    void oexpr_free(oexpr_t *);
+
     void operand_free(operand_t *);
     void operands_delete(operand_vector_t *);
 

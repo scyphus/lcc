@@ -1034,15 +1034,12 @@ x86_64_estimate_operand(operand_t *op)
     x86_64_eval_t *eval;
     size_t sz;
 
-    if ( OPERAND_EXPR == op->type ) {
+    if ( OEXPR_EXPR == op->oexpr0->type ) {
         /* Immediate value or register */
-        eval = _estimate_expr_imm_or_reg(op->op.expr);
-    } else if ( OPERAND_ADDR_EXPR == op->type ) {
+        eval = _estimate_expr_imm_or_reg(op->oexpr0->u.expr);
+    } else if ( OEXPR_ADDR == op->oexpr0->type ) {
         /* Address */
-        eval = _estimate_expr_addr(op->op.pexpr);
-    } else if ( OPERAND_PTR_EXPR == op->type ) {
-        /* PTR */
-        eval = _estimate_expr_ptr(op->op.ptr.expr0, op->op.ptr.expr1);
+        eval = _estimate_expr_addr(op->oexpr0->u.pexpr);
     } else {
         return NULL;
     }
