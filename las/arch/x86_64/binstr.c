@@ -28,14 +28,14 @@
 
 
 static int
-_encode_rm(const x86_64_eval_t *, const x86_64_eval_t *, x86_64_enop_t *);
+_encode_rm(const x86_64_opr_t *, const x86_64_opr_t *, x86_64_enop_t *);
 static int
-_encode_mr(const x86_64_eval_t *, const x86_64_eval_t *, x86_64_enop_t *);
+_encode_mr(const x86_64_opr_t *, const x86_64_opr_t *, x86_64_enop_t *);
 static int
-_encode_oi(const x86_64_eval_t *, const x86_64_eval_t *, size_t,
+_encode_oi(const x86_64_opr_t *, const x86_64_opr_t *, size_t,
            x86_64_enop_t *);
 static int
-_encode_mi(const x86_64_eval_t *, const x86_64_eval_t *, int, size_t,
+_encode_mi(const x86_64_opr_t *, const x86_64_opr_t *, int, size_t,
            x86_64_enop_t *);
 
 
@@ -43,9 +43,9 @@ _encode_mi(const x86_64_eval_t *, const x86_64_eval_t *, int, size_t,
  * Is an immediate value? (imm8, imm16, imm32, or imm64)
  */
 static __inline__ int
-_is_imm(x86_64_eval_t *eval, int sz)
+_is_imm(x86_64_opr_t *eval, int sz)
 {
-    if ( X86_64_EVAL_IMM == eval->type ) {
+    if ( X86_64_OPR_IMM == eval->type ) {
         switch ( eval->u.imm.type ) {
         case X86_64_IMM_FIXED:
             /* Fixed value */
@@ -76,9 +76,9 @@ _is_imm(x86_64_eval_t *eval, int sz)
     }
 }
 static __inline__ int
-_is_imm8(x86_64_eval_t *eval)
+_is_imm8(x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_IMM == eval->type ) {
+    if ( X86_64_OPR_IMM == eval->type ) {
         switch ( eval->u.imm.type ) {
         case X86_64_IMM_FIXED:
             /* Fixed value */
@@ -114,9 +114,9 @@ _is_imm8(x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_imm16(x86_64_eval_t *eval)
+_is_imm16(x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_IMM == eval->type ) {
+    if ( X86_64_OPR_IMM == eval->type ) {
         switch ( eval->u.imm.type ) {
         case X86_64_IMM_FIXED:
             /* Fixed value */
@@ -152,9 +152,9 @@ _is_imm16(x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_imm32(x86_64_eval_t *eval)
+_is_imm32(x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_IMM == eval->type ) {
+    if ( X86_64_OPR_IMM == eval->type ) {
         switch ( eval->u.imm.type ) {
         case X86_64_IMM_FIXED:
             /* Fixed value */
@@ -192,9 +192,9 @@ _is_imm32(x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_imm64(x86_64_eval_t *eval)
+_is_imm64(x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_IMM == eval->type ) {
+    if ( X86_64_OPR_IMM == eval->type ) {
         switch ( eval->u.imm.type ) {
         case X86_64_IMM_FIXED:
             /* Fixed value */
@@ -224,9 +224,9 @@ _is_imm64(x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_3(x86_64_eval_t *eval)
+_is_3(x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_IMM == eval->type ) {
+    if ( X86_64_OPR_IMM == eval->type ) {
         switch ( eval->u.imm.type ) {
         case X86_64_IMM_FIXED:
             if ( 3 == eval->u.imm.u.fixed ) {
@@ -246,12 +246,12 @@ _is_3(x86_64_eval_t *eval)
  */
 #if 0
 static __inline__ int
-_is_rel8(x86_64_eval_t *eval, off_t pos)
+_is_rel8(x86_64_opr_t *eval, off_t pos)
 {
     int64_t imin;
     int64_t imax;
 
-    if ( X86_64_EVAL_IMM == eval->type ) {
+    if ( X86_64_OPR_IMM == eval->type ) {
         /* Fixed value */
         if ( 0 == eval->sopsize ) {
             //imin = eval->u.imm.u.est.min - pos * X86_64_INSTR_SIZE_MAX;
@@ -274,9 +274,9 @@ _is_rel8(x86_64_eval_t *eval, off_t pos)
     }
 }
 static __inline__ int
-_is_imm16(x86_64_eval_t *eval)
+_is_imm16(x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_IMM == eval->type
+    if ( X86_64_OPR_IMM == eval->type
          && X86_64_IMM_FIXED == eval->u.imm.type ) {
         /* Fixed value */
         if ( 0 == eval->sopsize ) {
@@ -299,9 +299,9 @@ _is_imm16(x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_imm32(x86_64_eval_t *eval)
+_is_imm32(x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_IMM == eval->type
+    if ( X86_64_OPR_IMM == eval->type
          && X86_64_IMM_FIXED == eval->u.imm.type ) {
         /* Fixed value */
         if ( 0 == eval->sopsize ) {
@@ -324,9 +324,9 @@ _is_imm32(x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_imm64(x86_64_eval_t *eval)
+_is_imm64(x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_IMM == eval->type ) {
+    if ( X86_64_OPR_IMM == eval->type ) {
         if ( 0 == eval->sopsize ) {
             return 1;
         } else if ( SIZE64 == eval->sopsize ) {
@@ -345,9 +345,9 @@ _is_imm64(x86_64_eval_t *eval)
  * Does the estimated value equal the specified register?
  */
 static __inline__ int
-_eq_reg(const x86_64_eval_t *eval, x86_64_reg_t reg)
+_eq_reg(const x86_64_opr_t *eval, x86_64_reg_t reg)
 {
-    if ( X86_64_EVAL_REG == eval->type && reg == eval->u.reg ) {
+    if ( X86_64_OPR_REG == eval->type && reg == eval->u.reg ) {
         return 1;
     } else {
         return 0;
@@ -358,9 +358,9 @@ _eq_reg(const x86_64_eval_t *eval, x86_64_reg_t reg)
  * Is the register with the specified size?
  */
 static __inline__ int
-_is_r16(const x86_64_eval_t *eval)
+_is_r16(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_REG == eval->type ) {
+    if ( X86_64_OPR_REG == eval->type ) {
         if ( SIZE16 == eval->sopsize ) {
             return 1;
         } else {
@@ -371,9 +371,9 @@ _is_r16(const x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_r32(const x86_64_eval_t *eval)
+_is_r32(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_REG == eval->type ) {
+    if ( X86_64_OPR_REG == eval->type ) {
         if ( SIZE32 == eval->sopsize ) {
             return 1;
         } else {
@@ -384,9 +384,9 @@ _is_r32(const x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_r64(const x86_64_eval_t *eval)
+_is_r64(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_REG == eval->type ) {
+    if ( X86_64_OPR_REG == eval->type ) {
         if ( SIZE64 == eval->sopsize ) {
             return 1;
         } else {
@@ -401,9 +401,9 @@ _is_r64(const x86_64_eval_t *eval)
  * Is the value type memory with the specified size?
  */
 static __inline__ int
-_is_m_unspec(const x86_64_eval_t *eval)
+_is_m_unspec(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_ADDR == eval->type ) {
+    if ( X86_64_OPR_ADDR == eval->type ) {
         if ( 0 == eval->sopsize ) {
             return 1;
         } else {
@@ -414,9 +414,9 @@ _is_m_unspec(const x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_m8(const x86_64_eval_t *eval)
+_is_m8(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_ADDR == eval->type ) {
+    if ( X86_64_OPR_ADDR == eval->type ) {
         if ( SIZE8 == eval->sopsize ) {
             return 1;
         } else {
@@ -427,9 +427,9 @@ _is_m8(const x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_m16(const x86_64_eval_t *eval)
+_is_m16(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_ADDR == eval->type ) {
+    if ( X86_64_OPR_ADDR == eval->type ) {
         if ( SIZE16 == eval->sopsize ) {
             return 1;
         } else {
@@ -440,9 +440,9 @@ _is_m16(const x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_m32(const x86_64_eval_t *eval)
+_is_m32(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_ADDR == eval->type ) {
+    if ( X86_64_OPR_ADDR == eval->type ) {
         if ( SIZE32 == eval->sopsize ) {
             return 1;
         } else {
@@ -453,9 +453,9 @@ _is_m32(const x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_m64(const x86_64_eval_t *eval)
+_is_m64(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_ADDR == eval->type ) {
+    if ( X86_64_OPR_ADDR == eval->type ) {
         if ( SIZE64 == eval->sopsize ) {
             return 1;
         } else {
@@ -470,9 +470,9 @@ _is_m64(const x86_64_eval_t *eval)
  * Is the estimated value register or memory operand with the specified size?
  */
 static __inline__ int
-_is_rm8(const x86_64_eval_t *eval)
+_is_rm8(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_REG == eval->type || X86_64_EVAL_ADDR == eval->type ) {
+    if ( X86_64_OPR_REG == eval->type || X86_64_OPR_ADDR == eval->type ) {
         if ( SIZE8 == eval->sopsize ) {
             return 1;
         } else {
@@ -483,9 +483,9 @@ _is_rm8(const x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_rm16(const x86_64_eval_t *eval)
+_is_rm16(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_REG == eval->type || X86_64_EVAL_ADDR == eval->type ) {
+    if ( X86_64_OPR_REG == eval->type || X86_64_OPR_ADDR == eval->type ) {
         if ( SIZE16 == eval->sopsize ) {
             return 1;
         } else {
@@ -496,9 +496,9 @@ _is_rm16(const x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_rm32(const x86_64_eval_t *eval)
+_is_rm32(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_REG == eval->type || X86_64_EVAL_ADDR == eval->type ) {
+    if ( X86_64_OPR_REG == eval->type || X86_64_OPR_ADDR == eval->type ) {
         if ( SIZE32 == eval->sopsize ) {
             return 1;
         } else {
@@ -509,9 +509,9 @@ _is_rm32(const x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_rm64(const x86_64_eval_t *eval)
+_is_rm64(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_REG == eval->type || X86_64_EVAL_ADDR == eval->type ) {
+    if ( X86_64_OPR_REG == eval->type || X86_64_OPR_ADDR == eval->type ) {
         if ( SIZE64 == eval->sopsize ) {
             return 1;
         } else {
@@ -527,18 +527,18 @@ _is_rm64(const x86_64_eval_t *eval)
 
 
 static __inline__ int
-_is_reg(const x86_64_eval_t *eval)
+_is_reg(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_REG == eval->type ) {
+    if ( X86_64_OPR_REG == eval->type ) {
         return 1;
     } else {
         return 0;
     }
 }
 static __inline__ int
-_is_reg8(const x86_64_eval_t *eval)
+_is_reg8(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_REG == eval->type ) {
+    if ( X86_64_OPR_REG == eval->type ) {
         if ( SIZE8 == eval->sopsize ) {
             return 1;
         } else {
@@ -549,9 +549,9 @@ _is_reg8(const x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_reg16(const x86_64_eval_t *eval)
+_is_reg16(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_REG == eval->type ) {
+    if ( X86_64_OPR_REG == eval->type ) {
         if ( SIZE16 == eval->sopsize ) {
             return 1;
         } else {
@@ -562,9 +562,9 @@ _is_reg16(const x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_reg32(const x86_64_eval_t *eval)
+_is_reg32(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_REG == eval->type ) {
+    if ( X86_64_OPR_REG == eval->type ) {
         if ( SIZE32 == eval->sopsize ) {
             return 1;
         } else {
@@ -575,9 +575,9 @@ _is_reg32(const x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_reg64(const x86_64_eval_t *eval)
+_is_reg64(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_REG == eval->type ) {
+    if ( X86_64_OPR_REG == eval->type ) {
         if ( SIZE64 == eval->sopsize ) {
             return 1;
         } else {
@@ -588,9 +588,9 @@ _is_reg64(const x86_64_eval_t *eval)
     }
 }
 static __inline__ int
-_is_addr8(const x86_64_eval_t *eval)
+_is_addr8(const x86_64_opr_t *eval)
 {
-    if ( X86_64_EVAL_ADDR == eval->type ) {
+    if ( X86_64_OPR_ADDR == eval->type ) {
         if ( SIZE8 == eval->sopsize ) {
             return 1;
         } else {
@@ -604,11 +604,11 @@ _is_addr8(const x86_64_eval_t *eval)
 
 
 static __inline__ int
-_is_rm8_r8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_rm8_r8(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval2->type && SIZE8 == eval2->sopsize
-         && (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
+    if ( X86_64_OPR_REG == eval2->type && SIZE8 == eval2->sopsize
+         && (X86_64_OPR_REG == eval1->type || X86_64_OPR_ADDR == eval1->type)
          && (0 == eval1->sopsize || SIZE8 == eval1->sopsize) ) {
         return 1;
     }
@@ -616,11 +616,11 @@ _is_rm8_r8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_rm8_r32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_rm8_r32(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval2->type && SIZE32 == eval2->sopsize
-         && (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
+    if ( X86_64_OPR_REG == eval2->type && SIZE32 == eval2->sopsize
+         && (X86_64_OPR_REG == eval1->type || X86_64_OPR_ADDR == eval1->type)
          && (0 == eval1->sopsize || SIZE8 == eval1->sopsize) ) {
         return 1;
     }
@@ -628,11 +628,11 @@ _is_rm8_r32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_rm8_r64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_rm8_r64(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval2->type && SIZE64 == eval2->sopsize
-         && (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
+    if ( X86_64_OPR_REG == eval2->type && SIZE64 == eval2->sopsize
+         && (X86_64_OPR_REG == eval1->type || X86_64_OPR_ADDR == eval1->type)
          && (0 == eval1->sopsize || SIZE8 == eval1->sopsize) ) {
         return 1;
     }
@@ -640,11 +640,11 @@ _is_rm8_r64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_rm16_r16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_rm16_r16(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval2->type && SIZE16 == eval2->sopsize
-         && (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
+    if ( X86_64_OPR_REG == eval2->type && SIZE16 == eval2->sopsize
+         && (X86_64_OPR_REG == eval1->type || X86_64_OPR_ADDR == eval1->type)
          && (0 == eval1->sopsize || SIZE16 == eval1->sopsize) ) {
         return 1;
     }
@@ -652,11 +652,11 @@ _is_rm16_r16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_rm16_r32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_rm16_r32(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval2->type && SIZE32 == eval2->sopsize
-         && (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
+    if ( X86_64_OPR_REG == eval2->type && SIZE32 == eval2->sopsize
+         && (X86_64_OPR_REG == eval1->type || X86_64_OPR_ADDR == eval1->type)
          && (0 == eval1->sopsize || SIZE16 == eval1->sopsize) ) {
         return 1;
     }
@@ -664,11 +664,11 @@ _is_rm16_r32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_rm32_r32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_rm32_r32(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval2->type && SIZE32 == eval2->sopsize
-         && (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
+    if ( X86_64_OPR_REG == eval2->type && SIZE32 == eval2->sopsize
+         && (X86_64_OPR_REG == eval1->type || X86_64_OPR_ADDR == eval1->type)
          && (0 == eval1->sopsize || SIZE32 == eval1->sopsize) ) {
         return 1;
     }
@@ -676,11 +676,11 @@ _is_rm32_r32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_rm64_r64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_rm64_r64(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval2->type && SIZE64 == eval2->sopsize
-         && (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
+    if ( X86_64_OPR_REG == eval2->type && SIZE64 == eval2->sopsize
+         && (X86_64_OPR_REG == eval1->type || X86_64_OPR_ADDR == eval1->type)
          && (0 == eval1->sopsize || SIZE64 == eval1->sopsize) ) {
         return 1;
     }
@@ -688,46 +688,46 @@ _is_rm64_r64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_r8_rm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r8_rm8(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     return _is_rm8_r8(eval2, eval1);
 }
 static __inline__ int
-_is_r16_rm16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r16_rm16(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     return _is_rm16_r16(eval2, eval1);
 }
 static __inline__ int
-_is_r32_rm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r32_rm8(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     return _is_rm8_r32(eval2, eval1);
 }
 static __inline__ int
-_is_r32_rm16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r32_rm16(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     return _is_rm16_r32(eval2, eval1);
 }
 static __inline__ int
-_is_r32_rm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r32_rm32(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     return _is_rm32_r32(eval2, eval1);
 }
 static __inline__ int
-_is_r64_rm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r64_rm8(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     return _is_rm8_r64(eval2, eval1);
 }
 static __inline__ int
-_is_r64_rm64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r64_rm64(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     return _is_rm64_r64(eval2, eval1);
 }
 static __inline__ int
-_is_r8_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r8_imm8(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval1->type && SIZE8 == eval1->sopsize
-         && X86_64_EVAL_IMM == eval2->type
+    if ( X86_64_OPR_REG == eval1->type && SIZE8 == eval1->sopsize
+         && X86_64_OPR_IMM == eval2->type
          && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize ) {
             if ( eval2->u.imm.u.fixed >= -128 && eval2->u.imm.u.fixed <= 127 ) {
@@ -741,11 +741,11 @@ _is_r8_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_r16_imm16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r16_imm16(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval1->type && SIZE16 == eval1->sopsize
-         && X86_64_EVAL_IMM == eval2->type
+    if ( X86_64_OPR_REG == eval1->type && SIZE16 == eval1->sopsize
+         && X86_64_OPR_IMM == eval2->type
          && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize ) {
             if ( eval2->u.imm.u.fixed >= -32768
@@ -760,11 +760,11 @@ _is_r16_imm16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_r32_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r32_imm32(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval1->type && SIZE32 == eval1->sopsize
-         && X86_64_EVAL_IMM == eval2->type
+    if ( X86_64_OPR_REG == eval1->type && SIZE32 == eval1->sopsize
+         && X86_64_OPR_IMM == eval2->type
          && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize ) {
             if ( eval2->u.imm.u.fixed >= -2147483648
@@ -779,11 +779,11 @@ _is_r32_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_r64_imm64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r64_imm64(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval1->type && SIZE64 == eval1->sopsize
-         && X86_64_EVAL_IMM == eval2->type
+    if ( X86_64_OPR_REG == eval1->type && SIZE64 == eval1->sopsize
+         && X86_64_OPR_IMM == eval2->type
          && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize ) {
             return 1;
@@ -795,11 +795,11 @@ _is_r64_imm64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_r8_rela8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r8_rela8(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval1->type && SIZE8 == eval1->sopsize
-         && X86_64_EVAL_IMM == eval2->type
+    if ( X86_64_OPR_REG == eval1->type && SIZE8 == eval1->sopsize
+         && X86_64_OPR_IMM == eval2->type
          && X86_64_IMM_EXPR == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize || SIZE8 == eval2->sopsize ) {
             return 1;
@@ -809,11 +809,11 @@ _is_r8_rela8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_r16_rela16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r16_rela16(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval1->type && SIZE16 == eval1->sopsize
-         && X86_64_EVAL_IMM == eval2->type
+    if ( X86_64_OPR_REG == eval1->type && SIZE16 == eval1->sopsize
+         && X86_64_OPR_IMM == eval2->type
          && X86_64_IMM_EXPR == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize || SIZE16 == eval2->sopsize ) {
             return 1;
@@ -823,11 +823,11 @@ _is_r16_rela16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_r32_rela32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r32_rela32(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval1->type && SIZE32 == eval1->sopsize
-         && X86_64_EVAL_IMM == eval2->type
+    if ( X86_64_OPR_REG == eval1->type && SIZE32 == eval1->sopsize
+         && X86_64_OPR_IMM == eval2->type
          && X86_64_IMM_EXPR == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize || SIZE32 == eval2->sopsize ) {
             return 1;
@@ -837,11 +837,11 @@ _is_r32_rela32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_r64_rela64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_r64_rela64(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( X86_64_EVAL_REG == eval1->type && SIZE64 == eval1->sopsize
-         && X86_64_EVAL_IMM == eval2->type
+    if ( X86_64_OPR_REG == eval1->type && SIZE64 == eval1->sopsize
+         && X86_64_OPR_IMM == eval2->type
          && X86_64_IMM_EXPR == eval2->u.imm.type ) {
         if ( 0 == eval2->sopsize || SIZE64 == eval2->sopsize ) {
             return 1;
@@ -851,11 +851,11 @@ _is_r64_rela64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_rm8_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_rm8_imm8(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
-         && X86_64_EVAL_IMM == eval2->type
+    if ( (X86_64_OPR_REG == eval1->type || X86_64_OPR_ADDR == eval1->type)
+         && X86_64_OPR_IMM == eval2->type
          && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( SIZE8 == eval1->sopsize ) {
             if ( 0 == eval2->sopsize ) {
@@ -876,11 +876,11 @@ _is_rm8_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_rm16_imm16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_rm16_imm16(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
-         && X86_64_EVAL_IMM == eval2->type
+    if ( (X86_64_OPR_REG == eval1->type || X86_64_OPR_ADDR == eval1->type)
+         && X86_64_OPR_IMM == eval2->type
          && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( SIZE16 == eval1->sopsize ) {
             if ( 0 == eval2->sopsize ) {
@@ -901,11 +901,11 @@ _is_rm16_imm16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_rm32_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_rm32_imm32(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
-         && X86_64_EVAL_IMM == eval2->type
+    if ( (X86_64_OPR_REG == eval1->type || X86_64_OPR_ADDR == eval1->type)
+         && X86_64_OPR_IMM == eval2->type
          && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( SIZE32 == eval1->sopsize ) {
             if ( 0 == eval2->sopsize ) {
@@ -926,11 +926,11 @@ _is_rm32_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
     return 0;
 }
 static __inline__ int
-_is_rm64_imm64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
+_is_rm64_imm64(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2)
 {
     /* Check the first and second operands */
-    if ( (X86_64_EVAL_REG == eval1->type || X86_64_EVAL_ADDR == eval1->type)
-         && X86_64_EVAL_IMM == eval2->type
+    if ( (X86_64_OPR_REG == eval1->type || X86_64_OPR_ADDR == eval1->type)
+         && X86_64_OPR_IMM == eval2->type
          && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         if ( SIZE64 == eval1->sopsize ) {
             if ( 0 == eval2->sopsize ) {
@@ -949,13 +949,13 @@ _is_rm64_imm64(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2)
 }
 /* RMI */
 static __inline__ int
-_is_r16_rm16_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
-                  const x86_64_eval_t *eval3)
+_is_r16_rm16_imm8(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2,
+                  const x86_64_opr_t *eval3)
 {
     /* Check the type of all operands */
-    if ( X86_64_EVAL_REG == eval1->type
-         && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type
+    if ( X86_64_OPR_REG == eval1->type
+         && (X86_64_OPR_REG == eval2->type || X86_64_OPR_ADDR == eval2->type)
+         && X86_64_OPR_IMM == eval3->type
          && X86_64_IMM_FIXED == eval3->u.imm.type ) {
         if ( SIZE16 != eval1->sopsize ) {
             return 0;
@@ -977,13 +977,13 @@ _is_r16_rm16_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     return 0;
 }
 static __inline__ int
-_is_r32_rm32_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
-                  const x86_64_eval_t *eval3)
+_is_r32_rm32_imm8(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2,
+                  const x86_64_opr_t *eval3)
 {
     /* Check the type of all operands */
-    if ( X86_64_EVAL_REG == eval1->type
-         && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type
+    if ( X86_64_OPR_REG == eval1->type
+         && (X86_64_OPR_REG == eval2->type || X86_64_OPR_ADDR == eval2->type)
+         && X86_64_OPR_IMM == eval3->type
          && X86_64_IMM_FIXED == eval3->u.imm.type ) {
         if ( SIZE32 != eval1->sopsize ) {
             return 0;
@@ -1005,13 +1005,13 @@ _is_r32_rm32_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     return 0;
 }
 static __inline__ int
-_is_r64_rm64_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
-                  const x86_64_eval_t *eval3)
+_is_r64_rm64_imm8(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2,
+                  const x86_64_opr_t *eval3)
 {
     /* Check the type of all operands */
-    if ( X86_64_EVAL_REG == eval1->type
-         && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type
+    if ( X86_64_OPR_REG == eval1->type
+         && (X86_64_OPR_REG == eval2->type || X86_64_OPR_ADDR == eval2->type)
+         && X86_64_OPR_IMM == eval3->type
          && X86_64_IMM_FIXED == eval3->u.imm.type ) {
         if ( SIZE64 != eval1->sopsize ) {
             return 0;
@@ -1033,13 +1033,13 @@ _is_r64_rm64_imm8(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     return 0;
 }
 static __inline__ int
-_is_r16_rm16_imm16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
-                   const x86_64_eval_t *eval3)
+_is_r16_rm16_imm16(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2,
+                   const x86_64_opr_t *eval3)
 {
     /* Check the type of all operands */
-    if ( X86_64_EVAL_REG == eval1->type
-         && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type
+    if ( X86_64_OPR_REG == eval1->type
+         && (X86_64_OPR_REG == eval2->type || X86_64_OPR_ADDR == eval2->type)
+         && X86_64_OPR_IMM == eval3->type
          && X86_64_IMM_FIXED == eval3->u.imm.type ) {
         if ( SIZE16 != eval1->sopsize ) {
             return 0;
@@ -1062,13 +1062,13 @@ _is_r16_rm16_imm16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     return 0;
 }
 static __inline__ int
-_is_r16_rm16_rela16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
-                   const x86_64_eval_t *eval3)
+_is_r16_rm16_rela16(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2,
+                   const x86_64_opr_t *eval3)
 {
     /* Check the type of all operands */
-    if ( X86_64_EVAL_REG == eval1->type
-         && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type
+    if ( X86_64_OPR_REG == eval1->type
+         && (X86_64_OPR_REG == eval2->type || X86_64_OPR_ADDR == eval2->type)
+         && X86_64_OPR_IMM == eval3->type
          && X86_64_IMM_EXPR == eval3->u.imm.type ) {
         if ( SIZE16 != eval1->sopsize ) {
             return 0;
@@ -1086,13 +1086,13 @@ _is_r16_rm16_rela16(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     return 0;
 }
 static __inline__ int
-_is_r32_rm32_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
-                   const x86_64_eval_t *eval3)
+_is_r32_rm32_imm32(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2,
+                   const x86_64_opr_t *eval3)
 {
     /* Check the type of all operands */
-    if ( X86_64_EVAL_REG == eval1->type
-         && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type
+    if ( X86_64_OPR_REG == eval1->type
+         && (X86_64_OPR_REG == eval2->type || X86_64_OPR_ADDR == eval2->type)
+         && X86_64_OPR_IMM == eval3->type
          && X86_64_IMM_FIXED == eval3->u.imm.type ) {
         if ( SIZE32 != eval1->sopsize ) {
             return 0;
@@ -1115,13 +1115,13 @@ _is_r32_rm32_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     return 0;
 }
 static __inline__ int
-_is_r32_rm32_rela32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
-                   const x86_64_eval_t *eval3)
+_is_r32_rm32_rela32(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2,
+                   const x86_64_opr_t *eval3)
 {
     /* Check the type of all operands */
-    if ( X86_64_EVAL_REG == eval1->type
-         && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type
+    if ( X86_64_OPR_REG == eval1->type
+         && (X86_64_OPR_REG == eval2->type || X86_64_OPR_ADDR == eval2->type)
+         && X86_64_OPR_IMM == eval3->type
          && X86_64_IMM_EXPR == eval3->u.imm.type ) {
         if ( SIZE32 != eval1->sopsize ) {
             return 0;
@@ -1139,13 +1139,13 @@ _is_r32_rm32_rela32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     return 0;
 }
 static __inline__ int
-_is_r64_rm64_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
-                   const x86_64_eval_t *eval3)
+_is_r64_rm64_imm32(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2,
+                   const x86_64_opr_t *eval3)
 {
     /* Check the type of all operands */
-    if ( X86_64_EVAL_REG == eval1->type
-         && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type
+    if ( X86_64_OPR_REG == eval1->type
+         && (X86_64_OPR_REG == eval2->type || X86_64_OPR_ADDR == eval2->type)
+         && X86_64_OPR_IMM == eval3->type
          && X86_64_IMM_FIXED == eval3->u.imm.type ) {
         if ( SIZE64 != eval1->sopsize ) {
             return 0;
@@ -1168,13 +1168,13 @@ _is_r64_rm64_imm32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     return 0;
 }
 static __inline__ int
-_is_r64_rm64_rela32(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
-                    const x86_64_eval_t *eval3)
+_is_r64_rm64_rela32(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2,
+                    const x86_64_opr_t *eval3)
 {
     /* Check the type of all operands */
-    if ( X86_64_EVAL_REG == eval1->type
-         && (X86_64_EVAL_REG == eval2->type || X86_64_EVAL_ADDR == eval2->type)
-         && X86_64_EVAL_IMM == eval3->type
+    if ( X86_64_OPR_REG == eval1->type
+         && (X86_64_OPR_REG == eval2->type || X86_64_OPR_ADDR == eval2->type)
+         && X86_64_OPR_IMM == eval3->type
          && X86_64_IMM_EXPR == eval3->u.imm.type ) {
         if ( SIZE64 != eval1->sopsize ) {
             return 0;
@@ -1391,7 +1391,7 @@ _rex(int w, int r, int x, int b)
 }
 
 ssize_t
-_resolve_operand_size1(const x86_64_eval_t *eval)
+_resolve_operand_size1(const x86_64_opr_t *eval)
 {
     size_t s1;
     size_t s2;
@@ -1401,7 +1401,7 @@ _resolve_operand_size1(const x86_64_eval_t *eval)
 
     /* Estimated operand size */
     switch ( eval->type ) {
-    case X86_64_EVAL_REG:
+    case X86_64_OPR_REG:
         s2 = regsize(eval->u.reg);
         break;
     default:
@@ -1417,13 +1417,13 @@ _resolve_operand_size1(const x86_64_eval_t *eval)
     return s1;
 }
 ssize_t
-_resolve_address_size1(const x86_64_eval_t *eval)
+_resolve_address_size1(const x86_64_opr_t *eval)
 {
     size_t s1;
     size_t s2;
     size_t s3;
 
-    if ( X86_64_EVAL_ADDR != eval->type ) {
+    if ( X86_64_OPR_ADDR != eval->type ) {
         return 0;
     }
 
@@ -1484,11 +1484,11 @@ _encode_sib(int base, int idx, int ss)
  * Encode scaled index
  */
 static int
-_encode_scaled_index(const x86_64_eval_t *eval, int *idx, int *rexx, int *ss)
+_encode_scaled_index(const x86_64_opr_t *eval, int *idx, int *rexx, int *ss)
 {
     int ret;
 
-    assert( X86_64_EVAL_ADDR == eval->type );
+    assert( X86_64_OPR_ADDR == eval->type );
 
     /* Encode scaled index */
     if ( X86_64_ADDR_OFFSET & eval->u.eaddr.flags ) {
@@ -1539,9 +1539,9 @@ _encode_scaled_index(const x86_64_eval_t *eval, int *idx, int *rexx, int *ss)
  * Encode displacement
  */
 static int
-_encode_disp(const x86_64_eval_t *eval, int64_t *disp, size_t *dispsz)
+_encode_disp(const x86_64_opr_t *eval, int64_t *disp, size_t *dispsz)
 {
-    assert( X86_64_EVAL_ADDR == eval->type );
+    assert( X86_64_OPR_ADDR == eval->type );
 
     if ( eval->u.eaddr.flags & X86_64_ADDR_DISP ) {
         /* Displacement is specified */
@@ -1574,7 +1574,7 @@ _encode_disp(const x86_64_eval_t *eval, int64_t *disp, size_t *dispsz)
  * Encode the second operand with the addr type that specifies a base register
  */
 static int
-_encode_rm_addr_with_base(int reg, int rexr, const x86_64_eval_t *eval,
+_encode_rm_addr_with_base(int reg, int rexr, const x86_64_opr_t *eval,
                           x86_64_enop_t *enop)
 {
     int ret;
@@ -1590,7 +1590,7 @@ _encode_rm_addr_with_base(int reg, int rexr, const x86_64_eval_t *eval,
     size_t dispsz;
     int64_t disp;
 
-    assert( X86_64_EVAL_ADDR == eval->type );
+    assert( X86_64_OPR_ADDR == eval->type );
     assert( X86_64_ADDR_BASE & eval->u.eaddr.flags );
 
     rexx = REX_NONE;
@@ -1813,7 +1813,7 @@ _encode_rm_addr_with_base(int reg, int rexr, const x86_64_eval_t *eval,
  * Encode the second operand with the addr type for the w/o base register case
  */
 static int
-_encode_rm_addr_without_base(int reg, int rexr, const x86_64_eval_t *eval,
+_encode_rm_addr_without_base(int reg, int rexr, const x86_64_opr_t *eval,
                              x86_64_enop_t *enop)
 {
     int ret;
@@ -1826,7 +1826,7 @@ _encode_rm_addr_without_base(int reg, int rexr, const x86_64_eval_t *eval,
     size_t dispsz;
     int64_t disp;
 
-    assert( X86_64_EVAL_ADDR == eval->type );
+    assert( X86_64_OPR_ADDR == eval->type );
     assert( !(X86_64_ADDR_BASE & eval->u.eaddr.flags) );
 
     /* Mod and R/M must be 0 and 4, respectively, for the case w/o base
@@ -1889,12 +1889,12 @@ _encode_rm_addr_without_base(int reg, int rexr, const x86_64_eval_t *eval,
  * Encode the second R/M of RM operands
  */
 static int
-_encode_rm_addr(int reg, int rexr, const x86_64_eval_t *eval,
+_encode_rm_addr(int reg, int rexr, const x86_64_opr_t *eval,
                 x86_64_enop_t *enop)
 {
     int ret;
 
-    assert( X86_64_EVAL_ADDR == eval->type );
+    assert( X86_64_OPR_ADDR == eval->type );
 
     if ( X86_64_ADDR_BASE & eval->u.eaddr.flags ) {
         /* With base register */
@@ -1911,7 +1911,7 @@ _encode_rm_addr(int reg, int rexr, const x86_64_eval_t *eval,
  * Encode the second register of RM operands
  */
 static int
-_encode_rm_reg(int reg, int rexr, const x86_64_eval_t *eval,
+_encode_rm_reg(int reg, int rexr, const x86_64_opr_t *eval,
                x86_64_enop_t *enop)
 {
     int ret;
@@ -1920,7 +1920,7 @@ _encode_rm_reg(int reg, int rexr, const x86_64_eval_t *eval,
     int rexb;
     int modrm;
 
-    assert( X86_64_EVAL_REG == eval->type );
+    assert( X86_64_OPR_REG == eval->type );
 
     /* Mod = 3 where  R/M is register */
     mod = 3;
@@ -1974,7 +1974,7 @@ _encode_rm_reg(int reg, int rexr, const x86_64_eval_t *eval,
  * Encode operands whose Op/En is RM
  */
 static int
-_encode_rm(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
+_encode_rm(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2,
            x86_64_enop_t *enop)
 {
     int ret;
@@ -1982,7 +1982,7 @@ _encode_rm(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     int rexr;
 
     /* Check the first operand */
-    if ( X86_64_EVAL_REG != eval1->type ) {
+    if ( X86_64_OPR_REG != eval1->type ) {
         return -1;
     }
 
@@ -1994,14 +1994,14 @@ _encode_rm(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     }
 
     /* Check the second operand */
-    if ( X86_64_EVAL_REG == eval2->type ) {
+    if ( X86_64_OPR_REG == eval2->type ) {
         ret = _encode_rm_reg(reg, rexr, eval2, enop);
         if ( ret < 0 ) {
             return -1;
         }
 
         return 0;
-    } else if ( X86_64_EVAL_ADDR == eval2->type ) {
+    } else if ( X86_64_OPR_ADDR == eval2->type ) {
         /* Encode the second operand with the addr type */
         ret = _encode_rm_addr(reg, rexr, eval2, enop);
         if ( ret < 0 ) {
@@ -2018,7 +2018,7 @@ _encode_rm(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
  * Encode operands whose Op/En is MR
  */
 static int
-_encode_mr(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
+_encode_mr(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2,
            x86_64_enop_t *enop)
 {
     return _encode_rm(eval2, eval1, enop);
@@ -2028,15 +2028,15 @@ _encode_mr(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
  * Encode operands whose Op/En is RMI
  */
 static int
-_encode_rmi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
-            const x86_64_eval_t *eval3, size_t immsz, x86_64_enop_t *enop)
+_encode_rmi(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2,
+            const x86_64_opr_t *eval3, size_t immsz, x86_64_enop_t *enop)
 {
     int ret;
     int reg;
     int rexr;
 
     /* Check the first operand */
-    if ( X86_64_EVAL_REG != eval1->type ) {
+    if ( X86_64_OPR_REG != eval1->type ) {
         return -1;
     }
 
@@ -2048,12 +2048,12 @@ _encode_rmi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     }
 
     /* Check the second operand */
-    if ( X86_64_EVAL_REG == eval2->type ) {
+    if ( X86_64_OPR_REG == eval2->type ) {
         ret = _encode_rm_reg(reg, rexr, eval2, enop);
         if ( ret < 0 ) {
             return -1;
         }
-    } else if ( X86_64_EVAL_ADDR == eval2->type ) {
+    } else if ( X86_64_OPR_ADDR == eval2->type ) {
         /* Encode the second operand with the addr type */
         ret = _encode_rm_addr(reg, rexr, eval2, enop);
         if ( ret < 0 ) {
@@ -2064,13 +2064,13 @@ _encode_rmi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2,
     }
 
     /* Check the third operand */
-    if ( X86_64_EVAL_IMM == eval3->type
+    if ( X86_64_OPR_IMM == eval3->type
          && X86_64_IMM_FIXED == eval3->u.imm.type ) {
         /* Update immediate value */
         enop->imm.sz = immsz;
         enop->imm.val = eval3->u.imm.u.fixed;
         enop->imm.eval = NULL;
-    } else if ( X86_64_EVAL_IMM == eval3->type
+    } else if ( X86_64_OPR_IMM == eval3->type
                 && X86_64_IMM_EXPR == eval3->u.imm.type ) {
         /* Update relocatable value */
         enop->imm.sz = immsz;
@@ -2100,7 +2100,7 @@ _encode_td(const x86_64_val_t *val1, const x86_64_val_t *val2,
 }
 #endif
 static int
-_encode_oi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, size_t immsz,
+_encode_oi(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2, size_t immsz,
            x86_64_enop_t *enop)
 {
     int ret;
@@ -2108,7 +2108,7 @@ _encode_oi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, size_t immsz,
     int rexb;
 
     /* Check the first operand */
-    if ( X86_64_EVAL_REG != eval1->type ) {
+    if ( X86_64_OPR_REG != eval1->type ) {
         return -1;
     }
     ret = _reg_code(eval1->u.reg, &reg, &rexb);
@@ -2117,7 +2117,7 @@ _encode_oi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, size_t immsz,
     }
 
     /* Check the second operand */
-    if ( X86_64_EVAL_IMM == eval2->type
+    if ( X86_64_OPR_IMM == eval2->type
          && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         /* Immediate value */
         enop->opreg = reg;
@@ -2145,7 +2145,7 @@ _encode_oi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, size_t immsz,
         enop->ptr1.expr = NULL;
 
         return 0;
-    } else if ( X86_64_EVAL_IMM == eval2->type
+    } else if ( X86_64_OPR_IMM == eval2->type
                 && X86_64_IMM_EXPR == eval2->u.imm.type ) {
         /* Relocatable address */
         enop->opreg = reg;
@@ -2183,7 +2183,7 @@ _encode_oi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, size_t immsz,
  * Encode the MI type Op/En
  */
 static int
-_encode_mi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, int reg,
+_encode_mi(const x86_64_opr_t *eval1, const x86_64_opr_t *eval2, int reg,
            size_t immsz, x86_64_enop_t *enop)
 {
     int ret;
@@ -2193,12 +2193,12 @@ _encode_mi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, int reg,
     rexr = REX_NONE;
 
     /* Check the first operand */
-    if ( X86_64_EVAL_REG == eval1->type ) {
+    if ( X86_64_OPR_REG == eval1->type ) {
         ret = _encode_rm_reg(reg, rexr, eval1, enop);
         if ( ret < 0 ) {
             return -1;
         }
-    } else if ( X86_64_EVAL_ADDR == eval1->type ) {
+    } else if ( X86_64_OPR_ADDR == eval1->type ) {
         /* Encode the first operand with the addr type */
         ret = _encode_rm_addr(reg, rexr, eval1, enop);
         if ( ret < 0 ) {
@@ -2210,13 +2210,13 @@ _encode_mi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, int reg,
 
 
     /* Check the second operand */
-    if ( X86_64_EVAL_IMM == eval2->type
+    if ( X86_64_OPR_IMM == eval2->type
          && X86_64_IMM_FIXED == eval2->u.imm.type ) {
         /* Update immediate value */
         enop->imm.sz = immsz;
         enop->imm.val = eval2->u.imm.u.fixed;
         enop->imm.expr = NULL;
-    } else if ( X86_64_EVAL_IMM == eval2->type
+    } else if ( X86_64_OPR_IMM == eval2->type
                 && X86_64_IMM_EXPR == eval2->u.imm.type ) {
         /* Update immediate value */
         enop->imm.sz = immsz;
@@ -2229,7 +2229,7 @@ _encode_mi(const x86_64_eval_t *eval1, const x86_64_eval_t *eval2, int reg,
     return 0;
 }
 static int
-_encode_m(const x86_64_eval_t *eval, int reg, x86_64_enop_t *enop)
+_encode_m(const x86_64_opr_t *eval, int reg, x86_64_enop_t *enop)
 {
     int ret;
     int rexr;
@@ -2238,12 +2238,12 @@ _encode_m(const x86_64_eval_t *eval, int reg, x86_64_enop_t *enop)
     rexr = REX_NONE;
 
     /* Check the first operand */
-    if ( X86_64_EVAL_REG == eval->type ) {
+    if ( X86_64_OPR_REG == eval->type ) {
         ret = _encode_rm_reg(reg, rexr, eval, enop);
         if ( ret < 0 ) {
             return -1;
         }
-    } else if ( X86_64_EVAL_ADDR == eval->type ) {
+    } else if ( X86_64_OPR_ADDR == eval->type ) {
         /* Encode the first operand with the addr type */
         ret = _encode_rm_addr(reg, rexr, eval, enop);
         if ( ret < 0 ) {
@@ -2256,14 +2256,14 @@ _encode_m(const x86_64_eval_t *eval, int reg, x86_64_enop_t *enop)
     return 0;
 }
 static int
-_encode_o(const x86_64_eval_t *eval, x86_64_enop_t *enop)
+_encode_o(const x86_64_opr_t *eval, x86_64_enop_t *enop)
 {
     int ret;
     int reg;
     int rexb;
 
     /* Check the first operand */
-    if ( X86_64_EVAL_REG != eval->type ) {
+    if ( X86_64_OPR_REG != eval->type ) {
         return -1;
     }
     ret = _reg_code(eval->u.reg, &reg, &rexb);
@@ -2302,10 +2302,10 @@ _encode_o(const x86_64_eval_t *eval, x86_64_enop_t *enop)
  * Encode the I type Op/En
  */
 static int
-_encode_i(const x86_64_eval_t *eval, size_t immsz, x86_64_enop_t *enop)
+_encode_i(const x86_64_opr_t *eval, size_t immsz, x86_64_enop_t *enop)
 {
     /* Check the operand type */
-    if ( X86_64_EVAL_IMM == eval->type ) {
+    if ( X86_64_OPR_IMM == eval->type ) {
         if ( X86_64_IMM_FIXED == eval->u.imm.type ) {
             enop->opreg = -1;
             enop->rex.r = REX_NONE;
@@ -2368,10 +2368,10 @@ _encode_i(const x86_64_eval_t *eval, size_t immsz, x86_64_enop_t *enop)
  * Encode the D type Op/En
  */
 static int
-_encode_d(const x86_64_eval_t *eval, size_t immsz, x86_64_enop_t *enop)
+_encode_d(const x86_64_opr_t *eval, size_t immsz, x86_64_enop_t *enop)
 {
     /* Check the operand type */
-    if ( X86_64_EVAL_IMM == eval->type ) {
+    if ( X86_64_OPR_IMM == eval->type ) {
         if ( X86_64_IMM_FIXED == eval->u.imm.type ) {
             enop->opreg = -1;
             enop->rex.r = REX_NONE;
@@ -2437,15 +2437,15 @@ _encode_d(const x86_64_eval_t *eval, size_t immsz, x86_64_enop_t *enop)
 static int
 _eval(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
-    x86_64_eval_t *eval;
+    x86_64_opr_t *eval;
     operand_t *op;
     size_t nr;
     size_t i;
-    x86_64_eval_vector_t *evals;
+    x86_64_opr_vector_t *oprs;
 
     /* Allocate a vector for evals */
-    evals = mvector_new();
-    if ( NULL == evals ) {
+    oprs = mvector_new();
+    if ( NULL == oprs ) {
         return -1;
     }
 
@@ -2458,21 +2458,21 @@ _eval(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         eval = x86_64_estimate_operand(op);
         if ( NULL == eval ) {
             /* FIXME: Free the contents of the vector */
-            mvector_delete(evals);
+            mvector_delete(oprs);
             /* Error */
             return -EOPERAND;
         }
-        if ( NULL == mvector_push_back(evals, eval) ) {
+        if ( NULL == mvector_push_back(oprs, eval) ) {
             free(eval);
             /* FIXME: Free the contents of the vector */
-            mvector_delete(evals);
+            mvector_delete(oprs);
             /* Error */
             return -EUNKNOWN;
         }
     }
 
     /* Set evals */
-    xstmt->evals = evals;
+    xstmt->oprs = oprs;
 
     return 1;
 }
@@ -2828,7 +2828,7 @@ _binstr2_np_preg(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3,
  */
 static int
 _binstr2_i(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
-           const x86_64_eval_t *eval, size_t immsz)
+           const x86_64_opr_t *eval, size_t immsz)
 {
     int ret;
     x86_64_enop_t enop;
@@ -2875,7 +2875,7 @@ _binstr2_i(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
  */
 static int
 _binstr2_d(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
-           const x86_64_eval_t *eval, size_t immsz)
+           const x86_64_opr_t *eval, size_t immsz)
 {
     int ret;
     x86_64_enop_t enop;
@@ -2922,8 +2922,8 @@ _binstr2_d(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
  */
 static int
 _binstr2_mi(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, int preg,
-            ssize_t opsize, const x86_64_eval_t *evalm,
-            const x86_64_eval_t *evali, size_t immsz)
+            ssize_t opsize, const x86_64_opr_t *evalm,
+            const x86_64_opr_t *evali, size_t immsz)
 {
     int ret;
     x86_64_enop_t enop;
@@ -2984,7 +2984,7 @@ _binstr2_mi(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, int preg,
  */
 static int
 _binstr2_mr(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
-            const x86_64_eval_t *evalm, const x86_64_eval_t *evalr)
+            const x86_64_opr_t *evalm, const x86_64_opr_t *evalr)
 {
     int ret;
     x86_64_enop_t enop;
@@ -3037,7 +3037,7 @@ _binstr2_mr(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
  */
 static int
 _binstr2_o(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
-           const x86_64_eval_t *evalr)
+           const x86_64_opr_t *evalr)
 {
     int ret;
     x86_64_enop_t enop;
@@ -3091,7 +3091,7 @@ _binstr2_o(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
  */
 static int
 _binstr2_rm(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
-            const x86_64_eval_t *evalr, const x86_64_eval_t *evalm)
+            const x86_64_opr_t *evalr, const x86_64_opr_t *evalm)
 {
     int ret;
     x86_64_enop_t enop;
@@ -3144,7 +3144,7 @@ _binstr2_rm(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
  */
 static int
 _binstr2_m(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, int preg,
-           ssize_t opsize, const x86_64_eval_t *evalm)
+           ssize_t opsize, const x86_64_opr_t *evalm)
 {
     int ret;
     x86_64_enop_t enop;
@@ -3189,8 +3189,8 @@ _binstr2_m(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, int preg,
  */
 static int
 _binstr2_rmi(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
-             const x86_64_eval_t *evalr, const x86_64_eval_t *evalm,
-             const x86_64_eval_t *evali, size_t immsz)
+             const x86_64_opr_t *evalr, const x86_64_opr_t *evalm,
+             const x86_64_opr_t *evali, size_t immsz)
 {
     int ret;
     x86_64_enop_t enop;
@@ -3243,7 +3243,7 @@ _binstr2_rmi(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
  */
 static int
 _binstr2_oi(x86_64_stmt_t *xstmt, int opc1, int opc2, int opc3, ssize_t opsize,
-            const x86_64_eval_t *evalr, const x86_64_eval_t *evali,
+            const x86_64_opr_t *evalr, const x86_64_opr_t *evali,
             size_t immsz)
 {
     int ret;
@@ -3316,15 +3316,15 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
     switch ( enc ) {
     case ENC_NP:
         /* Check the number of operands and the format */
-        if ( 0 == mvector_size(xstmt->evals) ) {
+        if ( 0 == mvector_size(xstmt->oprs) ) {
             /* Build the instruction */
             stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
         }
         break;
     case ENC_NP_3:
         /* Check the number of operands and the format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_3(mvector_at(xstmt->evals, 0)) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_3(mvector_at(xstmt->oprs, 0)) ) {
 
             /* Build the instruction */
             stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
@@ -3332,8 +3332,8 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
         break;
     case ENC_NP_FS:
         /* Check the number of operands and the format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_FS) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_FS) ) {
 
             /* Build the instruction */
             stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
@@ -3341,8 +3341,8 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
         break;
     case ENC_NP_GS:
         /* Check the number of operands and the format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_GS) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_GS) ) {
 
             /* Build the instruction */
             stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
@@ -3350,9 +3350,9 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
         break;
     case ENC_NP_AL_DX:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_AL)
-             && _eq_reg(mvector_at(xstmt->evals, 1), REG_DX) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_AL)
+             && _eq_reg(mvector_at(xstmt->oprs, 1), REG_DX) ) {
 
             /* Build the instruction */
             stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
@@ -3360,9 +3360,9 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
         break;
     case ENC_NP_DX_AL:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_DX)
-             && _eq_reg(mvector_at(xstmt->evals, 1), REG_AL) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_DX)
+             && _eq_reg(mvector_at(xstmt->oprs, 1), REG_AL) ) {
 
             /* Build the instruction */
             stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
@@ -3370,9 +3370,9 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
         break;
     case ENC_NP_AX_DX:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_AX)
-             && _eq_reg(mvector_at(xstmt->evals, 1), REG_DX) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_AX)
+             && _eq_reg(mvector_at(xstmt->oprs, 1), REG_DX) ) {
 
             /* Build the instruction */
             stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
@@ -3380,9 +3380,9 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
         break;
     case ENC_NP_DX_AX:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_DX)
-             && _eq_reg(mvector_at(xstmt->evals, 1), REG_AX) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_DX)
+             && _eq_reg(mvector_at(xstmt->oprs, 1), REG_AX) ) {
 
             /* Build the instruction */
             stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
@@ -3390,9 +3390,9 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
         break;
     case ENC_NP_EAX_DX:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_EAX)
-             && _eq_reg(mvector_at(xstmt->evals, 1), REG_DX) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_EAX)
+             && _eq_reg(mvector_at(xstmt->oprs, 1), REG_DX) ) {
 
             /* Build the instruction */
             stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
@@ -3400,9 +3400,9 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
         break;
     case ENC_NP_DX_EAX:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_DX)
-             && _eq_reg(mvector_at(xstmt->evals, 1), REG_EAX) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_DX)
+             && _eq_reg(mvector_at(xstmt->oprs, 1), REG_EAX) ) {
 
             /* Build the instruction */
             stat = _binstr2_np(xstmt, opc1, opc2, opc3, opsize);
@@ -3410,7 +3410,7 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
         break;
     case ENC_NP_PREG:
         /* Check the number of operands and the format */
-        if ( 0 == mvector_size(xstmt->evals) ) {
+        if ( 0 == mvector_size(xstmt->oprs) ) {
             /* Build the instruction */
             stat = _binstr2_np_preg(xstmt, opc1, opc2, opc3, opsize, preg);
         }
@@ -3418,712 +3418,712 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
 
     case ENC_I_IMM8:
         /* Check the number of operands and the format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_imm(mvector_at(xstmt->evals, 0), SIZE8) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_imm(mvector_at(xstmt->oprs, 0), SIZE8) ) {
 
             /* Build the instruction */
             stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 0), SIZE8);
+                              mvector_at(xstmt->oprs, 0), SIZE8);
         }
         break;
     case ENC_I_IMM16:
         /* Check the number of operands and the format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_imm(mvector_at(xstmt->evals, 0), SIZE16) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_imm(mvector_at(xstmt->oprs, 0), SIZE16) ) {
 
             /* Build the instruction */
             stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 0), SIZE16);
+                              mvector_at(xstmt->oprs, 0), SIZE16);
         }
         break;
     case ENC_I_IMM32:
         /* Check the number of operands and the format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_imm(mvector_at(xstmt->evals, 0), SIZE32) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_imm(mvector_at(xstmt->oprs, 0), SIZE32) ) {
 
             /* Build the instruction */
             stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 0), SIZE32);
+                              mvector_at(xstmt->oprs, 0), SIZE32);
         }
         break;
     case ENC_I_AL_IMM8:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_AL)
-             && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_AL)
+             && _is_imm(mvector_at(xstmt->oprs, 1), SIZE8) ) {
 
             /* Build the instruction */
             stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 1), SIZE8);
+                              mvector_at(xstmt->oprs, 1), SIZE8);
         }
         break;
     case ENC_I_AX_IMM8:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_AX)
-             && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_AX)
+             && _is_imm(mvector_at(xstmt->oprs, 1), SIZE8) ) {
 
             /* Build the instruction */
             stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 1), SIZE8);
+                              mvector_at(xstmt->oprs, 1), SIZE8);
         }
         break;
     case ENC_I_AX_IMM16:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_AX)
-             && _is_imm(mvector_at(xstmt->evals, 1), SIZE16) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_AX)
+             && _is_imm(mvector_at(xstmt->oprs, 1), SIZE16) ) {
 
             /* Build the instruction */
             stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 1), SIZE16);
+                              mvector_at(xstmt->oprs, 1), SIZE16);
         }
         break;
     case ENC_I_EAX_IMM8:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_EAX)
-             && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_EAX)
+             && _is_imm(mvector_at(xstmt->oprs, 1), SIZE8) ) {
 
             /* Build the instruction */
             stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 1), SIZE8);
+                              mvector_at(xstmt->oprs, 1), SIZE8);
         }
         break;
     case ENC_I_EAX_IMM32:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_EAX)
-             && _is_imm(mvector_at(xstmt->evals, 1), SIZE32) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_EAX)
+             && _is_imm(mvector_at(xstmt->oprs, 1), SIZE32) ) {
 
             /* Build the instruction */
             stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 1), SIZE32);
+                              mvector_at(xstmt->oprs, 1), SIZE32);
         }
         break;
     case ENC_I_RAX_IMM32:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_RAX)
-             && _is_imm(mvector_at(xstmt->evals, 1), SIZE32) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_RAX)
+             && _is_imm(mvector_at(xstmt->oprs, 1), SIZE32) ) {
 
             /* Build the instruction */
             stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 1), SIZE32);
+                              mvector_at(xstmt->oprs, 1), SIZE32);
         }
         break;
     case ENC_I_IMM8_AL:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_imm(mvector_at(xstmt->evals, 0), SIZE8)
-             && _eq_reg(mvector_at(xstmt->evals, 1), REG_AL) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_imm(mvector_at(xstmt->oprs, 0), SIZE8)
+             && _eq_reg(mvector_at(xstmt->oprs, 1), REG_AL) ) {
 
             /* Build the instruction */
             stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 0), SIZE8);
+                              mvector_at(xstmt->oprs, 0), SIZE8);
         }
         break;
     case ENC_I_IMM8_AX:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_imm(mvector_at(xstmt->evals, 0), SIZE8)
-             && _eq_reg(mvector_at(xstmt->evals, 1), REG_AX) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_imm(mvector_at(xstmt->oprs, 0), SIZE8)
+             && _eq_reg(mvector_at(xstmt->oprs, 1), REG_AX) ) {
 
             /* Build the instruction */
             stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 0), SIZE8);
+                              mvector_at(xstmt->oprs, 0), SIZE8);
         }
         break;
     case ENC_I_IMM8_EAX:
         /* Check the number of operands and the format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_imm(mvector_at(xstmt->evals, 0), SIZE8)
-             && _eq_reg(mvector_at(xstmt->evals, 1), REG_EAX) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_imm(mvector_at(xstmt->oprs, 0), SIZE8)
+             && _eq_reg(mvector_at(xstmt->oprs, 1), REG_EAX) ) {
 
             /* Build the instruction */
             stat = _binstr2_i(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 0), SIZE8);
+                              mvector_at(xstmt->oprs, 0), SIZE8);
         }
         break;
 
     case ENC_MI_RM8_IMM8:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_rm8(mvector_at(xstmt->evals, 0))
-             && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_rm8(mvector_at(xstmt->oprs, 0))
+             && _is_imm(mvector_at(xstmt->oprs, 1), SIZE8) ) {
 
             /* Build the instruction */
             stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1), SIZE8);
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1), SIZE8);
         }
         break;
     case ENC_MI_RM16_IMM16:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_rm16(mvector_at(xstmt->evals, 0))
-             && _is_imm(mvector_at(xstmt->evals, 1), SIZE16) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_rm16(mvector_at(xstmt->oprs, 0))
+             && _is_imm(mvector_at(xstmt->oprs, 1), SIZE16) ) {
 
             /* Build the instruction */
             stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1), SIZE16);
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1), SIZE16);
         }
         break;
     case ENC_MI_RM32_IMM32:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_rm32(mvector_at(xstmt->evals, 0))
-             && _is_imm(mvector_at(xstmt->evals, 1), SIZE32) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_rm32(mvector_at(xstmt->oprs, 0))
+             && _is_imm(mvector_at(xstmt->oprs, 1), SIZE32) ) {
 
             /* Build the instruction */
             stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1), SIZE32);
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1), SIZE32);
         }
         break;
     case ENC_MI_RM64_IMM32:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_rm64(mvector_at(xstmt->evals, 0))
-             && _is_imm(mvector_at(xstmt->evals, 1), SIZE32) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_rm64(mvector_at(xstmt->oprs, 0))
+             && _is_imm(mvector_at(xstmt->oprs, 1), SIZE32) ) {
 
             /* Build the instruction */
             stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1), SIZE32);
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1), SIZE32);
         }
         break;
     case ENC_MI_RM16_IMM8:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_rm16(mvector_at(xstmt->evals, 0))
-             && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_rm16(mvector_at(xstmt->oprs, 0))
+             && _is_imm(mvector_at(xstmt->oprs, 1), SIZE8) ) {
 
             /* Build the instruction */
             stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1), SIZE8);
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1), SIZE8);
         }
         break;
     case ENC_MI_RM32_IMM8:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_rm32(mvector_at(xstmt->evals, 0))
-             && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_rm32(mvector_at(xstmt->oprs, 0))
+             && _is_imm(mvector_at(xstmt->oprs, 1), SIZE8) ) {
 
             /* Build the instruction */
             stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1), SIZE8);
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1), SIZE8);
         }
         break;
     case ENC_MI_RM64_IMM8:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_rm64(mvector_at(xstmt->evals, 0))
-             && _is_imm(mvector_at(xstmt->evals, 1), SIZE8) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_rm64(mvector_at(xstmt->oprs, 0))
+             && _is_imm(mvector_at(xstmt->oprs, 1), SIZE8) ) {
 
             /* Build the instruction */
             stat = _binstr2_mi(xstmt, opc1, opc2, opc3, preg, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1), SIZE8);
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1), SIZE8);
         }
         break;
 
     case ENC_MR_RM8_R8:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_rm8_r8(mvector_at(xstmt->evals, 0),
-                           mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_rm8_r8(mvector_at(xstmt->oprs, 0),
+                           mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_mr(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1));
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1));
         }
         break;
     case ENC_MR_RM16_R16:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_rm16_r16(mvector_at(xstmt->evals, 0),
-                             mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_rm16_r16(mvector_at(xstmt->oprs, 0),
+                             mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_mr(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1));
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1));
         }
     case ENC_MR_RM32_R32:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_rm32_r32(mvector_at(xstmt->evals, 0),
-                             mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_rm32_r32(mvector_at(xstmt->oprs, 0),
+                             mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_mr(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1));
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1));
         }
         break;
     case ENC_MR_RM64_R64:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_rm64_r64(mvector_at(xstmt->evals, 0),
-                             mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_rm64_r64(mvector_at(xstmt->oprs, 0),
+                             mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_mr(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1));
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1));
         }
         break;
 
     case ENC_RM_R8_RM8:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_r8_rm8(mvector_at(xstmt->evals, 0),
-                           mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_r8_rm8(mvector_at(xstmt->oprs, 0),
+                           mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1));
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1));
         }
         break;
     case ENC_RM_R16_RM16:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_r16_rm16(mvector_at(xstmt->evals, 0),
-                             mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_r16_rm16(mvector_at(xstmt->oprs, 0),
+                             mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1));
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1));
         }
         break;
     case ENC_RM_R32_RM8:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_r32_rm8(mvector_at(xstmt->evals, 0),
-                            mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_r32_rm8(mvector_at(xstmt->oprs, 0),
+                            mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1));
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1));
         }
         break;
     case ENC_RM_R32_RM16:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_r32_rm16(mvector_at(xstmt->evals, 0),
-                             mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_r32_rm16(mvector_at(xstmt->oprs, 0),
+                             mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1));
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1));
         }
         break;
     case ENC_RM_R32_RM32:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_r32_rm32(mvector_at(xstmt->evals, 0),
-                             mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_r32_rm32(mvector_at(xstmt->oprs, 0),
+                             mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1));
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1));
         }
         break;
     case ENC_RM_R64_RM8:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_r64_rm8(mvector_at(xstmt->evals, 0),
-                            mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_r64_rm8(mvector_at(xstmt->oprs, 0),
+                            mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1));
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1));
         }
         break;
     case ENC_RM_R64_RM64:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_r64_rm64(mvector_at(xstmt->evals, 0),
-                             mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_r64_rm64(mvector_at(xstmt->oprs, 0),
+                             mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_rm(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1));
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1));
         }
         break;
 
     case ENC_O_R16:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_r16(mvector_at(xstmt->evals, 0)) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_r16(mvector_at(xstmt->oprs, 0)) ) {
 
             /* Build the instruction */
             stat = _binstr2_o(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0));
+                               mvector_at(xstmt->oprs, 0));
         }
         break;
     case ENC_O_R32:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_r32(mvector_at(xstmt->evals, 0)) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_r32(mvector_at(xstmt->oprs, 0)) ) {
 
             /* Build the instruction */
             stat = _binstr2_o(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0));
+                               mvector_at(xstmt->oprs, 0));
         }
         break;
     case ENC_O_R64:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_r64(mvector_at(xstmt->evals, 0)) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_r64(mvector_at(xstmt->oprs, 0)) ) {
 
             /* Build the instruction */
             stat = _binstr2_o(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0));
+                               mvector_at(xstmt->oprs, 0));
         }
         break;
     case ENC_O_AX_R16:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_AX)
-             && _is_r16(mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_AX)
+             && _is_r16(mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_o(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 1));
+                              mvector_at(xstmt->oprs, 1));
         }
         break;
     case ENC_O_EAX_R32:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_EAX)
-             && _is_r32(mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_EAX)
+             && _is_r32(mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_o(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 1));
+                              mvector_at(xstmt->oprs, 1));
         }
         break;
     case ENC_O_RAX_R64:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _eq_reg(mvector_at(xstmt->evals, 0), REG_RAX)
-             && _is_r64(mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _eq_reg(mvector_at(xstmt->oprs, 0), REG_RAX)
+             && _is_r64(mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_o(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 1));
+                              mvector_at(xstmt->oprs, 1));
         }
         break;
     case ENC_O_R16_AX:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_r16(mvector_at(xstmt->evals, 0))
-             && _eq_reg(mvector_at(xstmt->evals, 1), REG_AX) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_r16(mvector_at(xstmt->oprs, 0))
+             && _eq_reg(mvector_at(xstmt->oprs, 1), REG_AX) ) {
 
             /* Build the instruction */
             stat = _binstr2_o(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 0));
+                              mvector_at(xstmt->oprs, 0));
         }
         break;
     case ENC_O_R32_EAX:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_r32(mvector_at(xstmt->evals, 0))
-             && _eq_reg(mvector_at(xstmt->evals, 1), REG_EAX) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_r32(mvector_at(xstmt->oprs, 0))
+             && _eq_reg(mvector_at(xstmt->oprs, 1), REG_EAX) ) {
 
             /* Build the instruction */
             stat = _binstr2_o(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 0));
+                              mvector_at(xstmt->oprs, 0));
         }
         break;
     case ENC_O_R64_RAX:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_r64(mvector_at(xstmt->evals, 0))
-             && _eq_reg(mvector_at(xstmt->evals, 1), REG_RAX)) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_r64(mvector_at(xstmt->oprs, 0))
+             && _eq_reg(mvector_at(xstmt->oprs, 1), REG_RAX)) {
 
             /* Build the instruction */
             stat = _binstr2_o(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 0));
+                              mvector_at(xstmt->oprs, 0));
         }
         break;
 
     case ENC_M_MUNSPEC:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_m_unspec(mvector_at(xstmt->evals, 0)) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_m_unspec(mvector_at(xstmt->oprs, 0)) ) {
 
             /* Build the instruction */
             stat = _binstr2_m(xstmt, opc1, opc2, opc3, preg, opsize,
-                              mvector_at(xstmt->evals, 0));
+                              mvector_at(xstmt->oprs, 0));
         }
         break;
     case ENC_M_M8:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_m8(mvector_at(xstmt->evals, 0)) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_m8(mvector_at(xstmt->oprs, 0)) ) {
 
             /* Build the instruction */
             stat = _binstr2_m(xstmt, opc1, opc2, opc3, preg, opsize,
-                              mvector_at(xstmt->evals, 0));
+                              mvector_at(xstmt->oprs, 0));
         }
         break;
     case ENC_M_M16:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_m16(mvector_at(xstmt->evals, 0)) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_m16(mvector_at(xstmt->oprs, 0)) ) {
 
             /* Build the instruction */
             stat = _binstr2_m(xstmt, opc1, opc2, opc3, preg, opsize,
-                              mvector_at(xstmt->evals, 0));
+                              mvector_at(xstmt->oprs, 0));
         }
         break;
     case ENC_M_M32:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_m32(mvector_at(xstmt->evals, 0)) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_m32(mvector_at(xstmt->oprs, 0)) ) {
 
             /* Build the instruction */
             stat = _binstr2_m(xstmt, opc1, opc2, opc3, preg, opsize,
-                              mvector_at(xstmt->evals, 0));
+                              mvector_at(xstmt->oprs, 0));
         }
         break;
     case ENC_M_M64:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_m64(mvector_at(xstmt->evals, 0)) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_m64(mvector_at(xstmt->oprs, 0)) ) {
 
             /* Build the instruction */
             stat = _binstr2_m(xstmt, opc1, opc2, opc3, preg, opsize,
-                              mvector_at(xstmt->evals, 0));
+                              mvector_at(xstmt->oprs, 0));
         }
         break;
     case ENC_M_R64:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_r64(mvector_at(xstmt->evals, 0)) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_r64(mvector_at(xstmt->oprs, 0)) ) {
 
             /* Build the instruction */
             stat = _binstr2_m(xstmt, opc1, opc2, opc3, preg, opsize,
-                              mvector_at(xstmt->evals, 0));
+                              mvector_at(xstmt->oprs, 0));
         }
         break;
     case ENC_M_RM8:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_rm8(mvector_at(xstmt->evals, 0)) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_rm8(mvector_at(xstmt->oprs, 0)) ) {
 
             /* Build the instruction */
             stat = _binstr2_m(xstmt, opc1, opc2, opc3, preg, opsize,
-                              mvector_at(xstmt->evals, 0));
+                              mvector_at(xstmt->oprs, 0));
         }
         break;
     case ENC_M_RM16:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_rm16(mvector_at(xstmt->evals, 0)) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_rm16(mvector_at(xstmt->oprs, 0)) ) {
 
             /* Build the instruction */
             stat = _binstr2_m(xstmt, opc1, opc2, opc3, preg, opsize,
-                              mvector_at(xstmt->evals, 0));
+                              mvector_at(xstmt->oprs, 0));
         }
         break;
     case ENC_M_RM32:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_rm32(mvector_at(xstmt->evals, 0)) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_rm32(mvector_at(xstmt->oprs, 0)) ) {
 
             /* Build the instruction */
             stat = _binstr2_m(xstmt, opc1, opc2, opc3, preg, opsize,
-                              mvector_at(xstmt->evals, 0));
+                              mvector_at(xstmt->oprs, 0));
         }
         break;
     case ENC_M_RM64:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_rm64(mvector_at(xstmt->evals, 0)) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_rm64(mvector_at(xstmt->oprs, 0)) ) {
 
             /* Build the instruction */
             stat = _binstr2_m(xstmt, opc1, opc2, opc3, preg, opsize,
-                              mvector_at(xstmt->evals, 0));
+                              mvector_at(xstmt->oprs, 0));
         }
         break;
 
     case ENC_RMI_R16_RM16_IMM8:
         /* Check the number of operands and format */
-        if ( 3 == mvector_size(xstmt->evals)
-             && _is_r16_rm16_imm8(mvector_at(xstmt->evals, 0),
-                                  mvector_at(xstmt->evals, 1),
-                                  mvector_at(xstmt->evals, 2)) ) {
+        if ( 3 == mvector_size(xstmt->oprs)
+             && _is_r16_rm16_imm8(mvector_at(xstmt->oprs, 0),
+                                  mvector_at(xstmt->oprs, 1),
+                                  mvector_at(xstmt->oprs, 2)) ) {
 
             /* Build the instruction */
             stat = _binstr2_rmi(xstmt, opc1, opc2, opc3, opsize,
-                                mvector_at(xstmt->evals, 0),
-                                mvector_at(xstmt->evals, 1),
-                                mvector_at(xstmt->evals, 2), SIZE8);
+                                mvector_at(xstmt->oprs, 0),
+                                mvector_at(xstmt->oprs, 1),
+                                mvector_at(xstmt->oprs, 2), SIZE8);
         }
         break;
     case ENC_RMI_R16_RM16_IMM16:
         /* Check the number of operands and format */
-        if ( 3 == mvector_size(xstmt->evals)
-             && _is_r16_rm16_imm16(mvector_at(xstmt->evals, 0),
-                                   mvector_at(xstmt->evals, 1),
-                                   mvector_at(xstmt->evals, 2)) ) {
+        if ( 3 == mvector_size(xstmt->oprs)
+             && _is_r16_rm16_imm16(mvector_at(xstmt->oprs, 0),
+                                   mvector_at(xstmt->oprs, 1),
+                                   mvector_at(xstmt->oprs, 2)) ) {
 
             /* Build the instruction */
             stat = _binstr2_rmi(xstmt, opc1, opc2, opc3, opsize,
-                                mvector_at(xstmt->evals, 0),
-                                mvector_at(xstmt->evals, 1),
-                                mvector_at(xstmt->evals, 2), SIZE16);
+                                mvector_at(xstmt->oprs, 0),
+                                mvector_at(xstmt->oprs, 1),
+                                mvector_at(xstmt->oprs, 2), SIZE16);
         }
         break;
     case ENC_RMI_R32_RM32_IMM8:
         /* Check the number of operands and format */
-        if ( 3 == mvector_size(xstmt->evals)
-             && _is_r32_rm32_imm8(mvector_at(xstmt->evals, 0),
-                                  mvector_at(xstmt->evals, 1),
-                                  mvector_at(xstmt->evals, 2)) ) {
+        if ( 3 == mvector_size(xstmt->oprs)
+             && _is_r32_rm32_imm8(mvector_at(xstmt->oprs, 0),
+                                  mvector_at(xstmt->oprs, 1),
+                                  mvector_at(xstmt->oprs, 2)) ) {
 
             /* Build the instruction */
             stat = _binstr2_rmi(xstmt, opc1, opc2, opc3, opsize,
-                                mvector_at(xstmt->evals, 0),
-                                mvector_at(xstmt->evals, 1),
-                                mvector_at(xstmt->evals, 2), SIZE8);
+                                mvector_at(xstmt->oprs, 0),
+                                mvector_at(xstmt->oprs, 1),
+                                mvector_at(xstmt->oprs, 2), SIZE8);
         }
         break;
     case ENC_RMI_R32_RM32_IMM32:
         /* Check the number of operands and format */
-        if ( 3 == mvector_size(xstmt->evals)
-             && _is_r32_rm32_imm32(mvector_at(xstmt->evals, 0),
-                                   mvector_at(xstmt->evals, 1),
-                                   mvector_at(xstmt->evals, 2)) ) {
+        if ( 3 == mvector_size(xstmt->oprs)
+             && _is_r32_rm32_imm32(mvector_at(xstmt->oprs, 0),
+                                   mvector_at(xstmt->oprs, 1),
+                                   mvector_at(xstmt->oprs, 2)) ) {
 
             /* Build the instruction */
             stat = _binstr2_rmi(xstmt, opc1, opc2, opc3, opsize,
-                                mvector_at(xstmt->evals, 0),
-                                mvector_at(xstmt->evals, 1),
-                                mvector_at(xstmt->evals, 2), SIZE32);
+                                mvector_at(xstmt->oprs, 0),
+                                mvector_at(xstmt->oprs, 1),
+                                mvector_at(xstmt->oprs, 2), SIZE32);
         }
         break;
     case ENC_RMI_R64_RM64_IMM8:
         /* Check the number of operands and format */
-        if ( 3 == mvector_size(xstmt->evals)
-             && _is_r64_rm64_imm8(mvector_at(xstmt->evals, 0),
-                                  mvector_at(xstmt->evals, 1),
-                                  mvector_at(xstmt->evals, 2)) ) {
+        if ( 3 == mvector_size(xstmt->oprs)
+             && _is_r64_rm64_imm8(mvector_at(xstmt->oprs, 0),
+                                  mvector_at(xstmt->oprs, 1),
+                                  mvector_at(xstmt->oprs, 2)) ) {
 
             /* Build the instruction */
             stat = _binstr2_rmi(xstmt, opc1, opc2, opc3, opsize,
-                                mvector_at(xstmt->evals, 0),
-                                mvector_at(xstmt->evals, 1),
-                                mvector_at(xstmt->evals, 2), SIZE8);
+                                mvector_at(xstmt->oprs, 0),
+                                mvector_at(xstmt->oprs, 1),
+                                mvector_at(xstmt->oprs, 2), SIZE8);
         }
         break;
     case ENC_RMI_R64_RM64_IMM32:
         /* Check the number of operands and format */
-        if ( 3 == mvector_size(xstmt->evals)
-             && _is_r64_rm64_imm32(mvector_at(xstmt->evals, 0),
-                                   mvector_at(xstmt->evals, 1),
-                                   mvector_at(xstmt->evals, 2)) ) {
+        if ( 3 == mvector_size(xstmt->oprs)
+             && _is_r64_rm64_imm32(mvector_at(xstmt->oprs, 0),
+                                   mvector_at(xstmt->oprs, 1),
+                                   mvector_at(xstmt->oprs, 2)) ) {
 
             /* Build the instruction */
             stat = _binstr2_rmi(xstmt, opc1, opc2, opc3, opsize,
-                                mvector_at(xstmt->evals, 0),
-                                mvector_at(xstmt->evals, 1),
-                                mvector_at(xstmt->evals, 2), SIZE32);
+                                mvector_at(xstmt->oprs, 0),
+                                mvector_at(xstmt->oprs, 1),
+                                mvector_at(xstmt->oprs, 2), SIZE32);
         }
         break;
 
     case ENC_OI_R8_IMM8:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_r8_imm8(mvector_at(xstmt->evals, 0),
-                            mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_r8_imm8(mvector_at(xstmt->oprs, 0),
+                            mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_oi(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1), SIZE8);
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1), SIZE8);
         }
         break;
     case ENC_OI_R16_IMM16:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_r16_imm16(mvector_at(xstmt->evals, 0),
-                              mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_r16_imm16(mvector_at(xstmt->oprs, 0),
+                              mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_oi(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1), SIZE16);
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1), SIZE16);
         }
         break;
     case ENC_OI_R32_IMM32:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_r32_imm32(mvector_at(xstmt->evals, 0),
-                              mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_r32_imm32(mvector_at(xstmt->oprs, 0),
+                              mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_oi(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1), SIZE32);
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1), SIZE32);
         }
         break;
     case ENC_OI_R64_IMM64:
         /* Check the number of operands and format */
-        if ( 2 == mvector_size(xstmt->evals)
-             && _is_r64_imm64(mvector_at(xstmt->evals, 0),
-                              mvector_at(xstmt->evals, 1)) ) {
+        if ( 2 == mvector_size(xstmt->oprs)
+             && _is_r64_imm64(mvector_at(xstmt->oprs, 0),
+                              mvector_at(xstmt->oprs, 1)) ) {
 
             /* Build the instruction */
             stat = _binstr2_oi(xstmt, opc1, opc2, opc3, opsize,
-                               mvector_at(xstmt->evals, 0),
-                               mvector_at(xstmt->evals, 1), SIZE64);
+                               mvector_at(xstmt->oprs, 0),
+                               mvector_at(xstmt->oprs, 1), SIZE64);
         }
         break;
 
     case ENC_D_REL8:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_imm(mvector_at(xstmt->evals, 0), SIZE8) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_imm(mvector_at(xstmt->oprs, 0), SIZE8) ) {
 
             /* Build the instruction */
             stat = _binstr2_d(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 0), SIZE8);
+                              mvector_at(xstmt->oprs, 0), SIZE8);
         }
         break;
     case ENC_D_REL16:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_imm(mvector_at(xstmt->evals, 0), SIZE16) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_imm(mvector_at(xstmt->oprs, 0), SIZE16) ) {
 
             /* Build the instruction */
             stat = _binstr2_d(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 0), SIZE16);
+                              mvector_at(xstmt->oprs, 0), SIZE16);
         }
         break;
     case ENC_D_REL32:
         /* Check the number of operands and format */
-        if ( 1 == mvector_size(xstmt->evals)
-             && _is_imm(mvector_at(xstmt->evals, 0), SIZE32) ) {
+        if ( 1 == mvector_size(xstmt->oprs)
+             && _is_imm(mvector_at(xstmt->oprs, 0), SIZE32) ) {
 
             /* Build the instruction */
             stat = _binstr2_d(xstmt, opc1, opc2, opc3, opsize,
-                              mvector_at(xstmt->evals, 0), SIZE32);
+                              mvector_at(xstmt->oprs, 0), SIZE32);
         }
         break;
 

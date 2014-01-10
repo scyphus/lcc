@@ -35,10 +35,10 @@ _expr_range_op(const x86_64_label_table_t *, const expr_t *, int64_t *,
 static int
 _expr_range(const x86_64_label_table_t *, const expr_t *, int64_t *, int64_t *);
 
-static x86_64_eval_t * _estimate_expr_var(expr_t *);
-static x86_64_eval_t * _estimate_expr_int(expr_t *);
-static x86_64_eval_t * _estimate_expr_op(expr_t *);
-static x86_64_eval_t * _estimate_expr(expr_t *);
+static x86_64_opr_t * _estimate_expr_var(expr_t *);
+static x86_64_opr_t * _estimate_expr_int(expr_t *);
+static x86_64_opr_t * _estimate_expr_op(expr_t *);
+static x86_64_opr_t * _estimate_expr(expr_t *);
 
 
 
@@ -488,528 +488,507 @@ x86_64_expr_range(const x86_64_label_table_t *ltbl, const expr_t *expr,
 /*
  * Estimate var expression
  */
-static x86_64_eval_t *
+static x86_64_opr_t *
 _estimate_expr_var(expr_t *expr)
 {
-    x86_64_eval_t *eval;
+    x86_64_opr_t *opr;
     x86_64_reg_t reg;
 
     /* Allocate estimated value */
-    eval = malloc(sizeof(x86_64_eval_t));
-    if ( NULL == eval ) {
+    opr = malloc(sizeof(x86_64_opr_t));
+    if ( NULL == opr ) {
         return NULL;
     }
 
     reg = strtoreg(expr->u.var);
     if ( REG_UNKNOWN == reg ) {
         /* Symbol */
-        eval->type = X86_64_EVAL_IMM;
-        eval->u.imm.type = X86_64_IMM_EXPR;
-        eval->u.imm.u.rexpr = expr;
-        eval->sopsize = 0;
+        opr->type = X86_64_OPR_IMM;
+        opr->u.imm.type = X86_64_IMM_EXPR;
+        opr->u.imm.u.rexpr = expr;
+        opr->sopsize = 0;
     } else {
         /* Register */
-        eval->type = X86_64_EVAL_REG;
-        eval->u.reg = reg;
-        eval->sopsize = 0;
+        opr->type = X86_64_OPR_REG;
+        opr->u.reg = reg;
+        opr->sopsize = 0;
     }
 
-    return eval;
+    return opr;
 }
 
 /*
  * Estimate integer expression
  */
-static x86_64_eval_t *
+static x86_64_opr_t *
 _estimate_expr_int(expr_t *expr)
 {
-    x86_64_eval_t *eval;
+    x86_64_opr_t *opr;
 
-    eval = malloc(sizeof(x86_64_eval_t));
-    if ( NULL == eval ) {
+    opr = malloc(sizeof(x86_64_opr_t));
+    if ( NULL == opr ) {
         return NULL;
     }
-    eval->type = X86_64_EVAL_IMM;
-    eval->u.imm.type = X86_64_IMM_FIXED;
-    eval->u.imm.u.fixed = expr->u.i;
-    eval->sopsize = 0;
+    opr->type = X86_64_OPR_IMM;
+    opr->u.imm.type = X86_64_IMM_FIXED;
+    opr->u.imm.u.fixed = expr->u.i;
+    opr->sopsize = 0;
 
-    return eval;
+    return opr;
 }
 
 /*
  * Estimate operand
  */
-static x86_64_eval_t *
+static x86_64_opr_t *
 _estimate_expr_op(expr_t *expr)
 {
-    x86_64_eval_t *eval;
-    x86_64_eval_t *leval;
-    x86_64_eval_t *reval;
+    x86_64_opr_t *opr;
+    x86_64_opr_t *lopr;
+    x86_64_opr_t *ropr;
     expr_t *expr0;
     expr_t *expr1;
 
     /* Allocate the estimated value */
-    eval = malloc(sizeof(x86_64_eval_t));
-    if ( NULL == eval ) {
+    opr = malloc(sizeof(x86_64_opr_t));
+    if ( NULL == opr ) {
         return NULL;
     }
-    eval->sopsize = 0;
+    opr->sopsize = 0;
 
     /* Refactoring is required... */
     if ( FIX_PREFIX == expr->u.op.fix_type ) {
         expr0 = vector_at(expr->u.op.args, 0);
-        leval = _estimate_expr(expr0);
-        if ( NULL == leval ) {
-            free(eval);
+        lopr = _estimate_expr(expr0);
+        if ( NULL == lopr ) {
+            free(opr);
             return NULL;
         }
-        if ( X86_64_EVAL_IMM == leval->type ) {
-            if ( X86_64_IMM_FIXED == leval->u.imm.type ) {
-                eval->type = X86_64_EVAL_IMM;
-                eval->u.imm.type = X86_64_IMM_FIXED;
+        if ( X86_64_OPR_IMM == lopr->type ) {
+            if ( X86_64_IMM_FIXED == lopr->u.imm.type ) {
+                opr->type = X86_64_OPR_IMM;
+                opr->u.imm.type = X86_64_IMM_FIXED;
                 switch ( expr->u.op.type ) {
                 case OP_PLUS:
                     /* Do nothing: Just copy */
-                    eval->u.imm.u.fixed = leval->u.imm.u.fixed;
+                    opr->u.imm.u.fixed = lopr->u.imm.u.fixed;
                     break;
                 case OP_MINUS:
                     /* Minus */
-                    eval->u.imm.u.fixed = -leval->u.imm.u.fixed;
+                    opr->u.imm.u.fixed = -lopr->u.imm.u.fixed;
                     break;
                 case OP_TILDE:
                     /* Bitwise not */
-                    eval->u.imm.u.fixed = ~leval->u.imm.u.fixed;
+                    opr->u.imm.u.fixed = ~lopr->u.imm.u.fixed;
                     break;
                 default:
-                    free(eval);
+                    free(opr);
                     return NULL;
                 }
             } else {
-                eval->type = X86_64_EVAL_IMM;
-                eval->u.imm.type = X86_64_IMM_EXPR;
+                opr->type = X86_64_OPR_IMM;
+                opr->u.imm.type = X86_64_IMM_EXPR;
                 switch ( expr->u.op.type ) {
                 case OP_PLUS:
                 case OP_MINUS:
                     /* Do nothing */
-                    eval->u.imm.u.rexpr = expr;
+                    opr->u.imm.u.rexpr = expr;
                     break;
                 default:
-                    free(eval);
+                    free(opr);
                     return NULL;
                 }
             }
         } else {
-            free(eval);
+            free(opr);
             return NULL;
         }
     } else if ( FIX_INFIX == expr->u.op.fix_type ) {
         expr0 = vector_at(expr->u.op.args, 0);
         expr1 = vector_at(expr->u.op.args, 1);
 
-        leval = _estimate_expr(expr0);
-        if ( NULL == leval ) {
-            free(eval);
+        lopr = _estimate_expr(expr0);
+        if ( NULL == lopr ) {
+            free(opr);
             return NULL;
         }
-        reval = _estimate_expr(expr1);
-        if ( NULL == reval ) {
+        ropr = _estimate_expr(expr1);
+        if ( NULL == ropr ) {
             /* Free lval */
-            free(eval);
-            free(leval);
+            free(opr);
+            free(lopr);
             return NULL;
         }
         switch ( expr->u.op.type ) {
         case OP_PLUS:
-            if ( X86_64_EVAL_IMM == leval->type
-                 && X86_64_EVAL_IMM == reval->type ) {
-                if ( X86_64_IMM_FIXED == leval->u.imm.type
-                     && X86_64_IMM_FIXED == reval->u.imm.type ) {
-                    eval->type = X86_64_EVAL_IMM;
-                    eval->u.imm.type = X86_64_IMM_FIXED;
-                    eval->u.imm.u.fixed
-                        = leval->u.imm.u.fixed + reval->u.imm.u.fixed;
-                    eval->sopsize = 0;
-                } else if ( X86_64_IMM_EXPR == leval->u.imm.type
-                            || X86_64_IMM_EXPR == reval->u.imm.type ) {
-                    eval->type = X86_64_EVAL_IMM;
-                    eval->u.imm.type = X86_64_IMM_EXPR;
-                    eval->u.imm.u.rexpr = expr;
-                    eval->sopsize = 0;
+            if ( X86_64_OPR_IMM == lopr->type
+                 && X86_64_OPR_IMM == ropr->type ) {
+                if ( X86_64_IMM_FIXED == lopr->u.imm.type
+                     && X86_64_IMM_FIXED == ropr->u.imm.type ) {
+                    opr->type = X86_64_OPR_IMM;
+                    opr->u.imm.type = X86_64_IMM_FIXED;
+                    opr->u.imm.u.fixed
+                        = lopr->u.imm.u.fixed + ropr->u.imm.u.fixed;
+                    opr->sopsize = 0;
+                } else if ( X86_64_IMM_EXPR == lopr->u.imm.type
+                            || X86_64_IMM_EXPR == ropr->u.imm.type ) {
+                    opr->type = X86_64_OPR_IMM;
+                    opr->u.imm.type = X86_64_IMM_EXPR;
+                    opr->u.imm.u.rexpr = expr;
+                    opr->sopsize = 0;
                 } else {
                     /* Invalid syntax */
-                    free(eval);
-                    free(leval);
-                    free(reval);
+                    free(opr);
+                    free(lopr);
+                    free(ropr);
                     return NULL;
                 }
-            } else if ( X86_64_EVAL_REG == leval->type
-                        && X86_64_EVAL_IMM == reval->type ) {
+            } else if ( X86_64_OPR_REG == lopr->type
+                        && X86_64_OPR_IMM == ropr->type ) {
                 /* Base register + Displacement */
-                eval->type = X86_64_EVAL_ADDR;
-                eval->u.eaddr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
-                eval->u.eaddr.base = leval->u.reg;
-                (void)memcpy(&eval->u.eaddr.disp, &reval->u.imm,
+                opr->type = X86_64_OPR_ADDR;
+                opr->u.eaddr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
+                opr->u.eaddr.base = lopr->u.reg;
+                (void)memcpy(&opr->u.eaddr.disp, &ropr->u.imm,
                              sizeof(x86_64_imm_t));
-                eval->u.eaddr.saddrsize = 0;
-                eval->sopsize = 0;
-            } else if ( X86_64_EVAL_IMM == leval->type
-                        && X86_64_EVAL_REG == reval->type ) {
+                opr->u.eaddr.saddrsize = 0;
+                opr->sopsize = 0;
+            } else if ( X86_64_OPR_IMM == lopr->type
+                        && X86_64_OPR_REG == ropr->type ) {
                 /* Base register + Displacement */
-                eval->type = X86_64_EVAL_ADDR;
-                eval->u.eaddr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
-                eval->u.eaddr.base = reval->u.reg;
-                (void)memcpy(&eval->u.eaddr.disp, &leval->u.imm,
+                opr->type = X86_64_OPR_ADDR;
+                opr->u.eaddr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
+                opr->u.eaddr.base = ropr->u.reg;
+                (void)memcpy(&opr->u.eaddr.disp, &lopr->u.imm,
                              sizeof(x86_64_imm_t));
-                eval->u.eaddr.saddrsize = 0;
-                eval->sopsize = 0;
-            } else if ( X86_64_EVAL_REG == leval->type
-                        && X86_64_EVAL_REG == reval->type ) {
+                opr->u.eaddr.saddrsize = 0;
+                opr->sopsize = 0;
+            } else if ( X86_64_OPR_REG == lopr->type
+                        && X86_64_OPR_REG == ropr->type ) {
                 /* Base register + Offset register */
-                eval->type = X86_64_EVAL_ADDR;
-                eval->u.eaddr.flags = X86_64_ADDR_BASE | X86_64_ADDR_OFFSET
+                opr->type = X86_64_OPR_ADDR;
+                opr->u.eaddr.flags = X86_64_ADDR_BASE | X86_64_ADDR_OFFSET
                     | X86_64_ADDR_SCALE;
-                eval->u.eaddr.base = leval->u.reg;
-                eval->u.eaddr.offset = reval->u.reg;
-                eval->u.eaddr.scale = 1;
-                eval->u.eaddr.saddrsize = 0;
-                eval->sopsize = 0;
-            } else if ( X86_64_EVAL_ADDR == leval->type ) {
-                if ( X86_64_EVAL_REG == reval->type ) {
+                opr->u.eaddr.base = lopr->u.reg;
+                opr->u.eaddr.offset = ropr->u.reg;
+                opr->u.eaddr.scale = 1;
+                opr->u.eaddr.saddrsize = 0;
+                opr->sopsize = 0;
+            } else if ( X86_64_OPR_ADDR == lopr->type ) {
+                if ( X86_64_OPR_REG == ropr->type ) {
                     /* Base register */
-                    if ( X86_64_ADDR_BASE & leval->u.eaddr.flags ) {
+                    if ( X86_64_ADDR_BASE & lopr->u.eaddr.flags ) {
                         /* Invalid syntax */
-                        free(eval);
-                        free(leval);
-                        free(reval);
+                        free(opr);
+                        free(lopr);
+                        free(ropr);
                         return NULL;
                     }
-                    eval->type = X86_64_EVAL_ADDR;
-                    eval->u.eaddr.flags = X86_64_ADDR_BASE
-                        | leval->u.eaddr.flags;
-                    eval->u.eaddr.base = reval->u.reg;
-                    eval->u.eaddr.offset = leval->u.eaddr.offset;
-                    eval->u.eaddr.scale = leval->u.eaddr.scale;
-                    (void)memcpy(&eval->u.eaddr.disp, &leval->u.eaddr.disp,
+                    opr->type = X86_64_OPR_ADDR;
+                    opr->u.eaddr.flags = X86_64_ADDR_BASE
+                        | lopr->u.eaddr.flags;
+                    opr->u.eaddr.base = ropr->u.reg;
+                    opr->u.eaddr.offset = lopr->u.eaddr.offset;
+                    opr->u.eaddr.scale = lopr->u.eaddr.scale;
+                    (void)memcpy(&opr->u.eaddr.disp, &lopr->u.eaddr.disp,
                                  sizeof(x86_64_imm_t));
-                    eval->u.eaddr.saddrsize = 0;
-                    eval->sopsize = 0;
-                } else if ( X86_64_EVAL_IMM == reval->type ) {
+                    opr->u.eaddr.saddrsize = 0;
+                    opr->sopsize = 0;
+                } else if ( X86_64_OPR_IMM == ropr->type ) {
                     /* Displacement */
-                    if ( X86_64_ADDR_DISP & leval->u.eaddr.flags ) {
+                    if ( X86_64_ADDR_DISP & lopr->u.eaddr.flags ) {
                         /* Invalid syntax */
-                        free(eval);
-                        free(leval);
-                        free(reval);
+                        free(opr);
+                        free(lopr);
+                        free(ropr);
                         return NULL;
                     }
-                    eval->type = X86_64_EVAL_ADDR;
-                    eval->u.eaddr.flags = X86_64_ADDR_DISP
-                        | leval->u.eaddr.flags;
-                    (void)memcpy(&eval->u.eaddr.disp, &reval->u.imm,
+                    opr->type = X86_64_OPR_ADDR;
+                    opr->u.eaddr.flags = X86_64_ADDR_DISP
+                        | lopr->u.eaddr.flags;
+                    (void)memcpy(&opr->u.eaddr.disp, &ropr->u.imm,
                                  sizeof(x86_64_imm_t));
-                    eval->u.eaddr.base = leval->u.eaddr.base;
-                    eval->u.eaddr.offset = leval->u.eaddr.offset;
-                    eval->u.eaddr.scale = leval->u.eaddr.scale;
-                    eval->u.eaddr.saddrsize = 0;
-                    eval->sopsize = 0;
+                    opr->u.eaddr.base = lopr->u.eaddr.base;
+                    opr->u.eaddr.offset = lopr->u.eaddr.offset;
+                    opr->u.eaddr.scale = lopr->u.eaddr.scale;
+                    opr->u.eaddr.saddrsize = 0;
+                    opr->sopsize = 0;
                 } else {
                     /* Invalid syntax */
-                    free(eval);
-                    free(leval);
-                    free(reval);
+                    free(opr);
+                    free(lopr);
+                    free(ropr);
                     return NULL;
                 }
-            } else if ( X86_64_EVAL_ADDR == reval->type ) {
-                if ( X86_64_EVAL_REG == leval->type ) {
+            } else if ( X86_64_OPR_ADDR == ropr->type ) {
+                if ( X86_64_OPR_REG == lopr->type ) {
                     /* Base register */
-                    if ( X86_64_ADDR_BASE & reval->u.eaddr.flags ) {
+                    if ( X86_64_ADDR_BASE & ropr->u.eaddr.flags ) {
                         /* Invalid syntax */
-                        free(eval);
-                        free(leval);
-                        free(reval);
+                        free(opr);
+                        free(lopr);
+                        free(ropr);
                         return NULL;
                     }
-                    eval->type = X86_64_EVAL_ADDR;
-                    eval->u.eaddr.flags = X86_64_ADDR_BASE
-                        | reval->u.eaddr.flags;
-                    eval->u.eaddr.base = leval->u.reg;
-                    eval->u.eaddr.saddrsize = 0;
-                    eval->sopsize = 0;
-                } else if ( X86_64_EVAL_IMM == leval->type ) {
+                    opr->type = X86_64_OPR_ADDR;
+                    opr->u.eaddr.flags = X86_64_ADDR_BASE
+                        | ropr->u.eaddr.flags;
+                    opr->u.eaddr.base = lopr->u.reg;
+                    opr->u.eaddr.saddrsize = 0;
+                    opr->sopsize = 0;
+                } else if ( X86_64_OPR_IMM == lopr->type ) {
                     /* Displacement */
-                    if ( X86_64_ADDR_DISP & reval->u.eaddr.flags ) {
+                    if ( X86_64_ADDR_DISP & ropr->u.eaddr.flags ) {
                         /* Invalid syntax */
-                        free(eval);
-                        free(leval);
-                        free(reval);
+                        free(opr);
+                        free(lopr);
+                        free(ropr);
                         return NULL;
                     }
-                    eval->type = X86_64_EVAL_ADDR;
-                    eval->u.eaddr.flags = X86_64_ADDR_DISP
-                        | reval->u.eaddr.flags;
-                    (void)memcpy(&eval->u.eaddr.disp, &leval->u.imm,
+                    opr->type = X86_64_OPR_ADDR;
+                    opr->u.eaddr.flags = X86_64_ADDR_DISP
+                        | ropr->u.eaddr.flags;
+                    (void)memcpy(&opr->u.eaddr.disp, &lopr->u.imm,
                                  sizeof(x86_64_imm_t));
-                    eval->u.eaddr.saddrsize = 0;
-                    eval->sopsize = 0;
+                    opr->u.eaddr.saddrsize = 0;
+                    opr->sopsize = 0;
                 } else {
                     /* Invalid syntax */
-                    free(eval);
-                    free(leval);
-                    free(reval);
+                    free(opr);
+                    free(lopr);
+                    free(ropr);
                     return NULL;
                 }
             } else {
                 /* Invalid */
-                free(eval);
-                free(leval);
-                free(reval);
+                free(opr);
+                free(lopr);
+                free(ropr);
                 return NULL;
             }
             break;
         case OP_MINUS:
-            if ( X86_64_EVAL_IMM == leval->type
-                 && X86_64_EVAL_IMM == reval->type ) {
-                if ( X86_64_IMM_FIXED == leval->u.imm.type
-                     && X86_64_IMM_FIXED == reval->u.imm.type ) {
-                    eval->type = X86_64_EVAL_IMM;
-                    eval->u.imm.type = X86_64_IMM_FIXED;
-                    eval->u.imm.u.fixed
-                        = leval->u.imm.u.fixed - reval->u.imm.u.fixed;
-                    eval->sopsize = 0;
-                } else if ( X86_64_IMM_EXPR == leval->u.imm.type
-                            || X86_64_IMM_EXPR == reval->u.imm.type ) {
-                    eval->type = X86_64_EVAL_IMM;
-                    eval->u.imm.type = X86_64_IMM_EXPR;
-                    eval->u.imm.u.rexpr = expr;
-                    eval->sopsize = 0;
+            if ( X86_64_OPR_IMM == lopr->type
+                 && X86_64_OPR_IMM == ropr->type ) {
+                if ( X86_64_IMM_FIXED == lopr->u.imm.type
+                     && X86_64_IMM_FIXED == ropr->u.imm.type ) {
+                    opr->type = X86_64_OPR_IMM;
+                    opr->u.imm.type = X86_64_IMM_FIXED;
+                    opr->u.imm.u.fixed
+                        = lopr->u.imm.u.fixed - ropr->u.imm.u.fixed;
+                    opr->sopsize = 0;
+                } else if ( X86_64_IMM_EXPR == lopr->u.imm.type
+                            || X86_64_IMM_EXPR == ropr->u.imm.type ) {
+                    opr->type = X86_64_OPR_IMM;
+                    opr->u.imm.type = X86_64_IMM_EXPR;
+                    opr->u.imm.u.rexpr = expr;
+                    opr->sopsize = 0;
                 } else {
                     /* Invalid syntax */
-                    free(eval);
-                    free(leval);
-                    free(reval);
+                    free(opr);
+                    free(lopr);
+                    free(ropr);
                     return NULL;
                 }
             } else {
                 /* Invalid */
-                free(eval);
-                free(leval);
-                free(reval);
+                free(opr);
+                free(lopr);
+                free(ropr);
                 return NULL;
             }
             break;
         case OP_MUL:
-            if ( X86_64_EVAL_IMM == leval->type
-                 && X86_64_EVAL_IMM == reval->type ) {
-                if ( X86_64_IMM_FIXED == leval->u.imm.type
-                     && X86_64_IMM_FIXED == reval->u.imm.type ) {
-                    eval->type = X86_64_EVAL_IMM;
-                    eval->u.imm.type = X86_64_IMM_FIXED;
-                    eval->u.imm.u.fixed
-                        = leval->u.imm.u.fixed * reval->u.imm.u.fixed;
-                    eval->sopsize = 0;
+            if ( X86_64_OPR_IMM == lopr->type
+                 && X86_64_OPR_IMM == ropr->type ) {
+                if ( X86_64_IMM_FIXED == lopr->u.imm.type
+                     && X86_64_IMM_FIXED == ropr->u.imm.type ) {
+                    opr->type = X86_64_OPR_IMM;
+                    opr->u.imm.type = X86_64_IMM_FIXED;
+                    opr->u.imm.u.fixed
+                        = lopr->u.imm.u.fixed * ropr->u.imm.u.fixed;
+                    opr->sopsize = 0;
                 } else {
                     /* Invalid */
-                    free(eval);
-                    free(leval);
-                    free(reval);
+                    free(opr);
+                    free(lopr);
+                    free(ropr);
                     return NULL;
                 }
-            } else if ( X86_64_EVAL_IMM == leval->type
-                        && X86_64_EVAL_REG == reval->type ) {
-                if ( X86_64_IMM_FIXED == leval->u.imm.type ) {
+            } else if ( X86_64_OPR_IMM == lopr->type
+                        && X86_64_OPR_REG == ropr->type ) {
+                if ( X86_64_IMM_FIXED == lopr->u.imm.type ) {
                     /* The scale must be a fixed value */
-                    eval->type = X86_64_EVAL_ADDR;
-                    eval->u.eaddr.flags
+                    opr->type = X86_64_OPR_ADDR;
+                    opr->u.eaddr.flags
                         = X86_64_ADDR_OFFSET | X86_64_ADDR_SCALE;
-                    eval->u.eaddr.offset = reval->u.reg;
-                    eval->u.eaddr.scale = leval->u.imm.u.fixed;
-                    eval->u.eaddr.saddrsize = 0;
-                    eval->sopsize = 0;
+                    opr->u.eaddr.offset = ropr->u.reg;
+                    opr->u.eaddr.scale = lopr->u.imm.u.fixed;
+                    opr->u.eaddr.saddrsize = 0;
+                    opr->sopsize = 0;
                 } else {
                     /* Invalid */
-                    free(eval);
-                    free(leval);
-                    free(reval);
+                    free(opr);
+                    free(lopr);
+                    free(ropr);
                     return NULL;
                 }
-            } else if ( X86_64_EVAL_REG == leval->type
-                        && X86_64_EVAL_IMM == reval->type ) {
-                if ( X86_64_IMM_FIXED == reval->u.imm.type ) {
+            } else if ( X86_64_OPR_REG == lopr->type
+                        && X86_64_OPR_IMM == ropr->type ) {
+                if ( X86_64_IMM_FIXED == ropr->u.imm.type ) {
                     /* The scale must be a fixed value */
-                    eval->type = X86_64_EVAL_ADDR;
-                    eval->u.eaddr.flags
+                    opr->type = X86_64_OPR_ADDR;
+                    opr->u.eaddr.flags
                         = X86_64_ADDR_OFFSET | X86_64_ADDR_SCALE;
-                    eval->u.eaddr.offset = leval->u.reg;
-                    eval->u.eaddr.scale = reval->u.imm.u.fixed;
-                    eval->u.eaddr.saddrsize = 0;
-                    eval->sopsize = 0;
+                    opr->u.eaddr.offset = lopr->u.reg;
+                    opr->u.eaddr.scale = ropr->u.imm.u.fixed;
+                    opr->u.eaddr.saddrsize = 0;
+                    opr->sopsize = 0;
                 } else {
                     /* Invalid */
-                    free(eval);
-                    free(leval);
-                    free(reval);
+                    free(opr);
+                    free(lopr);
+                    free(ropr);
                     return NULL;
                 }
             } else {
                 /* Invalid */
-                free(eval);
-                free(leval);
-                free(reval);
+                free(opr);
+                free(lopr);
+                free(ropr);
                 return NULL;
             }
             break;
         case OP_DIV:
-            if ( X86_64_EVAL_IMM == leval->type
-                 && X86_64_EVAL_IMM == reval->type ) {
-                if ( X86_64_IMM_FIXED == leval->u.imm.type
-                     && X86_64_IMM_FIXED == reval->u.imm.type ) {
-                    eval->type = X86_64_EVAL_IMM;
-                    eval->u.imm.type = X86_64_IMM_FIXED;
-                    eval->u.imm.u.fixed
-                        = leval->u.imm.u.fixed / reval->u.imm.u.fixed;
-                    eval->sopsize = 0;
+            if ( X86_64_OPR_IMM == lopr->type
+                 && X86_64_OPR_IMM == ropr->type ) {
+                if ( X86_64_IMM_FIXED == lopr->u.imm.type
+                     && X86_64_IMM_FIXED == ropr->u.imm.type ) {
+                    opr->type = X86_64_OPR_IMM;
+                    opr->u.imm.type = X86_64_IMM_FIXED;
+                    opr->u.imm.u.fixed
+                        = lopr->u.imm.u.fixed / ropr->u.imm.u.fixed;
+                    opr->sopsize = 0;
                 } else {
                     /* Invalid */
-                    free(eval);
-                    free(leval);
-                    free(reval);
+                    free(opr);
+                    free(lopr);
+                    free(ropr);
                     return NULL;
                 }
             } else {
                 /* Invalid */
-                free(eval);
-                free(leval);
-                free(reval);
+                free(opr);
+                free(lopr);
+                free(ropr);
                 return NULL;
             }
             break;
         default:
             /* Unsupported operator */
-            free(eval);
-            free(leval);
-            free(reval);
+            free(opr);
+            free(lopr);
+            free(ropr);
             return NULL;
         }
 
     }
 
-    return eval;
+    return opr;
 }
 
 /*
  * Estimate the expression (static function)
  */
-static x86_64_eval_t *
+static x86_64_opr_t *
 _estimate_expr(expr_t *expr)
 {
-    x86_64_eval_t *eval;
+    x86_64_opr_t *opr;
 
     switch ( expr->type ) {
     case EXPR_VAR:
-        eval = _estimate_expr_var(expr);
+        opr = _estimate_expr_var(expr);
         break;
     case EXPR_INT:
-        eval = _estimate_expr_int(expr);
+        opr = _estimate_expr_int(expr);
         break;
     case EXPR_OP:
-        eval = _estimate_expr_op(expr);
+        opr = _estimate_expr_op(expr);
         break;
     default:
-        eval = NULL;
+        opr = NULL;
     }
 
-    return eval;
+    return opr;
 }
 
 /*
  * Estimate immediate value or register
  */
-static x86_64_eval_t *
+static x86_64_opr_t *
 _estimate_expr_imm_or_reg(expr_t *expr)
 {
-    x86_64_eval_t *eval;
+    x86_64_opr_t *opr;
 
-    eval = _estimate_expr(expr);
+    opr = _estimate_expr(expr);
 
     /* Verify the returned value */
-    if ( NULL == eval ) {
+    if ( NULL == opr ) {
         return NULL;
-    } else if ( X86_64_EVAL_REG != eval->type
-                && X86_64_EVAL_IMM != eval->type ) {
-        free(eval);
-        return NULL;
-    }
-
-    return eval;
-}
-
-/*
- * Estimate ptr value
- */
-static x86_64_eval_t *
-_estimate_expr_ptr(expr_t *expr0, expr_t *expr1)
-{
-    x86_64_eval_t *eval;
-
-    eval = malloc(sizeof(x86_64_eval_t));
-    if ( NULL == eval ) {
+    } else if ( X86_64_OPR_REG != opr->type
+                && X86_64_OPR_IMM != opr->type ) {
+        free(opr);
         return NULL;
     }
 
-    eval->type = X86_64_EVAL_PTR;
-    eval->sopsize = 0;
-    eval->u.ptr.expr0 = expr0;
-    eval->u.ptr.expr1 = expr1;
-
-    return eval;
+    return opr;
 }
 
 /*
  * Estimate the expression which is address operand type
  */
-static x86_64_eval_t *
+static x86_64_opr_t *
 _estimate_expr_addr(pexpr_t *pexpr)
 {
-    x86_64_eval_t *eval;
+    x86_64_opr_t *opr;
     x86_64_reg_t reg;
     x86_64_imm_t imm;
 
-    eval = _estimate_expr(pexpr->expr);
-    if ( NULL == eval ) {
+    opr = _estimate_expr(pexpr->expr);
+    if ( NULL == opr ) {
         return NULL;
     }
 
     /* Convert the type to address operand */
-    if ( X86_64_EVAL_REG == eval->type ) {
-        reg = eval->u.reg;
-        eval->type = X86_64_EVAL_ADDR;
-        eval->u.eaddr.flags = X86_64_ADDR_BASE;
-        eval->u.eaddr.base = reg;
-        eval->u.eaddr.saddrsize = eval->sopsize;
-        eval->sopsize = 0;
-    } else if ( X86_64_EVAL_IMM == eval->type ) {
-        (void)memcpy(&imm, &eval->u.imm, sizeof(x86_64_imm_t));
-        eval->type = X86_64_EVAL_ADDR;
-        eval->u.eaddr.flags = X86_64_ADDR_DISP;
-        (void)memcpy(&eval->u.eaddr.disp, &imm, sizeof(x86_64_imm_t));
-        eval->u.eaddr.saddrsize = eval->sopsize;
-        eval->sopsize = 0;
+    if ( X86_64_OPR_REG == opr->type ) {
+        reg = opr->u.reg;
+        opr->type = X86_64_OPR_ADDR;
+        opr->u.eaddr.flags = X86_64_ADDR_BASE;
+        opr->u.eaddr.base = reg;
+        opr->u.eaddr.saddrsize = opr->sopsize;
+        opr->sopsize = 0;
+    } else if ( X86_64_OPR_IMM == opr->type ) {
+        (void)memcpy(&imm, &opr->u.imm, sizeof(x86_64_imm_t));
+        opr->type = X86_64_OPR_ADDR;
+        opr->u.eaddr.flags = X86_64_ADDR_DISP;
+        (void)memcpy(&opr->u.eaddr.disp, &imm, sizeof(x86_64_imm_t));
+        opr->u.eaddr.saddrsize = opr->sopsize;
+        opr->sopsize = 0;
     }
 
     /* Check the operand prefix */
     switch ( pexpr->prefix ) {
     case SIZE_PREFIX_BYTE:
-        eval->sopsize = SIZE8;
+        opr->sopsize = SIZE8;
         break;
     case SIZE_PREFIX_WORD:
-        eval->sopsize = SIZE16;
+        opr->sopsize = SIZE16;
         break;
     case SIZE_PREFIX_DWORD:
-        eval->sopsize = SIZE32;
+        opr->sopsize = SIZE32;
         break;
     case SIZE_PREFIX_QWORD:
-        eval->sopsize = SIZE64;
+        opr->sopsize = SIZE64;
         break;
     case SIZE_PREFIX_NONE:
     default:
@@ -1017,50 +996,50 @@ _estimate_expr_addr(pexpr_t *pexpr)
     }
 
     /* Verify the returned value */
-    if ( X86_64_EVAL_ADDR != eval->type ) {
-        free(eval);
+    if ( X86_64_OPR_ADDR != opr->type ) {
+        free(opr);
         return NULL;
     }
 
-    return eval;
+    return opr;
 }
 
 /*
  * Estimate the operand
  */
-x86_64_eval_t *
+x86_64_opr_t *
 x86_64_estimate_operand(operand_t *op)
 {
-    x86_64_eval_t *eval;
+    x86_64_opr_t *opr;
     size_t sz;
 
     if ( OEXPR_EXPR == op->oexpr0->type ) {
         /* Immediate value or register */
-        eval = _estimate_expr_imm_or_reg(op->oexpr0->u.expr);
+        opr = _estimate_expr_imm_or_reg(op->oexpr0->u.expr);
     } else if ( OEXPR_ADDR == op->oexpr0->type ) {
         /* Address */
-        eval = _estimate_expr_addr(op->oexpr0->u.pexpr);
+        opr = _estimate_expr_addr(op->oexpr0->u.pexpr);
     } else {
         return NULL;
     }
     /* Check the returned value */
-    if ( NULL == eval ) {
+    if ( NULL == opr ) {
         return NULL;
     }
 
     /* Check the operand prefix */
     switch ( op->prefix ) {
     case SIZE_PREFIX_BYTE:
-        eval->sopsize = SIZE8;
+        opr->sopsize = SIZE8;
         break;
     case SIZE_PREFIX_WORD:
-        eval->sopsize = SIZE16;
+        opr->sopsize = SIZE16;
         break;
     case SIZE_PREFIX_DWORD:
-        eval->sopsize = SIZE32;
+        opr->sopsize = SIZE32;
         break;
     case SIZE_PREFIX_QWORD:
-        eval->sopsize = SIZE64;
+        opr->sopsize = SIZE64;
         break;
     case SIZE_PREFIX_NONE:
     default:
@@ -1068,45 +1047,45 @@ x86_64_estimate_operand(operand_t *op)
     }
 
     /* Complement and validate the operand size and address size */
-    switch ( eval->type ) {
-    case X86_64_EVAL_IMM:
-    case X86_64_EVAL_PTR:
+    switch ( opr->type ) {
+    case X86_64_OPR_IMM:
+    case X86_64_OPR_PTR:
         /* Check nothing */
         break;
-    case X86_64_EVAL_REG:
-        sz = regsize(eval->u.reg);
-        if ( 0 != eval->sopsize && sz != eval->sopsize ) {
+    case X86_64_OPR_REG:
+        sz = regsize(opr->u.reg);
+        if ( 0 != opr->sopsize && sz != opr->sopsize ) {
             /* Invalid operand size */
-            free(eval);
+            free(opr);
             return NULL;
         }
-        eval->sopsize = sz;
+        opr->sopsize = sz;
         break;
-    case X86_64_EVAL_ADDR:
-        if ( X86_64_ADDR_BASE & eval->u.eaddr.flags ) {
-            sz = regsize(eval->u.eaddr.base);
-            if ( 0 != eval->u.eaddr.saddrsize
-                 && sz != eval->u.eaddr.saddrsize ) {
+    case X86_64_OPR_ADDR:
+        if ( X86_64_ADDR_BASE & opr->u.eaddr.flags ) {
+            sz = regsize(opr->u.eaddr.base);
+            if ( 0 != opr->u.eaddr.saddrsize
+                 && sz != opr->u.eaddr.saddrsize ) {
                 /* Invalid operand size */
-                free(eval);
+                free(opr);
                 return NULL;
             }
-            eval->u.eaddr.saddrsize = sz;
+            opr->u.eaddr.saddrsize = sz;
         }
-        if ( X86_64_ADDR_OFFSET & eval->u.eaddr.flags ) {
-            sz = regsize(eval->u.eaddr.offset);
-            if ( 0 != eval->u.eaddr.saddrsize
-                 && sz != eval->u.eaddr.saddrsize ) {
+        if ( X86_64_ADDR_OFFSET & opr->u.eaddr.flags ) {
+            sz = regsize(opr->u.eaddr.offset);
+            if ( 0 != opr->u.eaddr.saddrsize
+                 && sz != opr->u.eaddr.saddrsize ) {
                 /* Invalid operand size */
-                free(eval);
+                free(opr);
                 return NULL;
             }
-            eval->u.eaddr.saddrsize = sz;
+            opr->u.eaddr.saddrsize = sz;
         }
         break;
     }
 
-    return eval;
+    return opr;
 }
 
 /*

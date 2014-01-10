@@ -3519,7 +3519,7 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
         xstmt->stmt = stmt;
         xstmt->state = X86_64_STMT_INIT;
         xstmt->tgt = tgt;
-        xstmt->evals = NULL;
+        xstmt->oprs = NULL;
         xstmt->sinstr = NULL;
         xstmt->instrs = mvector_new();
         xstmt->esize.min = 0;
