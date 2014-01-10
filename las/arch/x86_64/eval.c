@@ -647,37 +647,37 @@ _estimate_expr_op(expr_t *expr)
                         && X86_64_OPR_IMM == ropr->type ) {
                 /* Base register + Displacement */
                 opr->type = X86_64_OPR_ADDR;
-                opr->u.eaddr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
-                opr->u.eaddr.base = lopr->u.reg;
-                (void)memcpy(&opr->u.eaddr.disp, &ropr->u.imm,
+                opr->u.addr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
+                opr->u.addr.base = lopr->u.reg;
+                (void)memcpy(&opr->u.addr.disp, &ropr->u.imm,
                              sizeof(x86_64_imm_t));
-                opr->u.eaddr.saddrsize = 0;
+                opr->u.addr.saddrsize = 0;
                 opr->sopsize = 0;
             } else if ( X86_64_OPR_IMM == lopr->type
                         && X86_64_OPR_REG == ropr->type ) {
                 /* Base register + Displacement */
                 opr->type = X86_64_OPR_ADDR;
-                opr->u.eaddr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
-                opr->u.eaddr.base = ropr->u.reg;
-                (void)memcpy(&opr->u.eaddr.disp, &lopr->u.imm,
+                opr->u.addr.flags = X86_64_ADDR_BASE | X86_64_ADDR_DISP;
+                opr->u.addr.base = ropr->u.reg;
+                (void)memcpy(&opr->u.addr.disp, &lopr->u.imm,
                              sizeof(x86_64_imm_t));
-                opr->u.eaddr.saddrsize = 0;
+                opr->u.addr.saddrsize = 0;
                 opr->sopsize = 0;
             } else if ( X86_64_OPR_REG == lopr->type
                         && X86_64_OPR_REG == ropr->type ) {
                 /* Base register + Offset register */
                 opr->type = X86_64_OPR_ADDR;
-                opr->u.eaddr.flags = X86_64_ADDR_BASE | X86_64_ADDR_OFFSET
+                opr->u.addr.flags = X86_64_ADDR_BASE | X86_64_ADDR_OFFSET
                     | X86_64_ADDR_SCALE;
-                opr->u.eaddr.base = lopr->u.reg;
-                opr->u.eaddr.offset = ropr->u.reg;
-                opr->u.eaddr.scale = 1;
-                opr->u.eaddr.saddrsize = 0;
+                opr->u.addr.base = lopr->u.reg;
+                opr->u.addr.offset = ropr->u.reg;
+                opr->u.addr.scale = 1;
+                opr->u.addr.saddrsize = 0;
                 opr->sopsize = 0;
             } else if ( X86_64_OPR_ADDR == lopr->type ) {
                 if ( X86_64_OPR_REG == ropr->type ) {
                     /* Base register */
-                    if ( X86_64_ADDR_BASE & lopr->u.eaddr.flags ) {
+                    if ( X86_64_ADDR_BASE & lopr->u.addr.flags ) {
                         /* Invalid syntax */
                         free(opr);
                         free(lopr);
@@ -685,18 +685,17 @@ _estimate_expr_op(expr_t *expr)
                         return NULL;
                     }
                     opr->type = X86_64_OPR_ADDR;
-                    opr->u.eaddr.flags = X86_64_ADDR_BASE
-                        | lopr->u.eaddr.flags;
-                    opr->u.eaddr.base = ropr->u.reg;
-                    opr->u.eaddr.offset = lopr->u.eaddr.offset;
-                    opr->u.eaddr.scale = lopr->u.eaddr.scale;
-                    (void)memcpy(&opr->u.eaddr.disp, &lopr->u.eaddr.disp,
+                    opr->u.addr.flags = X86_64_ADDR_BASE | lopr->u.addr.flags;
+                    opr->u.addr.base = ropr->u.reg;
+                    opr->u.addr.offset = lopr->u.addr.offset;
+                    opr->u.addr.scale = lopr->u.addr.scale;
+                    (void)memcpy(&opr->u.addr.disp, &lopr->u.addr.disp,
                                  sizeof(x86_64_imm_t));
-                    opr->u.eaddr.saddrsize = 0;
+                    opr->u.addr.saddrsize = 0;
                     opr->sopsize = 0;
                 } else if ( X86_64_OPR_IMM == ropr->type ) {
                     /* Displacement */
-                    if ( X86_64_ADDR_DISP & lopr->u.eaddr.flags ) {
+                    if ( X86_64_ADDR_DISP & lopr->u.addr.flags ) {
                         /* Invalid syntax */
                         free(opr);
                         free(lopr);
@@ -704,14 +703,13 @@ _estimate_expr_op(expr_t *expr)
                         return NULL;
                     }
                     opr->type = X86_64_OPR_ADDR;
-                    opr->u.eaddr.flags = X86_64_ADDR_DISP
-                        | lopr->u.eaddr.flags;
-                    (void)memcpy(&opr->u.eaddr.disp, &ropr->u.imm,
+                    opr->u.addr.flags = X86_64_ADDR_DISP | lopr->u.addr.flags;
+                    (void)memcpy(&opr->u.addr.disp, &ropr->u.imm,
                                  sizeof(x86_64_imm_t));
-                    opr->u.eaddr.base = lopr->u.eaddr.base;
-                    opr->u.eaddr.offset = lopr->u.eaddr.offset;
-                    opr->u.eaddr.scale = lopr->u.eaddr.scale;
-                    opr->u.eaddr.saddrsize = 0;
+                    opr->u.addr.base = lopr->u.addr.base;
+                    opr->u.addr.offset = lopr->u.addr.offset;
+                    opr->u.addr.scale = lopr->u.addr.scale;
+                    opr->u.addr.saddrsize = 0;
                     opr->sopsize = 0;
                 } else {
                     /* Invalid syntax */
@@ -723,7 +721,7 @@ _estimate_expr_op(expr_t *expr)
             } else if ( X86_64_OPR_ADDR == ropr->type ) {
                 if ( X86_64_OPR_REG == lopr->type ) {
                     /* Base register */
-                    if ( X86_64_ADDR_BASE & ropr->u.eaddr.flags ) {
+                    if ( X86_64_ADDR_BASE & ropr->u.addr.flags ) {
                         /* Invalid syntax */
                         free(opr);
                         free(lopr);
@@ -731,14 +729,13 @@ _estimate_expr_op(expr_t *expr)
                         return NULL;
                     }
                     opr->type = X86_64_OPR_ADDR;
-                    opr->u.eaddr.flags = X86_64_ADDR_BASE
-                        | ropr->u.eaddr.flags;
-                    opr->u.eaddr.base = lopr->u.reg;
-                    opr->u.eaddr.saddrsize = 0;
+                    opr->u.addr.flags = X86_64_ADDR_BASE | ropr->u.addr.flags;
+                    opr->u.addr.base = lopr->u.reg;
+                    opr->u.addr.saddrsize = 0;
                     opr->sopsize = 0;
                 } else if ( X86_64_OPR_IMM == lopr->type ) {
                     /* Displacement */
-                    if ( X86_64_ADDR_DISP & ropr->u.eaddr.flags ) {
+                    if ( X86_64_ADDR_DISP & ropr->u.addr.flags ) {
                         /* Invalid syntax */
                         free(opr);
                         free(lopr);
@@ -746,11 +743,10 @@ _estimate_expr_op(expr_t *expr)
                         return NULL;
                     }
                     opr->type = X86_64_OPR_ADDR;
-                    opr->u.eaddr.flags = X86_64_ADDR_DISP
-                        | ropr->u.eaddr.flags;
-                    (void)memcpy(&opr->u.eaddr.disp, &lopr->u.imm,
+                    opr->u.addr.flags = X86_64_ADDR_DISP | ropr->u.addr.flags;
+                    (void)memcpy(&opr->u.addr.disp, &lopr->u.imm,
                                  sizeof(x86_64_imm_t));
-                    opr->u.eaddr.saddrsize = 0;
+                    opr->u.addr.saddrsize = 0;
                     opr->sopsize = 0;
                 } else {
                     /* Invalid syntax */
@@ -820,11 +816,10 @@ _estimate_expr_op(expr_t *expr)
                 if ( X86_64_IMM_FIXED == lopr->u.imm.type ) {
                     /* The scale must be a fixed value */
                     opr->type = X86_64_OPR_ADDR;
-                    opr->u.eaddr.flags
-                        = X86_64_ADDR_OFFSET | X86_64_ADDR_SCALE;
-                    opr->u.eaddr.offset = ropr->u.reg;
-                    opr->u.eaddr.scale = lopr->u.imm.u.fixed;
-                    opr->u.eaddr.saddrsize = 0;
+                    opr->u.addr.flags = X86_64_ADDR_OFFSET | X86_64_ADDR_SCALE;
+                    opr->u.addr.offset = ropr->u.reg;
+                    opr->u.addr.scale = lopr->u.imm.u.fixed;
+                    opr->u.addr.saddrsize = 0;
                     opr->sopsize = 0;
                 } else {
                     /* Invalid */
@@ -838,11 +833,10 @@ _estimate_expr_op(expr_t *expr)
                 if ( X86_64_IMM_FIXED == ropr->u.imm.type ) {
                     /* The scale must be a fixed value */
                     opr->type = X86_64_OPR_ADDR;
-                    opr->u.eaddr.flags
-                        = X86_64_ADDR_OFFSET | X86_64_ADDR_SCALE;
-                    opr->u.eaddr.offset = lopr->u.reg;
-                    opr->u.eaddr.scale = ropr->u.imm.u.fixed;
-                    opr->u.eaddr.saddrsize = 0;
+                    opr->u.addr.flags = X86_64_ADDR_OFFSET | X86_64_ADDR_SCALE;
+                    opr->u.addr.offset = lopr->u.reg;
+                    opr->u.addr.scale = ropr->u.imm.u.fixed;
+                    opr->u.addr.saddrsize = 0;
                     opr->sopsize = 0;
                 } else {
                     /* Invalid */
@@ -963,16 +957,16 @@ _estimate_expr_addr(pexpr_t *pexpr)
     if ( X86_64_OPR_REG == opr->type ) {
         reg = opr->u.reg;
         opr->type = X86_64_OPR_ADDR;
-        opr->u.eaddr.flags = X86_64_ADDR_BASE;
-        opr->u.eaddr.base = reg;
-        opr->u.eaddr.saddrsize = opr->sopsize;
+        opr->u.addr.flags = X86_64_ADDR_BASE;
+        opr->u.addr.base = reg;
+        opr->u.addr.saddrsize = opr->sopsize;
         opr->sopsize = 0;
     } else if ( X86_64_OPR_IMM == opr->type ) {
         (void)memcpy(&imm, &opr->u.imm, sizeof(x86_64_imm_t));
         opr->type = X86_64_OPR_ADDR;
-        opr->u.eaddr.flags = X86_64_ADDR_DISP;
-        (void)memcpy(&opr->u.eaddr.disp, &imm, sizeof(x86_64_imm_t));
-        opr->u.eaddr.saddrsize = opr->sopsize;
+        opr->u.addr.flags = X86_64_ADDR_DISP;
+        (void)memcpy(&opr->u.addr.disp, &imm, sizeof(x86_64_imm_t));
+        opr->u.addr.saddrsize = opr->sopsize;
         opr->sopsize = 0;
     }
 
@@ -1062,25 +1056,25 @@ x86_64_estimate_operand(operand_t *op)
         opr->sopsize = sz;
         break;
     case X86_64_OPR_ADDR:
-        if ( X86_64_ADDR_BASE & opr->u.eaddr.flags ) {
-            sz = regsize(opr->u.eaddr.base);
-            if ( 0 != opr->u.eaddr.saddrsize
-                 && sz != opr->u.eaddr.saddrsize ) {
+        if ( X86_64_ADDR_BASE & opr->u.addr.flags ) {
+            sz = regsize(opr->u.addr.base);
+            if ( 0 != opr->u.addr.saddrsize
+                 && sz != opr->u.addr.saddrsize ) {
                 /* Invalid operand size */
                 free(opr);
                 return NULL;
             }
-            opr->u.eaddr.saddrsize = sz;
+            opr->u.addr.saddrsize = sz;
         }
-        if ( X86_64_ADDR_OFFSET & opr->u.eaddr.flags ) {
-            sz = regsize(opr->u.eaddr.offset);
-            if ( 0 != opr->u.eaddr.saddrsize
-                 && sz != opr->u.eaddr.saddrsize ) {
+        if ( X86_64_ADDR_OFFSET & opr->u.addr.flags ) {
+            sz = regsize(opr->u.addr.offset);
+            if ( 0 != opr->u.addr.saddrsize
+                 && sz != opr->u.addr.saddrsize ) {
                 /* Invalid operand size */
                 free(opr);
                 return NULL;
             }
-            opr->u.eaddr.saddrsize = sz;
+            opr->u.addr.saddrsize = sz;
         }
         break;
     }

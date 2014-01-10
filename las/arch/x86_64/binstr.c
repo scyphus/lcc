@@ -1428,16 +1428,16 @@ _resolve_address_size1(const x86_64_opr_t *opr)
     }
 
     /* Specified address size */
-    s1 = opr->u.eaddr.saddrsize;
+    s1 = opr->u.addr.saddrsize;
 
     /* Estimated operand size */
-    if ( X86_64_ADDR_BASE & opr->u.eaddr.flags ) {
-        s2 = regsize(opr->u.eaddr.base);
+    if ( X86_64_ADDR_BASE & opr->u.addr.flags ) {
+        s2 = regsize(opr->u.addr.base);
     } else {
         s2 = 0;
     }
-    if ( X86_64_ADDR_OFFSET & opr->u.eaddr.flags ) {
-        s3 = regsize(opr->u.eaddr.offset);
+    if ( X86_64_ADDR_OFFSET & opr->u.addr.flags ) {
+        s3 = regsize(opr->u.addr.offset);
     } else {
         s3 = 0;
     }
@@ -1491,9 +1491,9 @@ _encode_scaled_index(const x86_64_opr_t *opr, int *idx, int *rexx, int *ss)
     assert( X86_64_OPR_ADDR == opr->type );
 
     /* Encode scaled index */
-    if ( X86_64_ADDR_OFFSET & opr->u.eaddr.flags ) {
+    if ( X86_64_ADDR_OFFSET & opr->u.addr.flags ) {
         /* Resolve the register code of the index register */
-        ret = _reg_code(opr->u.eaddr.offset, idx, rexx);
+        ret = _reg_code(opr->u.addr.offset, idx, rexx);
         if ( ret < 0 ) {
             /* Cannot resolve the register code */
             return -1;
@@ -1504,8 +1504,8 @@ _encode_scaled_index(const x86_64_opr_t *opr, int *idx, int *rexx, int *ss)
         }
 
         /* Check scale multiplier */
-        if ( X86_64_ADDR_SCALE & opr->u.eaddr.flags ) {
-            switch ( opr->u.eaddr.scale ) {
+        if ( X86_64_ADDR_SCALE & opr->u.addr.flags ) {
+            switch ( opr->u.addr.scale ) {
             case 1:
                 *ss = 0;
                 break;
@@ -1543,11 +1543,11 @@ _encode_disp(const x86_64_opr_t *opr, int64_t *disp, size_t *dispsz)
 {
     assert( X86_64_OPR_ADDR == opr->type );
 
-    if ( opr->u.eaddr.flags & X86_64_ADDR_DISP ) {
+    if ( opr->u.addr.flags & X86_64_ADDR_DISP ) {
         /* Displacement is specified */
-        if ( X86_64_IMM_FIXED == opr->u.eaddr.disp.type ) {
+        if ( X86_64_IMM_FIXED == opr->u.addr.disp.type ) {
             /* Get the value of displacement */
-            *disp = opr->u.eaddr.disp.u.fixed;
+            *disp = opr->u.addr.disp.u.fixed;
             if ( 0 == *disp ) {
                 *dispsz = 0;
             } else if ( *disp >= -128 && *disp <= 127 ) {
@@ -1591,16 +1591,16 @@ _encode_rm_addr_with_base(int reg, int rexr, const x86_64_opr_t *opr,
     int64_t disp;
 
     assert( X86_64_OPR_ADDR == opr->type );
-    assert( X86_64_ADDR_BASE & opr->u.eaddr.flags );
+    assert( X86_64_ADDR_BASE & opr->u.addr.flags );
 
     rexx = REX_NONE;
     rexb = REX_NONE;
 
     /* Is the base register EIP/RIP? */
-    if ( REG_EIP == opr->u.eaddr.base || REG_RIP == opr->u.eaddr.base ) {
+    if ( REG_EIP == opr->u.addr.base || REG_RIP == opr->u.addr.base ) {
         /* The base register is EIP/RIP */
-        if ( (X86_64_ADDR_OFFSET & opr->u.eaddr.flags)
-             || (X86_64_ADDR_SCALE & opr->u.eaddr.flags) ) {
+        if ( (X86_64_ADDR_OFFSET & opr->u.addr.flags)
+             || (X86_64_ADDR_SCALE & opr->u.addr.flags) ) {
             /* Must not have scaled index */
             return -1;
         }
@@ -1654,7 +1654,7 @@ _encode_rm_addr_with_base(int reg, int rexr, const x86_64_opr_t *opr,
         /* The base register is not EIP/RIP and needs to specify SIB */
 
         /* Resolve the register code of the base register */
-        ret = _reg_code(opr->u.eaddr.base, &base, &rexb);
+        ret = _reg_code(opr->u.addr.base, &base, &rexb);
         if ( ret < 0 ) {
             /* Cannot resolve the register code */
             return -1;
@@ -1666,7 +1666,7 @@ _encode_rm_addr_with_base(int reg, int rexr, const x86_64_opr_t *opr,
             return -1;
         }
 
-        if ( X86_64_ADDR_OFFSET & opr->u.eaddr.flags ) {
+        if ( X86_64_ADDR_OFFSET & opr->u.addr.flags ) {
             /* Requires SIB */
             ret = _encode_scaled_index(opr, &idx, &rexx, &ss);
             if ( ret < 0 ) {
@@ -1827,7 +1827,7 @@ _encode_rm_addr_without_base(int reg, int rexr, const x86_64_opr_t *opr,
     int64_t disp;
 
     assert( X86_64_OPR_ADDR == opr->type );
-    assert( !(X86_64_ADDR_BASE & opr->u.eaddr.flags) );
+    assert( !(X86_64_ADDR_BASE & opr->u.addr.flags) );
 
     /* Mod and R/M must be 0 and 4, respectively, for the case w/o base
        register */
@@ -1895,7 +1895,7 @@ _encode_rm_addr(int reg, int rexr, const x86_64_opr_t *opr, x86_64_enop_t *enop)
 
     assert( X86_64_OPR_ADDR == opr->type );
 
-    if ( X86_64_ADDR_BASE & opr->u.eaddr.flags ) {
+    if ( X86_64_ADDR_BASE & opr->u.addr.flags ) {
         /* With base register */
         ret = _encode_rm_addr_with_base(reg, rexr, opr, enop);
     } else {
@@ -2427,28 +2427,6 @@ _encode_d(const x86_64_opr_t *opr, size_t immsz, x86_64_enop_t *enop)
         return -1;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3252,7 +3230,6 @@ int
 binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
         int opc1, int opc2, int opc3, x86_64_enc_t enc, int preg)
 {
-    int ret;
     int stat;
 
     assert( STMT_INSTR == xstmt->stmt->type );
