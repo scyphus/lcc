@@ -3481,10 +3481,38 @@ _fix_label_position(x86_64_label_table_t *tbl, const char *lstr, off_t pos)
 
 
 /*
+ * Delete the opcode vector
+ */
+static void
+_opr_vector_delete(x86_64_opr_vector_t *vec)
+{
+    size_t i;
+
+    for ( i = 0; i < mvector_size(vec); i++ ) {
+        free((x86_64_opr_t *)mvector_at(vec, i));
+    }
+    mvector_delete(vec);
+}
+
+/*
+ * Delete the opcode vector
+ */
+static void
+_stmt_vector_delete(x86_64_stmt_vector_t *vec)
+{
+    size_t i;
+
+    for ( i = 0; i < mvector_size(vec); i++ ) {
+        free((x86_64_stmt_t *)mvector_at(vec, i));
+    }
+    mvector_delete(vec);
+}
+
+/*
  * Evaluate operands
  */
 static int
-_eval(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+_convert_operands(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
 {
     x86_64_opr_t *opr;
     operand_t *op;
@@ -3506,16 +3534,14 @@ _eval(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
         /* Evaluate operands */
         opr = x86_64_convert_operand(op);
         if ( NULL == opr ) {
-            /* FIXME: Free the contents of the vector */
-            mvector_delete(oprs);
             /* Error */
+            _opr_vector_delete(oprs);
             return -EOPERAND;
         }
         if ( NULL == mvector_push_back(oprs, opr) ) {
             free(opr);
-            /* FIXME: Free the contents of the vector */
-            mvector_delete(oprs);
             /* Error */
+            _opr_vector_delete(oprs);
             return -EUNKNOWN;
         }
     }
@@ -3559,7 +3585,8 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
 
         xstmt = malloc(sizeof(x86_64_stmt_t));
         if ( NULL == xstmt ) {
-            /* FIXME */
+            /* Error */
+            _stmt_vector_delete(xvec);
             mvector_delete(xvec);
             return -1;
         }
@@ -3574,8 +3601,8 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
 
         /* Append */
         if ( NULL == mvector_push_back(xvec, xstmt) ) {
-            /* FIXME: Must free the contents of the vector */
-            mvector_delete(xvec);
+            /* Error */
+            _stmt_vector_delete(xvec);
             return -1;
         }
 
@@ -3593,13 +3620,13 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
                             mvector_at(xstmt->stmt->u.instr->opcode, j));
                 }
                 fprintf(stderr, "\n");
-                /* FIXME: Must free the contents of the vector */
-                mvector_delete(xvec);
+                /* Error */
+                _stmt_vector_delete(xvec);
                 return -1;
             }
 
             /* Evaluate operands first */
-            ret = _eval(asmblr, xstmt);
+            ret = _convert_operands(asmblr, xstmt);
             if ( ret < 0 ) {
                 /* Error */
                 return -1;
@@ -3609,8 +3636,7 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
             ret = _assemble_instr(asmblr, xstmt);
             if ( 0 != ret ) {
                 /* Error on assembling the instruction */
-                /* FIXME: Must free the contents of the vector */
-                mvector_delete(xvec);
+                _stmt_vector_delete(xvec);
                 return -1;
             }
             pos++;
