@@ -2429,52 +2429,6 @@ _encode_d(const x86_64_opr_t *opr, size_t immsz, x86_64_enop_t *enop)
 }
 
 
-/*
- * Evaluate operands
- */
-static int
-_eval(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
-{
-    x86_64_opr_t *opr;
-    operand_t *op;
-    size_t nr;
-    size_t i;
-    x86_64_opr_vector_t *oprs;
-
-    /* Allocate a vector for evals */
-    oprs = mvector_new();
-    if ( NULL == oprs ) {
-        return -1;
-    }
-
-    /* Evaluate operands */
-    nr = mvector_size(xstmt->stmt->u.instr->operands);
-    for ( i = 0; i < nr; i++ ) {
-        /* Obtain operands */
-        op = mvector_at(xstmt->stmt->u.instr->operands, i);
-        /* Evaluate operands */
-        opr = x86_64_estimate_operand(op);
-        if ( NULL == opr ) {
-            /* FIXME: Free the contents of the vector */
-            mvector_delete(oprs);
-            /* Error */
-            return -EOPERAND;
-        }
-        if ( NULL == mvector_push_back(oprs, opr) ) {
-            free(opr);
-            /* FIXME: Free the contents of the vector */
-            mvector_delete(oprs);
-            /* Error */
-            return -EUNKNOWN;
-        }
-    }
-
-    /* Set evals */
-    xstmt->oprs = oprs;
-
-    return 1;
-}
-
 
 
 
@@ -3302,13 +3256,6 @@ binstr2(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt, ssize_t opsize,
     int stat;
 
     assert( STMT_INSTR == xstmt->stmt->type );
-
-    /* Evaluate operands first */
-    ret = _eval(asmblr, xstmt);
-    if ( ret < 0 ) {
-        /* Error */
-        return ret;
-    }
 
     stat = 0;
     switch ( enc ) {

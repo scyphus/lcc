@@ -3481,6 +3481,53 @@ _fix_label_position(x86_64_label_table_t *tbl, const char *lstr, off_t pos)
 
 
 /*
+ * Evaluate operands
+ */
+static int
+_eval(x86_64_assembler_t *asmblr, x86_64_stmt_t *xstmt)
+{
+    x86_64_opr_t *opr;
+    operand_t *op;
+    size_t nr;
+    size_t i;
+    x86_64_opr_vector_t *oprs;
+
+    /* Allocate a vector for evals */
+    oprs = mvector_new();
+    if ( NULL == oprs ) {
+        return -1;
+    }
+
+    /* Evaluate operands */
+    nr = mvector_size(xstmt->stmt->u.instr->operands);
+    for ( i = 0; i < nr; i++ ) {
+        /* Obtain operands */
+        op = mvector_at(xstmt->stmt->u.instr->operands, i);
+        /* Evaluate operands */
+        opr = x86_64_estimate_operand(op);
+        if ( NULL == opr ) {
+            /* FIXME: Free the contents of the vector */
+            mvector_delete(oprs);
+            /* Error */
+            return -EOPERAND;
+        }
+        if ( NULL == mvector_push_back(oprs, opr) ) {
+            free(opr);
+            /* FIXME: Free the contents of the vector */
+            mvector_delete(oprs);
+            /* Error */
+            return -EUNKNOWN;
+        }
+    }
+
+    /* Set evals */
+    xstmt->oprs = oprs;
+
+    return 1;
+}
+
+
+/*
  * Stage 1: Assemble all the candidates
  * State 2: Estimate label offsets
  * Stage 3: Complete the assembling procedure
@@ -3548,6 +3595,13 @@ _stage1(x86_64_assembler_t *asmblr, const stmt_vector_t *vec)
                 fprintf(stderr, "\n");
                 /* FIXME: Must free the contents of the vector */
                 mvector_delete(xvec);
+                return -1;
+            }
+
+            /* Evaluate operands first */
+            ret = _eval(asmblr, xstmt);
+            if ( ret < 0 ) {
+                /* Error */
                 return -1;
             }
 
